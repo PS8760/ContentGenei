@@ -1,0 +1,14 @@
+{
+  "name": "contentgenie",
+  "version": "1.0.0",
+  "description": "AI-powered content creation and management platform",
+  "scripts": {
+    "dev": "concurrently \"cd backend && python app.py\" \"cd frontend && npm run dev\"",
+    "install-all": "cd frontend && npm install && cd ../backend && pip install -r requirements.txt",
+    "backend": "cd backend && python app.py",
+    "frontend": "cd frontend && npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
+}

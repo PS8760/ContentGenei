@@ -1,0 +1,795 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 15%, #3b82f6 30%, #60a5fa 45%, #93c5fd 60%, #bfdbfe 75%, #dbeafe 90%, #ffffff 100%);
+  background-attachment: fixed;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  color: #111827;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  line-height: 1.6;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Mobile optimization for diagonal gradient */
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll;
+  }
+  
+  .dark body {
+    background-attachment: scroll;
+  }
+}
+
+/* Professional dark mode */
+.dark html {
+  height: 100%;
+}
+
+.dark body {
+  background: linear-gradient(135deg, #0f172a 0%, #1f2937 25%, #374151 50%, #1f2937 75%, #111827 100%);
+  background-attachment: fixed;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  color: #f8fafc;
+}
+
+/* Seamless gradient backgrounds - diagonal blue to white transition */
+.hero-gradient {
+  background: transparent;
+  position: relative;
+  transition: background 0.3s ease;
+}
+
+.dark .hero-gradient {
+  background: transparent;
+}
+
+.section-gradient {
+  background: transparent;
+  transition: background 0.3s ease;
+}
+
+.dark .section-gradient {
+  background: transparent;
+}
+
+.features-gradient {
+  background: transparent;
+  transition: background 0.3s ease;
+}
+
+.dark .features-gradient {
+  background: transparent;
+}
+
+/* Professional glass morphism */
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(209, 213, 219, 0.3);
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.1), 0 1px 2px rgba(17, 24, 39, 0.06);
+  transition: all 0.3s ease;
+}
+
+.dark .glass-card {
+  background: rgba(31, 41, 55, 0.95);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.glass-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(209, 213, 219, 0.3);
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.05);
+  transition: all 0.3s ease;
+}
+
+.dark .glass-header {
+  background: rgba(17, 24, 39, 0.95);
+  border-bottom: 1px solid rgba(75, 85, 99, 0.2);
+  box-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Professional gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: background 0.3s ease;
+}
+
+.dark .gradient-text {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Professional button styles with ultra fast click animations */
+.btn-primary {
+  background: #1e40af;
+  transition: all 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+}
+
+.dark .btn-primary {
+  background: #f8fafc;
+  color: #1e40af;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+}
+
+.dark .btn-primary:hover {
+  background: #f1f5f9;
+  box-shadow: 0 4px 12px rgba(248, 250, 252, 0.2);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.97);
+  animation: buttonClick 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes buttonClick {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(0.97);
+  }
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  transition: all 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.dark .btn-secondary {
+  border: 1px solid #475569;
+  color: #cbd5e1;
+}
+
+.btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.dark .btn-secondary:hover {
+  background: #1e293b;
+  border-color: #64748b;
+  color: #f1f5f9;
+}
+
+.btn-secondary:active {
+  transform: scale(0.97);
+  animation: buttonClickSecondary 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes buttonClickSecondary {
+  0% {
+    transform: scale(1);
+    background: transparent;
+  }
+  50% {
+    transform: scale(0.96);
+    background: rgba(59, 130, 246, 0.15);
+  }
+  100% {
+    transform: scale(0.97);
+    background: transparent;
+  }
+}
+
+/* Minimal card hover effects */
+.feature-card {
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.dark .feature-card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Seamless section transitions */
+.section-padding {
+  padding: 5rem 0;
+  position: relative;
+}
+
+.section-padding-sm {
+  padding: 3rem 0;
+  position: relative;
+}
+
+.section-padding-lg {
+  padding: 6rem 0;
+  position: relative;
+}
+
+/* Remove section borders and create seamless flow */
+section {
+  border: none;
+  margin: 0;
+  position: relative;
+}
+
+/* Ensure content is above particles */
+.content-layer {
+  position: relative;
+  z-index: 10;
+}
+
+/* Particle system enhancements - ultra fast and smooth */
+.particle-main, .particle-accent, .particle-sparkle {
+  z-index: 1 !important;
+  display: block !important;
+  visibility: visible !important;
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1 !important;
+}
+
+/* Ensure particles container is visible */
+.particles-container {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+  display: block !important;
+  visibility: visible !important;
+}
+
+/* Enhanced particle visibility with faster animation */
+.particle-enhanced {
+  animation: particleFloat 4s ease-in-out infinite;
+}
+
+@keyframes particleFloat {
+  0%, 100% { 
+    transform: translateY(0px) scale(1) rotate(0deg); 
+    opacity: 0.8;
+  }
+  25% {
+    transform: translateY(-8px) scale(1.05) rotate(90deg);
+    opacity: 0.9;
+  }
+  50% { 
+    transform: translateY(-15px) scale(1.1) rotate(180deg); 
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(-8px) scale(1.05) rotate(270deg);
+    opacity: 0.9;
+  }
+}
+
+/* Faster particle glow effects */
+.particle-glow-light {
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.7), 0 0 16px rgba(59, 130, 246, 0.5), 0 0 24px rgba(59, 130, 246, 0.3);
+  animation: pulseGlow 2s ease-in-out infinite alternate;
+}
+
+.particle-glow-dark {
+  box-shadow: 0 0 8px rgba(147, 197, 253, 0.9), 0 0 16px rgba(147, 197, 253, 0.7), 0 0 24px rgba(147, 197, 253, 0.5);
+  animation: pulseGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes pulseGlow {
+  0% {
+    filter: brightness(1) blur(0.5px);
+  }
+  100% {
+    filter: brightness(1.2) blur(0.3px);
+  }
+}
+
+/* Enhanced interactive element animations - ultra fast and smooth */
+
+/* Navigation link animations */
+nav a:focus {
+  animation: navLinkFocus 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes navLinkFocus {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  50% {
+    transform: translateX(1px) scale(1.02);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Card hover and focus animations */
+.feature-card:focus {
+  animation: cardFocus 0.12s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes cardFocus {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.2);
+  }
+  100% {
+    transform: translateY(-1px) scale(1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Theme toggle focus animation */
+.theme-toggle:focus {
+  animation: toggleFocus 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes toggleFocus {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-3deg) scale(1.05);
+  }
+  50% {
+    transform: rotate(3deg) scale(1.05);
+  }
+  75% {
+    transform: rotate(-1deg) scale(1.02);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+/* Social media icon focus animations */
+.social-icon:focus {
+  animation: socialIconFocus 0.12s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes socialIconFocus {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.05) rotate(-3deg);
+  }
+  50% {
+    transform: scale(1.08) rotate(3deg);
+  }
+  75% {
+    transform: scale(1.05) rotate(-1deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Form element enhanced animations */
+.form-input:focus {
+  animation: inputFocusEnhanced 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes inputFocusEnhanced {
+  0% {
+    transform: scale(1);
+    border-color: #d1d5db;
+  }
+  50% {
+    transform: scale(1.005);
+    border-color: #3b82f6;
+  }
+  100% {
+    transform: scale(1);
+    border-color: #2563eb;
+  }
+}
+
+/* Logo focus animation */
+.logo:focus {
+  animation: logoFocus 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes logoFocus {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.03) rotate(-1deg);
+  }
+  50% {
+    transform: scale(1.05) rotate(1deg);
+  }
+  75% {
+    transform: scale(1.03) rotate(-0.5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Ripple effect for buttons - ultra fast */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ripple:active::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  transform: translate(-50%, -50%);
+  animation: ripple 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes ripple {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 1;
+  }
+  100% {
+    width: 150px;
+    height: 150px;
+    opacity: 0;
+  }
+}
+
+/* Enhanced glass effects for particles background */
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(209, 213, 219, 0.3);
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.1), 0 1px 2px rgba(17, 24, 39, 0.06);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 15;
+}
+
+.dark .glass-card {
+  background: rgba(31, 41, 55, 0.95);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.glass-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(209, 213, 219, 0.3);
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.05);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 50;
+}
+
+.dark .glass-header {
+  background: rgba(17, 24, 39, 0.95);
+  border-bottom: 1px solid rgba(75, 85, 99, 0.2);
+  box-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+  .section-padding {
+    padding: 3rem 0;
+  }
+  
+  .section-padding-lg {
+    padding: 4rem 0;
+  }
+}
+
+/* Minimal animations */
+.floating-element {
+  animation: float 8s ease-in-out infinite;
+}
+
+.floating-element:nth-child(2) {
+  animation-delay: -2s;
+}
+
+.floating-element:nth-child(3) {
+  animation-delay: -4s;
+}
+
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0px); 
+  }
+  50% { 
+    transform: translateY(-8px); 
+  }
+}
+
+/* Professional transitions */
+.theme-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Professional form elements - darker text */
+.form-input {
+  background: #ffffff;
+  border: 1px solid #9ca3af;
+  color: #111827;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
+}
+
+.dark .form-input {
+  background: #1f2937;
+  border: 1px solid #4b5563;
+  color: #f9fafb;
+}
+
+.dark .form-input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+/* Professional text colors - darker grays for light theme */
+.text-primary { 
+  color: #111827; 
+  font-weight: 600;
+}
+.text-secondary { 
+  color: #1f2937; 
+  font-weight: 500;
+}
+.text-muted { 
+  color: #374151; 
+  font-weight: 400;
+}
+
+.dark .text-primary { 
+  color: #f9fafb; 
+  font-weight: 600;
+}
+.dark .text-secondary { 
+  color: #d1d5db; 
+  font-weight: 500;
+}
+.dark .text-muted { 
+  color: #9ca3af; 
+  font-weight: 400;
+}
+
+/* Typography improvements */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  color: #111827;
+}
+
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+  color: #f9fafb;
+}
+
+p {
+  line-height: 1.7;
+  color: #374151;
+}
+
+.dark p {
+  color: #d1d5db;
+}
+
+/* Button typography */
+button {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Link typography */
+a {
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+/* Label typography */
+label {
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+/* Professional loading spinner */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid #ffffff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Professional focus states - ultra fast and smooth animations */
+*:focus {
+  outline: none;
+}
+
+/* Button focus animations - ultra fast */
+button:focus {
+  outline: none;
+  animation: focusPulse 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes focusPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.8);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.3);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+/* Link focus animations - ultra fast */
+a:focus {
+  outline: none;
+  animation: focusGlow 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes focusGlow {
+  0% {
+    text-shadow: 0 0 0 transparent;
+    transform: translateY(0);
+  }
+  50% {
+    text-shadow: 0 0 6px rgba(59, 130, 246, 0.7);
+    transform: translateY(-0.5px);
+  }
+  100% {
+    text-shadow: 0 0 0 transparent;
+    transform: translateY(0);
+  }
+}
+
+/* Input focus animations - ultra fast */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  animation: focusRipple 0.12s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes focusRipple {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    transform: scale(1.01);
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.15);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+/* Dark theme focus animations - ultra fast */
+.dark button:focus {
+  animation: focusPulseDark 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes focusPulseDark {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(147, 197, 253, 0.8);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 0 8px rgba(147, 197, 253, 0.3);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(147, 197, 253, 0);
+  }
+}
+
+.dark a:focus {
+  animation: focusGlowDark 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes focusGlowDark {
+  0% {
+    text-shadow: 0 0 0 transparent;
+    transform: translateY(0);
+  }
+  50% {
+    text-shadow: 0 0 6px rgba(147, 197, 253, 0.9);
+    transform: translateY(-0.5px);
+  }
+  100% {
+    text-shadow: 0 0 0 transparent;
+    transform: translateY(0);
+  }
+}
+
+.dark input:focus, .dark textarea:focus, .dark select:focus {
+  animation: focusRippleDark 0.12s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes focusRippleDark {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(147, 197, 253, 0.5);
+  }
+  50% {
+    transform: scale(1.01);
+    box-shadow: 0 0 0 6px rgba(147, 197, 253, 0.15);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(147, 197, 253, 0);
+  }
+}
