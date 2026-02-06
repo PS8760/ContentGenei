@@ -1,8 +1,10 @@
 import { auth } from '../config/firebase'
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-backend-domain.com/api'  // Replace with your production backend URL
-  : 'http://localhost:5000/api'
+// Backend API URL - Update this after deploying your backend
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.MODE === 'production' 
+    ? 'https://your-backend-url.onrender.com/api'  // Replace with your deployed backend URL
+    : 'http://localhost:5000/api')
 
 class ApiService {
   constructor() {

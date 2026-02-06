@@ -25,14 +25,22 @@ def create_app(config_name=None):
     jwt = JWTManager(app)
     
     # Configure CORS
-    CORS(app, origins=[
+    cors_origins = os.environ.get('CORS_ORIGINS', '').split(',') if os.environ.get('CORS_ORIGINS') else [
         "http://localhost:3000",
         "http://localhost:3001", 
         "http://localhost:3002",
         "http://localhost:3003",
-        "https://content-genei.vercel.app",  # Add your production domain
+        "http://localhost:5173",
+        "https://content-ai-orcin-tau.vercel.app",
         "https://*.vercel.app"
-    ])
+    ]
+    
+    CORS(app, 
+         origins=cors_origins,
+         supports_credentials=True,
+         allow_headers=["Content-Type", "Authorization"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    )
     
     # Register blueprints
     from routes.auth import auth_bp
