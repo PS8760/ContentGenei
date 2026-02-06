@@ -3,7 +3,6 @@
 import io
 import base64
 from PIL import Image
-import easyocr
 from typing import Dict, Any
 import logging
 
@@ -11,18 +10,31 @@ import logging
 logger = logging.getLogger(__name__)
 
 class OCRService:
-    """Service for extracting text from images using EasyOCR"""
+    """Service for extracting text from images - Simplified version for deployment"""
     
     def __init__(self):
-        # Initialize EasyOCR reader (English by default)
-        # Using GPU=False for compatibility
+        # OCR reader will be initialized on first use
         self.reader = None
         self.initialization_error = None
+        self.ocr_available = False
+        
+        # Try to import easyocr if available
+        try:
+            import easyocr
+            self.ocr_available = True
+            logger.info("EasyOCR is available")
+        except ImportError:
+            logger.warning("EasyOCR not available - OCR features will be disabled")
+            self.ocr_available = False
     
     def _get_reader(self):
         """Lazy load the OCR reader"""
+        if not self.ocr_available:
+            raise Exception("OCR library (EasyOCR) is not installed. OCR features are disabled.")
+        
         if self.reader is None:
             try:
+                import easyocr
                 logger.info("Initializing EasyOCR reader...")
                 self.reader = easyocr.Reader(['en'], gpu=False, verbose=False)
                 logger.info("EasyOCR reader initialized successfully")
@@ -42,6 +54,16 @@ class OCRService:
         Returns:
             Dict with success status, extracted text, and confidence scores
         """
+        # Check if OCR is available
+        if not self.ocr_available:
+            return {
+                'success': False,
+                'error': 'OCR feature is not available. Please contact support to enable this feature.',
+                'text': '',
+                'word_count': 0,
+                'avg_confidence': 0
+            }
+        
         try:
             # Open image from bytes
             image = Image.open(io.BytesIO(image_data))
@@ -57,7 +79,7 @@ class OCRService:
             if max(image.size) > max_dimension:
                 ratio = max_dimension / max(image.size)
                 new_size = tuple(int(dim * ratio) for dim in image.size)
-                image = image.resize(new_size, Image.LANCZOS)
+                image = image.resize(new_size, Image.Resampling.LANCZOS)
                 logger.info(f"Image resized to: {new_size}")
             
             # Get OCR reader
