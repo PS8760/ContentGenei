@@ -3,7 +3,7 @@ import { auth } from '../config/firebase'
 // Backend API URL - Update this after deploying your backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.MODE === 'production' 
-    ? 'https://contentgenei.onrender.com/'  // Production backend URL
+    ? 'https://contentgenei.onrender.com/api'  // Production backend URL
     : 'http://localhost:5000/api')
 
 class ApiService {
