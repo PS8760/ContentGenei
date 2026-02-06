@@ -9,9 +9,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL ||
 class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL
-    console.log('🔗 API Base URL:', this.baseURL)
-    console.log('🌍 Environment Mode:', import.meta.env.MODE)
-    console.log('🔧 VITE_API_URL:', import.meta.env.VITE_API_URL)
   }
 
   async getAuthHeaders() {
