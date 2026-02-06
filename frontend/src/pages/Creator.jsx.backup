@@ -1,0 +1,618 @@
+import { useState, useEffect, useRef } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { gsap } from 'gsap'
+import ParticlesBackground from '../components/ParticlesBackground'
+import FloatingEmojis from '../components/FloatingEmojis'
+import Header from '../components/Header'
+import Footer from '../components/Footer'
+import apiService from '../services/api'
+
+const Creator = () => {
+  const { currentUser } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [contentType, setContentType] = useState('article')
+  const [prompt, setPrompt] = useState('')
+  const [tone, setTone] = useState('professional')
+  const [generatedContent, setGeneratedContent] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [activeTab, setActiveTab] = useState('generate') // generate, chat, summarize, improve
+  const [chatMessages, setChatMessages] = useState([])
+  const [chatInput, setChatInput] = useState('')
+  const [summarizeText, setSummarizeText] = useState('')
+  const [summarizedContent, setSummarizedContent] = useState('')
+  
+  const titleRef = useRef(null)
+  const formRef = useRef(null)
+  const resultRef = useRef(null)
+
+  useEffect(() => {
+    const tl = gsap.timeline({ delay: 0.3 })
+    
+    tl.fromTo(titleRef.current,
+      { y: 50, opacity: 0 },
+      { y: 0, opacity: 1, duration: 1, ease: "power3.out" }
+    )
+    .fromTo([formRef.current, resultRef.current],
+      { y: 80, opacity: 0, scale: 0.95 },
+      { y: 0, opacity: 1, scale: 1, duration: 1.2, stagger: 0.2, ease: "back.out(1.1)" },
+      "-=0.5"
+    )
+  }, [])
+
+
+
+  const handleGenerate = async () => {
+    if (!prompt.trim()) {
+      setGeneratedContent('Please enter a prompt to generate content.')
+      return
+    }
+
+    setIsGenerating(true)
+    setGeneratedContent('') // Clear previous content
+    
+    // Enhanced loading animation
+    gsap.to(resultRef.current, {
+      scale: 0.99,
+      opacity: 0.9,
+      duration: 0.3,
+      ease: "power2.out"
+    })
+
+    try {
+      // Call the backend API using the API service
+      const data = await apiService.generateContent({
+        prompt: prompt,
+        type: contentType,
+        tone: tone
+      })
+      
+      if (data.success) {
+        setGeneratedContent(data.content.content)
+        
+        // Enhanced content appearance animation
+        gsap.to(resultRef.current, {
+          scale: 1,
+          opacity: 1,
+          duration: 0.5,
+          ease: "back.out(1.1)"
+        })
+      } else {
+        throw new Error(data.error || 'Content generation failed')
+      }
+    } catch (error) {
+      console.error('Error generating content:', error)
+      setGeneratedContent(`Error: ${error.message || 'Failed to generate content. Please check if the backend server is running and try again.'}`)
+      
+      // Reset animation
+      gsap.to(resultRef.current, {
+        scale: 1,
+        opacity: 1,
+        duration: 0.3
+      })
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleCopy = async () => {
+    if (!generatedContent) return
+    
+    try {
+      await navigator.clipboard.writeText(generatedContent)
+      // Show success feedback
+      const button = document.activeElement
+      const originalText = button.textContent
+      button.textContent = '✓ Copied!'
+      button.classList.add('bg-green-600')
+      
+      setTimeout(() => {
+        button.textContent = originalText
+        button.classList.remove('bg-green-600')
+      }, 2000)
+    } catch (error) {
+      console.error('Error copying content:', error)
+      alert('Failed to copy content')
+    }
+  }
+
+  const handleSave = async () => {
+    if (!generatedContent) return
+    
+    try {
+      setLoading(true)
+      // Save the generated content to Content Library
+      const title = prompt.split(' ').slice(0, 8).join(' ') || 'Generated Content'
+      
+      // This would call the backend to save the content
+      // For now, show success message
+      alert('Content saved to your library! You can view it in the Content Library page.')
+      
+      // In production, you would call:
+      // await apiService.updateContent(contentId, { status: 'published' })
+      
+    } catch (error) {
+      console.error('Error saving content:', error)
+      alert('Failed to save content')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEdit = () => {
+    if (!generatedContent) return
+    
+    // Make content editable
+    const contentElement = document.querySelector('.generated-content-text')
+    if (contentElement) {
+      contentElement.contentEditable = true
+      contentElement.focus()
+      contentElement.classList.add('border-2', 'border-blue-500')
+      
+      // Update the content when user finishes editing
+      contentElement.addEventListener('blur', () => {
+        setGeneratedContent(contentElement.textContent)
+        contentElement.contentEditable = false
+        contentElement.classList.remove('border-2', 'border-blue-500')
+      }, { once: true })
+    }
+  }
+
+  const handleChatSend = async () => {
+    if (!chatInput.trim()) return
+    
+    const userMessage = { role: 'user', content: chatInput }
+    setChatMessages(prev => [...prev, userMessage])
+    setChatInput('')
+    setIsGenerating(true)
+    
+    try {
+      const response = await apiService.generateContent({
+        prompt: chatInput,
+        type: 'chat',
+        tone: 'conversational'
+      })
+      
+      if (response.success) {
+        const aiMessage = { role: 'assistant', content: response.content.content }
+        setChatMessages(prev => [...prev, aiMessage])
+      }
+    } catch (error) {
+      console.error('Error in chat:', error)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleSummarize = async () => {
+    if (!summarizeText.trim()) return
+    
+    setIsGenerating(true)
+    try {
+      const response = await apiService.generateContent({
+        prompt: `Summarize the following text concisely:\n\n${summarizeText}`,
+        type: 'article',
+        tone: 'professional'
+      })
+      
+      if (response.success) {
+        setSummarizedContent(response.content.content)
+      }
+    } catch (error) {
+      console.error('Error summarizing:', error)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleImprove = async () => {
+    if (!generatedContent) return
+    
+    setIsGenerating(true)
+    try {
+      const response = await apiService.generateContent({
+        prompt: `Improve the following content for better readability and engagement:\n\n${generatedContent}`,
+        type: contentType,
+        tone: tone
+      })
+      
+      if (response.success) {
+        setGeneratedContent(response.content.content)
+      }
+    } catch (error) {
+      console.error('Error improving content:', error)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen theme-transition relative">
+      <ParticlesBackground />
+      <FloatingEmojis />
+      
+      {/* Header */}
+      <Header />
+
+      {/* Main Content */}
+      <main className="pt-24 pb-12 relative z-10 content-layer">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Title Section */}
+          <div ref={titleRef} className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight tracking-tight">
+              AI <span className="gradient-text">Content Creator</span>
+            </h1>
+            <p className="text-blue-100 dark:text-blue-200 text-lg font-normal max-w-2xl mx-auto theme-transition">
+              Generate, chat, summarize, and improve your content with AI-powered tools.
+            </p>
+          </div>
+
+          {/* Feature Tabs */}
+          <div className="flex justify-center mb-8">
+            <div className="glass-card rounded-2xl p-2 inline-flex space-x-2 theme-transition">
+              <button
+                onClick={() => setActiveTab('generate')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                  activeTab === 'generate'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                ✨ Generate
+              </button>
+              <button
+                onClick={() => setActiveTab('chat')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                  activeTab === 'chat'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                💬 Chat Assistant
+              </button>
+              <button
+                onClick={() => setActiveTab('summarize')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                  activeTab === 'summarize'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                📄 Summarize
+              </button>
+              <button
+                onClick={() => setActiveTab('improve')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                  activeTab === 'improve'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                🎯 Improve
+              </button>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12">
+            {/* Generate Tab */}
+            {activeTab === 'generate' && (
+              <>
+                {/* Content Creator Form */}
+                <div ref={formRef} className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 theme-transition relative">
+                  {!currentUser && (
+                    <div className="absolute inset-0 bg-gray-900/10 dark:bg-gray-900/30 backdrop-blur-[2px] rounded-2xl md:rounded-3xl z-10 flex items-center justify-center theme-transition">
+                      <div className="text-center p-6">
+                        <div className="text-5xl mb-4">🔒</div>
+                        <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2 theme-transition">
+                          Sign In Required
+                        </h4>
+                        <p className="text-gray-800 dark:text-gray-300 mb-4 theme-transition">
+                          Create an account to start generating content
+                        </p>
+                        <button
+                          onClick={() => navigate('/signin')}
+                          className="btn-primary text-white px-6 py-3 rounded-xl font-semibold btn-ripple"
+                        >
+                          Sign In Now
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center space-x-3 mb-8">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center">
+                      <span className="text-white text-xl">✏️</span>
+                    </div>
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 theme-transition">AI Content Creator</h3>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-900 dark:text-gray-200 mb-3 theme-transition">
+                        Content Type
+                      </label>
+                      <select
+                        value={contentType}
+                        onChange={(e) => setContentType(e.target.value)}
+                        className="form-input w-full p-4 rounded-xl transition-all duration-200"
+                      >
+                        <option value="article">Article</option>
+                        <option value="social-post">Social Media Post</option>
+                        <option value="email">Email</option>
+                        <option value="blog">Blog Post</option>
+                        <option value="caption">Caption</option>
+                        <option value="script">Video Script</option>
+                        <option value="ad-copy">Ad Copy</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-900 dark:text-gray-200 mb-3 theme-transition">
+                        Content Prompt
+                      </label>
+                      <textarea
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="Describe what content you want to create... Be specific about your topic, target audience, and key points you want to cover."
+                        className="form-input w-full p-4 rounded-xl h-32 resize-none placeholder-gray-800 dark:placeholder-gray-400 theme-transition"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-900 dark:text-gray-200 mb-3 theme-transition">
+                        Tone & Style
+                      </label>
+                      <select
+                        value={tone}
+                        onChange={(e) => setTone(e.target.value)}
+                        className="form-input w-full p-4 rounded-xl transition-all duration-200"
+                      >
+                        <option value="professional">Professional</option>
+                        <option value="casual">Casual</option>
+                        <option value="friendly">Friendly</option>
+                        <option value="formal">Formal</option>
+                        <option value="creative">Creative</option>
+                        <option value="persuasive">Persuasive</option>
+                        <option value="informative">Informative</option>
+                        <option value="conversational">Conversational</option>
+                      </select>
+                    </div>
+
+                    <button
+                      onClick={handleGenerate}
+                      disabled={!prompt || isGenerating}
+                      className="w-full btn-primary btn-ripple text-white py-4 px-6 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      {isGenerating ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full loading-spinner"></div>
+                          <span>Generating Content...</span>
+                        </div>
+                      ) : currentUser ? (
+                        'Generate Content'
+                      ) : (
+                        '🔒 Sign In to Generate'
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Generated Content Display */}
+                <div ref={resultRef} className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 theme-transition relative">
+                  {!currentUser && (
+                    <div className="absolute inset-0 bg-gray-900/10 dark:bg-gray-900/30 backdrop-blur-[2px] rounded-2xl md:rounded-3xl z-10 flex items-center justify-center theme-transition">
+                      <div className="text-center p-6">
+                        <div className="text-5xl mb-4">🔒</div>
+                        <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2 theme-transition">
+                          Sign In Required
+                        </h4>
+                        <p className="text-gray-800 dark:text-gray-300 mb-4 theme-transition">
+                          View and manage your generated content
+                        </p>
+                        <button
+                          onClick={() => navigate('/signin')}
+                          className="btn-primary text-white px-6 py-3 rounded-xl font-semibold btn-ripple"
+                        >
+                          Sign In Now
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center space-x-3 mb-8">
+                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-xl flex items-center justify-center">
+                      <span className="text-white text-xl">📄</span>
+                    </div>
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 theme-transition">Generated Content</h3>
+                  </div>
+                  
+                  {generatedContent ? (
+                    <div className="space-y-6">
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 theme-transition max-h-96 overflow-y-auto">
+                        <pre className="generated-content-text text-gray-900 dark:text-gray-200 whitespace-pre-wrap leading-relaxed theme-transition font-sans text-sm">
+                          {generatedContent}
+                        </pre>
+                      </div>
+                      <div className="grid grid-cols-4 gap-3">
+                        <button 
+                          onClick={handleCopy}
+                          className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple"
+                        >
+                          Copy
+                        </button>
+                        <button 
+                          onClick={handleEdit}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={handleImprove}
+                          disabled={isGenerating}
+                          className="bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple disabled:opacity-50"
+                        >
+                          Improve
+                        </button>
+                        <button 
+                          onClick={handleSave}
+                          disabled={loading}
+                          className="bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-16">
+                      <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-6 theme-transition">
+                        <span className="text-3xl">✨</span>
+                      </div>
+                      <p className="text-gray-800 dark:text-gray-400 text-lg font-normal theme-transition">
+                        Your generated content will appear here
+                      </p>
+                      <p className="text-gray-600 dark:text-gray-500 text-sm mt-2 theme-transition">
+                        Fill out the form and click "Generate Content" to get started
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+            {/* Content Creator Form */}
+            <div ref={formRef} className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 theme-transition">
+              <div className="flex items-center space-x-3 mb-8">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center">
+                  <span className="text-white text-xl">✏️</span>
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 theme-transition">Create New Content</h3>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 dark:text-gray-200 mb-3 theme-transition">
+                    Content Type
+                  </label>
+                  <select
+                    value={contentType}
+                    onChange={(e) => setContentType(e.target.value)}
+                    className="form-input w-full p-4 rounded-xl transition-all duration-200"
+                  >
+                    <option value="article">Article</option>
+                    <option value="social-post">Social Media Post</option>
+                    <option value="email">Email</option>
+                    <option value="blog">Blog Post</option>
+                    <option value="caption">Caption</option>
+                    <option value="script">Video Script</option>
+                    <option value="ad-copy">Ad Copy</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 dark:text-gray-200 mb-3 theme-transition">
+                    Content Prompt
+                  </label>
+                  <textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="Describe what content you want to create... Be specific about your topic, target audience, and key points you want to cover."
+                    className="form-input w-full p-4 rounded-xl h-32 resize-none placeholder-gray-800 dark:placeholder-gray-400 theme-transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 dark:text-gray-200 mb-3 theme-transition">
+                    Tone & Style
+                  </label>
+                  <select
+                    value={tone}
+                    onChange={(e) => setTone(e.target.value)}
+                    className="form-input w-full p-4 rounded-xl transition-all duration-200"
+                  >
+                    <option value="professional">Professional</option>
+                    <option value="casual">Casual</option>
+                    <option value="friendly">Friendly</option>
+                    <option value="formal">Formal</option>
+                    <option value="creative">Creative</option>
+                    <option value="persuasive">Persuasive</option>
+                    <option value="informative">Informative</option>
+                    <option value="conversational">Conversational</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={handleGenerate}
+                  disabled={!prompt || isGenerating}
+                  className="w-full btn-primary btn-ripple text-white py-4 px-6 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {isGenerating ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full loading-spinner"></div>
+                      <span>Generating Content...</span>
+                    </div>
+                  ) : (
+                    'Generate Content'
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Generated Content Display */}
+            <div ref={resultRef} className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 theme-transition">
+              <div className="flex items-center space-x-3 mb-8">
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-xl flex items-center justify-center">
+                  <span className="text-white text-xl">📄</span>
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 theme-transition">Generated Content</h3>
+              </div>
+              
+              {generatedContent ? (
+                <div className="space-y-6">
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 theme-transition max-h-96 overflow-y-auto">
+                    <pre className="generated-content-text text-gray-900 dark:text-gray-200 whitespace-pre-wrap leading-relaxed theme-transition font-sans text-sm">
+                      {generatedContent}
+                    </pre>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <button 
+                      onClick={handleCopy}
+                      className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple"
+                    >
+                      Copy
+                    </button>
+                    <button 
+                      onClick={handleEdit}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple"
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      onClick={handleSave}
+                      disabled={loading}
+                      className="bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-6 theme-transition">
+                    <span className="text-3xl">✨</span>
+                  </div>
+                  <p className="text-gray-800 dark:text-gray-400 text-lg font-normal theme-transition">
+                    Your generated content will appear here
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-500 text-sm mt-2 theme-transition">
+                    Fill out the form and click "Generate Content" to get started
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+      
+      {/* Footer */}
+      <Footer />
+    </div>
+  )
+}
+
+export default Creator

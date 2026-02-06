@@ -1,10 +1,14 @@
 import { useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useAuth } from '../contexts/AuthContext'
 
 gsap.registerPlugin(ScrollTrigger)
 
 const Features = () => {
+  const { currentUser } = useAuth()
+  const navigate = useNavigate()
   const sectionRef = useRef(null)
   const cardsRef = useRef([])
   const ctaRef = useRef(null)
@@ -103,8 +107,11 @@ const Features = () => {
             </div>
           </div>
           
-          <button className="btn-primary btn-ripple text-white px-12 py-5 rounded-2xl font-bold text-xl transition-all duration-75">
-            Start Creating Today
+          <button 
+            onClick={() => currentUser ? navigate('/dashboard') : navigate('/signin')}
+            className="btn-primary btn-ripple text-white px-12 py-5 rounded-2xl font-bold text-xl transition-all duration-75"
+          >
+            {currentUser ? 'Go to Dashboard' : 'Start Creating Today'}
           </button>
         </div>
       </div>

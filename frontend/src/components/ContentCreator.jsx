@@ -1,10 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useAuth } from '../contexts/AuthContext'
 
 gsap.registerPlugin(ScrollTrigger)
 
 const ContentCreator = () => {
+  const { currentUser } = useAuth()
+  const navigate = useNavigate()
   const [contentType, setContentType] = useState('article')
   const [prompt, setPrompt] = useState('')
   const [tone, setTone] = useState('professional')
@@ -53,6 +57,12 @@ const ContentCreator = () => {
   }, [])
 
   const handleGenerate = async () => {
+    // Redirect to sign in if not authenticated
+    if (!currentUser) {
+      navigate('/signin')
+      return
+    }
+
     setIsLoading(true)
     
     // Enhanced loading animation
@@ -110,7 +120,26 @@ const ContentCreator = () => {
 
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Content Creator Form */}
-          <div ref={formRef} className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 theme-transition">
+          <div ref={formRef} className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 theme-transition relative">
+            {!currentUser && (
+              <div className="absolute inset-0 bg-gray-900/10 dark:bg-gray-900/30 backdrop-blur-[2px] rounded-2xl md:rounded-3xl z-10 flex items-center justify-center theme-transition">
+                <div className="text-center p-6">
+                  <div className="text-5xl mb-4">🔒</div>
+                  <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2 theme-transition">
+                    Sign In Required
+                  </h4>
+                  <p className="text-gray-800 dark:text-gray-300 mb-4 theme-transition">
+                    Create an account to start generating content
+                  </p>
+                  <button
+                    onClick={() => navigate('/signin')}
+                    className="btn-primary text-white px-6 py-3 rounded-xl font-semibold btn-ripple"
+                  >
+                    Sign In Now
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="flex items-center space-x-3 mb-8">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center">
                 <span className="text-white text-xl">✏️</span>
@@ -175,15 +204,36 @@ const ContentCreator = () => {
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full loading-spinner"></div>
                     <span>Generating...</span>
                   </div>
-                ) : (
+                ) : currentUser ? (
                   'Generate Content'
+                ) : (
+                  '🔒 Sign In to Generate'
                 )}
               </button>
             </div>
           </div>
 
           {/* Generated Content Display */}
-          <div ref={resultRef} className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 theme-transition">
+          <div ref={resultRef} className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 theme-transition relative">
+            {!currentUser && (
+              <div className="absolute inset-0 bg-gray-900/10 dark:bg-gray-900/30 backdrop-blur-[2px] rounded-2xl md:rounded-3xl z-10 flex items-center justify-center theme-transition">
+                <div className="text-center p-6">
+                  <div className="text-5xl mb-4">🔒</div>
+                  <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2 theme-transition">
+                    Sign In Required
+                  </h4>
+                  <p className="text-gray-800 dark:text-gray-300 mb-4 theme-transition">
+                    View and manage your generated content
+                  </p>
+                  <button
+                    onClick={() => navigate('/signin')}
+                    className="btn-primary text-white px-6 py-3 rounded-xl font-semibold btn-ripple"
+                  >
+                    Sign In Now
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="flex items-center space-x-3 mb-8">
               <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-xl flex items-center justify-center">
                 <span className="text-white text-xl">📄</span>
@@ -197,13 +247,22 @@ const ContentCreator = () => {
                   <p className="text-gray-900 dark:text-gray-200 whitespace-pre-wrap leading-relaxed theme-transition">{generatedContent}</p>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple">
+                  <button 
+                    onClick={() => !currentUser && navigate('/signin')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple"
+                  >
                     Copy
                   </button>
-                  <button className="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple">
+                  <button 
+                    onClick={() => !currentUser && navigate('/signin')}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple"
+                  >
                     Edit
                   </button>
-                  <button className="bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple">
+                  <button 
+                    onClick={() => !currentUser && navigate('/signin')}
+                    className="bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple"
+                  >
                     Save
                   </button>
                 </div>

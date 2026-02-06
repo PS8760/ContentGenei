@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
+import { useAuth } from '../contexts/AuthContext'
 
 const Hero = () => {
+  const { currentUser } = useAuth()
+  const navigate = useNavigate()
   const heroRef = useRef(null)
   const titleRef = useRef(null)
   const subtitleRef = useRef(null)
@@ -84,8 +88,11 @@ const Hero = () => {
                   <span className="text-xs text-gray-800 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full font-medium theme-transition">
                     Style: Informative, Inspiring
                   </span>
-                  <button className="btn-primary text-white px-4 py-2 rounded-xl font-semibold text-sm">
-                    Generate Content
+                  <button 
+                    onClick={() => currentUser ? navigate('/creator') : navigate('/signin')}
+                    className="btn-primary text-white px-4 py-2 rounded-xl font-semibold text-sm btn-ripple"
+                  >
+                    {currentUser ? 'Go to Creator' : 'Sign In to Generate'}
                   </button>
                 </div>
               </div>
