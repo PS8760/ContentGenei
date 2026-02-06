@@ -3,12 +3,15 @@ import { auth } from '../config/firebase'
 // Backend API URL - Update this after deploying your backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.MODE === 'production' 
-    ? 'https://your-backend-url.onrender.com/api'  // Replace with your deployed backend URL
+    ? 'https://contentgenei.onrender.com/'  // Production backend URL
     : 'http://localhost:5000/api')
 
 class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL
+    console.log('🔗 API Base URL:', this.baseURL)
+    console.log('🌍 Environment Mode:', import.meta.env.MODE)
+    console.log('🔧 VITE_API_URL:', import.meta.env.VITE_API_URL)
   }
 
   async getAuthHeaders() {
