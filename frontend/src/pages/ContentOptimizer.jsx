@@ -267,19 +267,19 @@ const ContentOptimizer = () => {
                   {/* Analysis Comparison */}
                   {analysis && (
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl">
+                      <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-gray-300 dark:border-blue-800">
                         <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Words</div>
                         <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analysis.words}</div>
                       </div>
-                      <div className="p-4 bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 rounded-xl">
+                      <div className="p-4 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-green-900/20 dark:to-teal-900/20 rounded-xl border border-gray-300 dark:border-green-800">
                         <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Reading Time</div>
                         <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analysis.readingTime} min</div>
                       </div>
-                      <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl">
+                      <div className="p-4 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-gray-300 dark:border-purple-800">
                         <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Readability</div>
                         <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analysis.readabilityScore}/100</div>
                       </div>
-                      <div className="p-4 bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-xl">
+                      <div className="p-4 bg-gradient-to-br from-gray-300 to-gray-400 dark:from-orange-900/20 dark:to-red-900/20 rounded-xl border border-gray-300 dark:border-orange-800">
                         <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Avg Words/Sentence</div>
                         <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analysis.avgWordsPerSentence}</div>
                       </div>
@@ -296,28 +296,28 @@ const ContentOptimizer = () => {
               💡 Optimization Tips
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+              <div className="p-4 bg-gray-50 dark:bg-blue-900/20 rounded-xl border border-gray-300 dark:border-blue-800">
                 <div className="text-2xl mb-2">🔍</div>
                 <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">SEO</h3>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   Use relevant keywords naturally throughout your content
                 </p>
               </div>
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
+              <div className="p-4 bg-gray-100 dark:bg-green-900/20 rounded-xl border border-gray-300 dark:border-green-800">
                 <div className="text-2xl mb-2">📖</div>
                 <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">Readability</h3>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   Keep sentences short and use simple language
                 </p>
               </div>
-              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+              <div className="p-4 bg-gray-200 dark:bg-purple-900/20 rounded-xl border border-gray-300 dark:border-purple-800">
                 <div className="text-2xl mb-2">🎯</div>
                 <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">Engagement</h3>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   Start with a hook and maintain reader interest
                 </p>
               </div>
-              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+              <div className="p-4 bg-gray-300 dark:bg-orange-900/20 rounded-xl border border-gray-300 dark:border-orange-800">
                 <div className="text-2xl mb-2">✍️</div>
                 <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">Grammar</h3>
                 <p className="text-sm text-gray-700 dark:text-gray-300">

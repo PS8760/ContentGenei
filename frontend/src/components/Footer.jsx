@@ -25,15 +25,15 @@ const Footer = () => {
   }, [])
 
   return (
-    <footer ref={footerRef} className="bg-gradient-to-br from-gray-50 via-blue-50 to-blue-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 text-gray-900 dark:text-white relative overflow-hidden theme-transition">
+    <footer ref={footerRef} className="bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 text-gray-900 dark:text-white relative overflow-hidden theme-transition">
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-900/5 via-indigo-900/10 to-blue-900/5 dark:from-blue-900/10 dark:via-indigo-900/10 dark:to-blue-900/10"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-black/5 via-gray-900/10 to-black/5 dark:from-blue-900/10 dark:via-indigo-900/10 dark:to-blue-900/10"></div>
       
       <div ref={contentRef} className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-20 content-layer">
         <div className="grid md:grid-cols-4 gap-12 mb-16">
           <div className="col-span-2">
             <div className="flex items-center space-x-4 mb-8">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-black to-gray-700 dark:from-blue-600 dark:to-indigo-700 rounded-2xl flex items-center justify-center">
                 <span className="text-white font-bold text-xl">C</span>
               </div>
               <span className="text-gray-900 dark:text-white font-bold text-2xl tracking-tight theme-transition">ContentGenie</span>
@@ -43,13 +43,13 @@ const Footer = () => {
               personalization, and management solutions that drive engagement and growth.
             </p>
             <div className="flex space-x-6">
-              <a href="#" className="w-12 h-12 bg-blue-100/50 dark:bg-white/10 rounded-xl flex items-center justify-center hover:bg-blue-200/50 dark:hover:bg-white/20 transition-all duration-100 backdrop-blur-sm theme-transition social-icon">
+              <a href="#" className="w-12 h-12 bg-gray-200 dark:bg-white/10 rounded-xl flex items-center justify-center hover:bg-gray-300 dark:hover:bg-white/20 transition-all duration-100 backdrop-blur-sm theme-transition social-icon">
                 <span className="text-xl">📧</span>
               </a>
-              <a href="#" className="w-12 h-12 bg-blue-100/50 dark:bg-white/10 rounded-xl flex items-center justify-center hover:bg-blue-200/50 dark:hover:bg-white/20 transition-all duration-100 backdrop-blur-sm theme-transition social-icon">
+              <a href="#" className="w-12 h-12 bg-gray-200 dark:bg-white/10 rounded-xl flex items-center justify-center hover:bg-gray-300 dark:hover:bg-white/20 transition-all duration-100 backdrop-blur-sm theme-transition social-icon">
                 <span className="text-xl">🐦</span>
               </a>
-              <a href="#" className="w-12 h-12 bg-blue-100/50 dark:bg-white/10 rounded-xl flex items-center justify-center hover:bg-blue-200/50 dark:hover:bg-white/20 transition-all duration-100 backdrop-blur-sm theme-transition social-icon">
+              <a href="#" className="w-12 h-12 bg-gray-200 dark:bg-white/10 rounded-xl flex items-center justify-center hover:bg-gray-300 dark:hover:bg-white/20 transition-all duration-100 backdrop-blur-sm theme-transition social-icon">
                 <span className="text-xl">💼</span>
               </a>
             </div>
@@ -68,10 +68,10 @@ const Footer = () => {
           <div>
             <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg tracking-wide theme-transition">COMPANY</h4>
             <ul className="space-y-4 text-gray-700 dark:text-gray-300 theme-transition">
-              <li><a href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block theme-transition">About</a></li>
+              <li><a href="/about" className="hover:text-gray-900 dark:hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block theme-transition">About</a></li>
               <li><a href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block theme-transition">Blog</a></li>
               <li><a href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block theme-transition">Careers</a></li>
-              <li><a href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block theme-transition">Contact</a></li>
+              <li><a href="/contact" className="hover:text-gray-900 dark:hover:text-white transition-colors duration-300 hover:translate-x-1 inline-block theme-transition">Contact</a></li>
             </ul>
           </div>
         </div>

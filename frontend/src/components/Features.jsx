@@ -82,7 +82,7 @@ const Features = () => {
               ref={el => cardsRef.current[index] = el}
               className="glass-card rounded-3xl p-8 lg:p-10 text-center feature-card group theme-transition"
             >
-              <div className="w-18 h-18 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl flex items-center justify-center mx-auto mb-8 group-hover:scale-105 transition-transform duration-300">
+              <div className="w-18 h-18 bg-gradient-to-br from-black to-gray-700 dark:from-blue-600 dark:to-indigo-700 rounded-3xl flex items-center justify-center mx-auto mb-8 group-hover:scale-105 transition-transform duration-300">
                 <span className="text-3xl">{feature.icon}</span>
               </div>
               <h3 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 leading-tight theme-transition">{feature.title}</h3>
@@ -94,14 +94,14 @@ const Features = () => {
         <div ref={ctaRef} className="text-center">
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-6 sm:space-y-0 sm:space-x-16 mb-16">
             <div className="flex items-center space-x-5">
-              <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 rounded-3xl flex items-center justify-center theme-transition">
-                <span className="text-blue-600 dark:text-blue-400 text-2xl">👥</span>
+              <div className="w-16 h-16 bg-gray-100 dark:bg-blue-900/30 rounded-3xl flex items-center justify-center theme-transition">
+                <span className="text-black dark:text-blue-400 text-2xl">👥</span>
               </div>
               <span className="text-gray-900 dark:text-gray-200 font-semibold text-xl theme-transition">Team Collaboration</span>
             </div>
             <div className="flex items-center space-x-5">
-              <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 rounded-3xl flex items-center justify-center theme-transition">
-                <span className="text-indigo-600 dark:text-indigo-400 text-2xl">💼</span>
+              <div className="w-16 h-16 bg-gray-100 dark:bg-indigo-900/30 rounded-3xl flex items-center justify-center theme-transition">
+                <span className="text-black dark:text-indigo-400 text-2xl">💼</span>
               </div>
               <span className="text-gray-900 dark:text-gray-200 font-semibold text-xl theme-transition">Business Solutions</span>
             </div>

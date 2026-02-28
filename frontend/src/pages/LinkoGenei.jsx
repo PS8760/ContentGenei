@@ -257,52 +257,52 @@ export default function LinkoGenei() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-black via-gray-700 to-gray-500 dark:from-white dark:via-gray-300 dark:to-gray-500 bg-clip-text text-transparent mb-2">
               🔗 LinkoGenei
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-gray-700 dark:text-gray-300">
               Save and organize posts from social media with our Chrome extension
             </p>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-800 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 dark:text-gray-400 text-sm">Total Posts</p>
-                  <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{stats.total_posts}</p>
+                  <p className="text-3xl font-bold text-black dark:text-white">{stats.total_posts}</p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
                   <span className="text-2xl">📌</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-800 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 dark:text-gray-400 text-sm">Categories</p>
-                  <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.total_categories}</p>
+                  <p className="text-3xl font-bold text-black dark:text-white">{stats.total_categories}</p>
                 </div>
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
                   <span className="text-2xl">📁</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-800 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 dark:text-gray-400 text-sm">Extension Status</p>
-                  <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                  <p className="text-lg font-semibold text-black dark:text-green-400">
                     {extensionToken ? '✅ Token Generated' : '⚠️ No Token'}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                     {extensionToken ? 'Activate in Chrome extension' : 'Generate token to start'}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
                   <span className="text-2xl">🔌</span>
                 </div>
               </div>
@@ -311,7 +311,7 @@ export default function LinkoGenei() {
 
           {/* Extension Setup */}
           {!extensionToken && (
-            <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl shadow-lg p-8 mb-8 text-white">
+            <div className="bg-gradient-to-r from-black via-gray-800 to-gray-600 dark:from-white dark:via-gray-200 dark:to-gray-400 rounded-xl shadow-lg p-8 mb-8 text-white dark:text-black transition-all duration-300">
               <h2 className="text-2xl font-bold mb-4">🚀 Get Started with LinkoGenei</h2>
               <p className="mb-6 opacity-90">
                 Generate your access token and install our Chrome extension to start saving posts from social media.
@@ -319,13 +319,13 @@ export default function LinkoGenei() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={generateToken}
-                  className="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition"
+                  className="bg-white dark:bg-black text-black dark:text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 dark:hover:bg-gray-900 transition-all duration-300 shadow-lg"
                 >
                   Generate Access Token
                 </button>
                 <a
                   href="chrome://extensions"
-                  className="bg-purple-700 px-6 py-3 rounded-lg font-semibold hover:bg-purple-800 transition text-center"
+                  className="bg-gray-800 dark:bg-gray-200 text-white dark:text-black px-6 py-3 rounded-lg font-semibold hover:bg-gray-700 dark:hover:bg-gray-300 transition-all duration-300 text-center shadow-lg"
                 >
                   Open Chrome Extensions
                 </a>
@@ -335,27 +335,27 @@ export default function LinkoGenei() {
 
           {/* Token Display */}
           {extensionToken && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-400 dark:border-blue-600 rounded-xl p-6 mb-8">
+            <div className="bg-gray-50 dark:bg-blue-900/20 border-2 border-gray-300 dark:border-blue-600 rounded-xl p-6 mb-8">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-bold text-blue-800 dark:text-blue-200 mb-2">
+                  <h3 className="text-lg font-bold text-black dark:text-blue-200 mb-2">
                     🔑 Your Access Token
                   </h3>
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                  <p className="text-sm text-gray-700 dark:text-blue-300">
                     Copy this token and paste it in the Chrome extension popup to activate it.
                   </p>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={regenerateToken}
-                    className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
+                    className="text-sm bg-black dark:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-800 dark:hover:bg-blue-700 transition"
                     title="Generate a new token (old token will stop working)"
                   >
                     🔄 Regenerate
                   </button>
                   <button
                     onClick={revokeToken}
-                    className="text-sm bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition"
+                    className="text-sm bg-gray-600 dark:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-700 dark:hover:bg-red-700 transition"
                     title="Revoke this token"
                   >
                     🗑️ Revoke
@@ -367,28 +367,28 @@ export default function LinkoGenei() {
                   type={showToken ? "text" : "password"}
                   value={extensionToken}
                   readOnly
-                  className="flex-1 px-4 py-2 bg-white dark:bg-gray-800 border border-blue-400 dark:border-blue-600 rounded-lg font-mono text-sm text-gray-900 dark:text-gray-100"
+                  className="flex-1 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-blue-600 rounded-lg font-mono text-sm text-gray-900 dark:text-gray-100"
                 />
                 <button
                   onClick={() => setShowToken(!showToken)}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600 transition"
+                  className="bg-gray-500 dark:bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-600 dark:hover:bg-blue-600 transition"
                   title={showToken ? "Hide token" : "Show token"}
                 >
                   {showToken ? '👁️' : '👁️‍🗨️'}
                 </button>
                 <button
                   onClick={copyToken}
-                  className="bg-blue-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-600 transition"
+                  className="bg-black dark:bg-blue-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-800 dark:hover:bg-blue-600 transition"
                 >
                   Copy
                 </button>
               </div>
               
-              <div className="mt-4 p-4 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
-                <p className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">
+              <div className="mt-4 p-4 bg-gray-100 dark:bg-blue-900/40 rounded-lg">
+                <p className="text-sm font-semibold text-black dark:text-blue-200 mb-2">
                   📋 How to activate the extension:
                 </p>
-                <ol className="text-sm text-blue-700 dark:text-blue-300 space-y-1 list-decimal list-inside">
+                <ol className="text-sm text-gray-700 dark:text-blue-300 space-y-1 list-decimal list-inside">
                   <li>Click the LinkoGenei extension icon in Chrome</li>
                   <li>Paste this token in the input field</li>
                   <li>Click "Activate Extension"</li>
@@ -409,7 +409,7 @@ export default function LinkoGenei() {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-black dark:focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="all">All Categories</option>
                   {categories.map(cat => (
@@ -425,7 +425,7 @@ export default function LinkoGenei() {
                 <select
                   value={selectedPlatform}
                   onChange={(e) => setSelectedPlatform(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-black dark:focus:ring-purple-500 focus:border-transparent"
                 >
                   <option value="all">All Platforms</option>
                   {platforms.map(platform => (
@@ -437,7 +437,7 @@ export default function LinkoGenei() {
               <div className="flex items-end">
                 <button
                   onClick={() => setShowNewCategory(true)}
-                  className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-purple-700 transition w-full md:w-auto"
+                  className="bg-black dark:bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-800 dark:hover:bg-purple-700 transition w-full md:w-auto"
                 >
                   + New Category
                 </button>
@@ -460,7 +460,7 @@ export default function LinkoGenei() {
                 <div className="flex gap-2">
                   <button
                     onClick={createCategory}
-                    className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition"
+                    className="flex-1 bg-black dark:bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-800 dark:hover:bg-purple-700 transition"
                   >
                     Create
                   </button>
@@ -481,7 +481,7 @@ export default function LinkoGenei() {
           {/* Posts Grid */}
           {loading ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-purple-600 mx-auto"></div>
               <p className="mt-4 text-gray-600 dark:text-gray-400">Loading posts...</p>
             </div>
           ) : posts.length === 0 ? (
@@ -497,7 +497,7 @@ export default function LinkoGenei() {
               {posts.map(post => (
                 <div key={post.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition border border-gray-200 dark:border-gray-700">
                   {/* Post Image or Placeholder */}
-                  <div className="w-full h-48 bg-gradient-to-br from-purple-500 to-blue-600 overflow-hidden flex items-center justify-center">
+                  <div className="w-full h-48 bg-gradient-to-br from-black to-gray-700 dark:from-purple-500 dark:to-blue-600 overflow-hidden flex items-center justify-center">
                     {post.image_url ? (
                       <img 
                         src={post.image_url} 
@@ -533,19 +533,19 @@ export default function LinkoGenei() {
                   
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-3">
-                      <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 rounded-full text-sm font-semibold">
+                      <span className="px-3 py-1 bg-gray-100 dark:bg-purple-900 text-black dark:text-purple-300 rounded-full text-sm font-semibold">
                         {post.platform}
                       </span>
                       <div className="flex gap-2">
                         <button
                           onClick={() => setEditingPost(post)}
-                          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                          className="text-black hover:text-gray-700 dark:text-blue-400 dark:hover:text-blue-300"
                         >
                           ✏️
                         </button>
                         <button
                           onClick={() => deletePost(post.id)}
-                          className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                          className="text-gray-700 hover:text-black dark:text-red-400 dark:hover:text-red-300"
                         >
                           🗑️
                         </button>
@@ -564,7 +564,7 @@ export default function LinkoGenei() {
                       href={post.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 font-semibold text-sm"
+                      className="inline-flex items-center gap-2 text-black hover:text-gray-700 dark:text-purple-400 dark:hover:text-purple-300 font-semibold text-sm"
                     >
                       View Original Post →
                     </a>
@@ -611,7 +611,7 @@ export default function LinkoGenei() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => updatePost(editingPost.id, { category: editingPost.category, notes: editingPost.notes })}
-                    className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition"
+                    className="flex-1 bg-black dark:bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-800 dark:hover:bg-purple-700 transition"
                   >
                     Save
                   </button>

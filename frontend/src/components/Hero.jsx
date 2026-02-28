@@ -52,13 +52,13 @@ const Hero = () => {
     <section ref={heroRef} className="hero-gradient section-padding-lg pt-32 md:pt-40 min-h-screen flex items-center relative overflow-hidden theme-transition bg-transition">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 content-layer">
         <div className="mb-16">
-          <h1 ref={titleRef} className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight tracking-tight">
+          <h1 ref={titleRef} className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-black dark:text-white mb-6 leading-tight tracking-tight">
             Create. Personalize. Distribute.
             <br />
-            <span className="text-blue-200 dark:text-blue-300 block mt-2 theme-transition">Instantly.</span>
+            <span className="bg-gradient-to-r from-gray-700 via-gray-500 to-gray-400 dark:from-blue-200 dark:via-blue-300 dark:to-blue-400 bg-clip-text text-transparent block mt-2 theme-transition">Instantly.</span>
           </h1>
           
-          <p ref={subtitleRef} className="text-base sm:text-lg md:text-xl text-blue-100 dark:text-blue-200 mb-12 max-w-2xl mx-auto font-normal leading-relaxed theme-transition">
+          <p ref={subtitleRef} className="text-base sm:text-lg md:text-xl text-gray-700 dark:text-blue-200 mb-12 max-w-2xl mx-auto font-normal leading-relaxed theme-transition">
             AI-powered content creation and management platform for modern creators
           </p>
         </div>
@@ -66,7 +66,7 @@ const Hero = () => {
         {/* Main Content Card */}
         <div ref={cardRef} className="glass-card rounded-2xl md:rounded-3xl p-4 md:p-8 max-w-4xl mx-auto relative theme-transition">
           <div className="flex flex-col lg:flex-row items-center space-y-6 lg:space-y-0 lg:space-x-8">
-            <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl md:rounded-3xl flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-black to-gray-700 dark:from-blue-600 dark:to-indigo-700 rounded-2xl md:rounded-3xl flex items-center justify-center flex-shrink-0">
               <span className="text-white text-xl md:text-2xl">✨</span>
             </div>
             <div className="flex-1 text-left">
@@ -76,7 +76,7 @@ const Hero = () => {
               <div className="bg-white dark:bg-gray-800 rounded-2xl md:rounded-3xl p-4 md:p-6 border border-gray-200 dark:border-gray-700 theme-transition">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4">
                   <h3 className="font-bold text-gray-900 dark:text-gray-100 text-base md:text-lg mb-2 sm:mb-0 theme-transition">Content Creator</h3>
-                  <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full font-semibold theme-transition">
+                  <span className="text-xs text-black dark:text-blue-400 bg-gray-100 dark:bg-blue-900/30 px-3 py-1 rounded-full font-semibold theme-transition">
                     AI Powered
                   </span>
                 </div>
@@ -104,19 +104,19 @@ const Hero = () => {
       {/* Enhanced Floating Elements with Emojis */}
       <div 
         ref={el => floatingRefs.current[0] = el}
-        className="absolute top-32 left-8 md:left-16 w-12 h-12 md:w-14 md:h-14 bg-white/20 dark:bg-white/10 rounded-2xl flex items-center justify-center floating-element backdrop-blur-sm border border-white/30 theme-transition"
+        className="absolute top-32 left-8 md:left-16 w-12 h-12 md:w-14 md:h-14 bg-white/20 dark:bg-white/10 rounded-2xl flex items-center justify-center floating-element backdrop-blur-sm border border-gray-300 dark:border-white/30 theme-transition"
       >
         <span className="text-lg md:text-xl">👍</span>
       </div>
       <div 
         ref={el => floatingRefs.current[1] = el}
-        className="absolute top-40 right-8 md:right-20 w-10 h-10 md:w-12 md:h-12 bg-white/20 dark:bg-white/10 rounded-2xl flex items-center justify-center floating-element backdrop-blur-sm border border-white/30 theme-transition"
+        className="absolute top-40 right-8 md:right-20 w-10 h-10 md:w-12 md:h-12 bg-white/20 dark:bg-white/10 rounded-2xl flex items-center justify-center floating-element backdrop-blur-sm border border-gray-300 dark:border-white/30 theme-transition"
       >
         <span className="text-base md:text-lg">❤️</span>
       </div>
       <div 
         ref={el => floatingRefs.current[2] = el}
-        className="absolute bottom-32 left-12 md:left-24 w-14 h-14 md:w-16 md:h-16 bg-white/20 dark:bg-white/10 rounded-2xl flex items-center justify-center floating-element backdrop-blur-sm border border-white/30 theme-transition"
+        className="absolute bottom-32 left-12 md:left-24 w-14 h-14 md:w-16 md:h-16 bg-white/20 dark:bg-white/10 rounded-2xl flex items-center justify-center floating-element backdrop-blur-sm border border-gray-300 dark:border-white/30 theme-transition"
       >
         <span className="text-lg md:text-xl">💡</span>
       </div>

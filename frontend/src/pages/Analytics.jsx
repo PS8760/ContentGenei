@@ -378,7 +378,7 @@ const Analytics = () => {
           {/* Title Section */}
           <div ref={titleRef} className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight tracking-tight">
-              Content <span className="gradient-text">Analytics</span>
+               <span className="gradient-text">Content Analytics</span>
             </h1>
             <p className="text-gray-700 dark:text-blue-200 text-lg font-normal max-w-2xl mx-auto theme-transition">
               Track your content performance and gain insights to optimize your strategy.
@@ -469,7 +469,7 @@ const Analytics = () => {
                 </h3>
                 <div className="space-y-4">
                   {analyticsData.contentDistribution.map((item, index) => {
-                    const colors = ['bg-blue-500', 'bg-indigo-500', 'bg-purple-500', 'bg-pink-500', 'bg-cyan-500', 'bg-teal-500']
+                    const colors = ['bg-gray-800 dark:bg-blue-500', 'bg-gray-700 dark:bg-indigo-500', 'bg-gray-600 dark:bg-purple-500', 'bg-black dark:bg-pink-500', 'bg-gray-900 dark:bg-cyan-500', 'bg-gray-500 dark:bg-teal-500']
                     const color = colors[index % colors.length]
                     
                     return (
@@ -531,7 +531,7 @@ const Analytics = () => {
                     const icon = platformIcons[platform.platform] || '📱'
                     
                     return (
-                      <div key={index} className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                      <div key={index} className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-gray-300 dark:border-blue-800">
                         <div className="flex items-center space-x-3 mb-3">
                           <div className="text-2xl">{icon}</div>
                           <div className="font-bold text-gray-900 dark:text-gray-100 capitalize">
@@ -582,7 +582,7 @@ const Analytics = () => {
                           <div key={index} className="flex-1 flex flex-col items-center group">
                             <div className="relative w-full">
                               <div 
-                                className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t transition-all duration-300 group-hover:from-blue-600 group-hover:to-blue-500"
+                                className="w-full bg-gradient-to-t from-gray-700 to-gray-600 dark:from-blue-500 dark:to-blue-400 rounded-t transition-all duration-300 group-hover:from-gray-800 group-hover:to-gray-700 dark:group-hover:from-blue-600 dark:group-hover:to-blue-500"
                                 style={{ height: `${height}%`, minHeight: '4px' }}
                                 title={`${item.value} views on ${new Date(item.date).toLocaleDateString()}`}
                               ></div>
@@ -611,7 +611,7 @@ const Analytics = () => {
                             <div key={index} className="flex-1 flex flex-col items-center group">
                               <div className="relative w-full">
                                 <div 
-                                  className="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t transition-all duration-300 group-hover:from-green-600 group-hover:to-green-500"
+                                  className="w-full bg-gradient-to-t from-gray-800 to-gray-700 dark:from-green-500 dark:to-green-400 rounded-t transition-all duration-300 group-hover:from-black group-hover:to-gray-800 dark:group-hover:from-green-600 dark:group-hover:to-green-500"
                                   style={{ height: `${height}%`, minHeight: '4px' }}
                                   title={`${item.value} content on ${new Date(item.date).toLocaleDateString()}`}
                                 ></div>

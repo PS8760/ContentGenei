@@ -16,14 +16,14 @@ html {
 
 body {
   font-family: 'Inter', sans-serif;
-  background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 15%, #3b82f6 30%, #60a5fa 45%, #93c5fd 60%, #bfdbfe 75%, #dbeafe 90%, #ffffff 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 15%, #f1f3f5 30%, #e9ecef 45%, #dee2e6 60%, #ced4da 75%, #adb5bd 90%, #6c757d 100%);
   background-attachment: fixed;
   background-size: 100% 100%;
   background-repeat: no-repeat;
   min-height: 100vh;
-  color: #111827;
+  color: #212529;
   overflow-x: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   line-height: 1.6;
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
@@ -86,10 +86,10 @@ body {
 /* Professional glass morphism */
 .glass-card {
   background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(209, 213, 219, 0.3);
-  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.1), 0 1px 2px rgba(17, 24, 39, 0.06);
-  transition: all 0.3s ease;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark .glass-card {
@@ -99,11 +99,11 @@ body {
 }
 
 .glass-header {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(209, 213, 219, 0.3);
-  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.05);
-  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark .glass-header {
@@ -114,11 +114,11 @@ body {
 
 /* Professional gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, #000000 0%, #2a2a2a 50%, #4a4a4a 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  transition: background 0.3s ease;
+  transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark .gradient-text {
@@ -130,30 +130,32 @@ body {
 
 /* Professional button styles with ultra fast click animations */
 .btn-primary {
-  background: #1e40af;
-  transition: all 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .dark .btn-primary {
-  background: #f8fafc;
-  color: #1e40af;
-}
-
-.btn-primary:hover {
-  background: #1d4ed8;
-  transform: translateY(-1px);
+  background: #1e40af;
+  color: #ffffff;
   box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
 }
 
+.btn-primary:hover {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
 .dark .btn-primary:hover {
-  background: #f1f5f9;
-  box-shadow: 0 4px 12px rgba(248, 250, 252, 0.2);
+  background: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
 }
 
 .btn-primary:active {
-  transform: translateY(0) scale(0.97);
+  transform: translateY(0) scale(0.98);
   animation: buttonClick 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
@@ -171,9 +173,9 @@ body {
 
 .btn-secondary {
   background: transparent;
-  border: 1px solid #e2e8f0;
-  color: #475569;
-  transition: all 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  color: #2a2a2a;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark .btn-secondary {
@@ -182,9 +184,10 @@ body {
 }
 
 .btn-secondary:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #334155;
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.3);
+  color: #000000;
+  transform: translateY(-2px);
 }
 
 .dark .btn-secondary:hover {
@@ -194,7 +197,7 @@ body {
 }
 
 .btn-secondary:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
   animation: buttonClickSecondary 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 

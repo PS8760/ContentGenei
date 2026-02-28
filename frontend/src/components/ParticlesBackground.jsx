@@ -27,14 +27,14 @@ const ParticlesBackground = () => {
           position: absolute;
           width: ${size}px;
           height: ${size}px;
-          background: rgba(30, 64, 175, ${opacity});
+          background: rgba(0, 0, 0, ${opacity});
           border-radius: 50%;
           pointer-events: none;
           left: ${x}px;
           top: ${y}px;
           filter: blur(0.5px);
           will-change: transform, opacity;
-          box-shadow: 0 0 ${size * 3}px rgba(30, 64, 175, ${opacity * 0.6});
+          box-shadow: 0 0 ${size * 3}px rgba(0, 0, 0, ${opacity * 0.6});
           z-index: 1;
         `
         
@@ -47,7 +47,7 @@ const ParticlesBackground = () => {
           vx: (Math.random() - 0.5) * 1.2,
           vy: (Math.random() - 0.5) * 0.8,
           originalOpacity: opacity,
-          baseColor: 'rgba(59, 130, 246, ' + opacity + ')'
+          baseColor: 'rgba(0, 0, 0, ' + opacity + ')'
         })
       }
 
@@ -65,14 +65,14 @@ const ParticlesBackground = () => {
           position: absolute;
           width: ${size}px;
           height: ${size}px;
-          background: radial-gradient(circle, rgba(30, 64, 175, ${opacity}) 0%, rgba(59, 130, 246, ${opacity * 0.8}) 50%, rgba(147, 197, 253, ${opacity * 0.4}) 100%);
+          background: radial-gradient(circle, rgba(0, 0, 0, ${opacity}) 0%, rgba(40, 40, 40, ${opacity * 0.8}) 50%, rgba(80, 80, 80, ${opacity * 0.4}) 100%);
           border-radius: 50%;
           pointer-events: none;
           left: ${x}px;
           top: ${y}px;
           filter: blur(1px);
           will-change: transform, opacity;
-          box-shadow: 0 0 ${size * 4}px rgba(30, 64, 175, ${opacity * 0.5});
+          box-shadow: 0 0 ${size * 4}px rgba(0, 0, 0, ${opacity * 0.5});
           z-index: 1;
         `
         
@@ -103,12 +103,12 @@ const ParticlesBackground = () => {
           position: absolute;
           width: ${size}px;
           height: ${size}px;
-          background: rgba(59, 130, 246, ${opacity});
+          background: rgba(60, 60, 60, ${opacity});
           border-radius: 50%;
           pointer-events: none;
           left: ${x}px;
           top: ${y}px;
-          box-shadow: 0 0 ${size * 5}px rgba(59, 130, 246, ${opacity * 0.7});
+          box-shadow: 0 0 ${size * 5}px rgba(80, 80, 80, ${opacity * 0.7});
           will-change: transform, opacity;
           z-index: 1;
         `
@@ -164,11 +164,11 @@ const ParticlesBackground = () => {
           
           // Update particle color based on theme
           if (isDarkMode) {
-            element.style.background = `rgba(255, 255, 255, ${originalOpacity * themeOpacityMultiplier})`
-            element.style.boxShadow = `0 0 ${element.offsetWidth * 3}px rgba(255, 255, 255, ${originalOpacity * themeOpacityMultiplier * 0.6})`
+            element.style.background = `rgba(147, 197, 253, ${originalOpacity * themeOpacityMultiplier})`
+            element.style.boxShadow = `0 0 ${element.offsetWidth * 3}px rgba(147, 197, 253, ${originalOpacity * themeOpacityMultiplier * 0.6})`
           } else {
-            element.style.background = `rgba(59, 130, 246, ${originalOpacity * themeOpacityMultiplier})`
-            element.style.boxShadow = `0 0 ${element.offsetWidth * 3}px rgba(59, 130, 246, ${originalOpacity * themeOpacityMultiplier * 0.6})`
+            element.style.background = `rgba(0, 0, 0, ${originalOpacity * themeOpacityMultiplier})`
+            element.style.boxShadow = `0 0 ${element.offsetWidth * 3}px rgba(0, 0, 0, ${originalOpacity * themeOpacityMultiplier * 0.6})`
           }
           
         } else if (type === 'accent') {
@@ -180,11 +180,11 @@ const ParticlesBackground = () => {
           
           // Update accent particle color based on theme
           if (isDarkMode) {
-            element.style.background = `radial-gradient(circle, rgba(255, 255, 255, ${originalOpacity * themeOpacityMultiplier}) 0%, rgba(248, 250, 252, ${originalOpacity * themeOpacityMultiplier * 0.8}) 50%, rgba(241, 245, 249, ${originalOpacity * themeOpacityMultiplier * 0.4}) 100%)`
-            element.style.boxShadow = `0 0 ${element.offsetWidth * 4}px rgba(255, 255, 255, ${originalOpacity * themeOpacityMultiplier * 0.5})`
+            element.style.background = `radial-gradient(circle, rgba(147, 197, 253, ${originalOpacity * themeOpacityMultiplier}) 0%, rgba(96, 165, 250, ${originalOpacity * themeOpacityMultiplier * 0.8}) 50%, rgba(59, 130, 246, ${originalOpacity * themeOpacityMultiplier * 0.4}) 100%)`
+            element.style.boxShadow = `0 0 ${element.offsetWidth * 4}px rgba(147, 197, 253, ${originalOpacity * themeOpacityMultiplier * 0.5})`
           } else {
-            element.style.background = `radial-gradient(circle, rgba(59, 130, 246, ${originalOpacity * themeOpacityMultiplier}) 0%, rgba(30, 64, 175, ${originalOpacity * themeOpacityMultiplier * 0.8}) 50%, rgba(147, 197, 253, ${originalOpacity * themeOpacityMultiplier * 0.4}) 100%)`
-            element.style.boxShadow = `0 0 ${element.offsetWidth * 4}px rgba(59, 130, 246, ${originalOpacity * themeOpacityMultiplier * 0.5})`
+            element.style.background = `radial-gradient(circle, rgba(0, 0, 0, ${originalOpacity * themeOpacityMultiplier}) 0%, rgba(40, 40, 40, ${originalOpacity * themeOpacityMultiplier * 0.8}) 50%, rgba(80, 80, 80, ${originalOpacity * themeOpacityMultiplier * 0.4}) 100%)`
+            element.style.boxShadow = `0 0 ${element.offsetWidth * 4}px rgba(0, 0, 0, ${originalOpacity * themeOpacityMultiplier * 0.5})`
           }
           
         } else if (type === 'sparkle') {
@@ -196,11 +196,11 @@ const ParticlesBackground = () => {
           
           // Update sparkle particle color based on theme
           if (isDarkMode) {
-            element.style.background = `rgba(255, 255, 255, ${originalOpacity * twinkle * themeOpacityMultiplier})`
-            element.style.boxShadow = `0 0 ${element.offsetWidth * 5}px rgba(255, 255, 255, ${originalOpacity * twinkle * themeOpacityMultiplier * 0.7})`
+            element.style.background = `rgba(96, 165, 250, ${originalOpacity * twinkle * themeOpacityMultiplier})`
+            element.style.boxShadow = `0 0 ${element.offsetWidth * 5}px rgba(96, 165, 250, ${originalOpacity * twinkle * themeOpacityMultiplier * 0.7})`
           } else {
-            element.style.background = `rgba(59, 130, 246, ${originalOpacity * twinkle * themeOpacityMultiplier})`
-            element.style.boxShadow = `0 0 ${element.offsetWidth * 5}px rgba(59, 130, 246, ${originalOpacity * twinkle * themeOpacityMultiplier * 0.7})`
+            element.style.background = `rgba(60, 60, 60, ${originalOpacity * twinkle * themeOpacityMultiplier})`
+            element.style.boxShadow = `0 0 ${element.offsetWidth * 5}px rgba(80, 80, 80, ${originalOpacity * twinkle * themeOpacityMultiplier * 0.7})`
           }
         }
       })
@@ -259,7 +259,7 @@ const ParticlesBackground = () => {
         if (type === 'main') {
           element.style.background = isDarkMode 
             ? `rgba(147, 197, 253, ${originalOpacity * themeOpacityMultiplier})`
-            : `rgba(59, 130, 246, ${originalOpacity * themeOpacityMultiplier})`
+            : `rgba(0, 0, 0, ${originalOpacity * themeOpacityMultiplier})`
         }
       })
     }

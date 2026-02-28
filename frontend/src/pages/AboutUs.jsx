@@ -35,30 +35,30 @@ const AboutUs = () => {
       name: 'Pranav Ghodke',
       role: 'Full Stack Developer & Project Lead',
       initials: 'PG',
-      color: 'from-blue-500 to-blue-600'
+      color: 'from-gray-700 to-gray-900 dark:from-blue-500 dark:to-blue-600'
     },
     {
       name: 'Tanushree Pabale',
       role: 'Backend Developer & AI Specialist',
       initials: 'TP',
-      color: 'from-purple-500 to-purple-600'
+      color: 'from-gray-800 to-black dark:from-purple-500 dark:to-purple-600'
     },
     {
       name: 'Sakshi Pandey',
       role: 'Frontend Developer & UI/UX Designer',
       initials: 'SP',
-      color: 'from-pink-500 to-pink-600'
+      color: 'from-black to-gray-800 dark:from-pink-500 dark:to-pink-600'
     },
     {
       name: 'Kajol Khatri',
       role: 'Quality Assurance & Testing Lead',
       initials: 'KK',
-      color: 'from-green-500 to-green-600'
+      color: 'from-gray-600 to-gray-800 dark:from-green-500 dark:to-green-600'
     }
   ]
 
   return (
-    <div className="min-h-screen theme-transition relative bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen theme-transition relative bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <ParticlesBackground />
       <FloatingEmojis />
       
@@ -82,7 +82,7 @@ const AboutUs = () => {
             {/* Mission Card */}
             <div ref={missionRef} className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700">
               <div className="flex justify-center mb-6">
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-700 to-gray-900 dark:from-blue-500 dark:to-blue-600 rounded-2xl flex items-center justify-center">
                   <span className="text-4xl">🚀</span>
                 </div>
               </div>
@@ -97,7 +97,7 @@ const AboutUs = () => {
             {/* Vision Card */}
             <div ref={visionRef} className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700">
               <div className="flex justify-center mb-6">
-                <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-gray-800 to-black dark:from-purple-500 dark:to-purple-600 rounded-2xl flex items-center justify-center">
                   <span className="text-4xl">👁️</span>
                 </div>
               </div>
@@ -163,16 +163,16 @@ const AboutUs = () => {
 
             {/* Value Pills */}
             <div className="flex flex-wrap justify-center gap-4 mt-8">
-              <span className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full font-semibold shadow-lg">
+              <span className="px-6 py-3 bg-gradient-to-r from-gray-700 to-gray-900 dark:from-blue-500 dark:to-blue-600 text-white rounded-full font-semibold shadow-lg">
                 🔍 Transparency
               </span>
-              <span className="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-full font-semibold shadow-lg">
+              <span className="px-6 py-3 bg-gradient-to-r from-gray-800 to-black dark:from-purple-500 dark:to-purple-600 text-white rounded-full font-semibold shadow-lg">
                 ♿ Accessibility
               </span>
-              <span className="px-6 py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-full font-semibold shadow-lg">
+              <span className="px-6 py-3 bg-gradient-to-r from-black to-gray-800 dark:from-pink-500 dark:to-pink-600 text-white rounded-full font-semibold shadow-lg">
                 💡 Innovation
               </span>
-              <span className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full font-semibold shadow-lg">
+              <span className="px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-800 dark:from-green-500 dark:to-green-600 text-white rounded-full font-semibold shadow-lg">
                 👥 Creator-First
               </span>
             </div>

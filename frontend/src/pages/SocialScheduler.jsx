@@ -88,13 +88,13 @@ const SocialScheduler = () => {
 
   const getPlatformColor = (platform) => {
     const colors = {
-      twitter: 'from-blue-400 to-blue-600',
-      facebook: 'from-blue-600 to-blue-800',
-      instagram: 'from-pink-500 to-purple-600',
-      linkedin: 'from-blue-700 to-blue-900',
-      tiktok: 'from-black to-gray-800'
+      twitter: 'from-gray-700 to-gray-900 dark:from-blue-400 dark:to-blue-600',
+      facebook: 'from-gray-800 to-black dark:from-blue-600 dark:to-blue-800',
+      instagram: 'from-black to-gray-800 dark:from-pink-500 dark:to-purple-600',
+      linkedin: 'from-gray-900 to-gray-700 dark:from-blue-700 dark:to-blue-900',
+      tiktok: 'from-black to-gray-800 dark:from-black dark:to-gray-800'
     }
-    return colors[platform] || 'from-gray-500 to-gray-700'
+    return colors[platform] || 'from-gray-600 to-gray-800 dark:from-gray-500 dark:to-gray-700'
   }
 
   return (
@@ -256,7 +256,7 @@ const SocialScheduler = () => {
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 theme-transition">
               Content Calendar
             </h2>
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-12 text-center theme-transition">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl p-12 text-center theme-transition border border-gray-300 dark:border-gray-600">
               <div className="text-6xl mb-4">📆</div>
               <p className="text-gray-600 dark:text-gray-400 theme-transition">
                 Interactive calendar view coming soon

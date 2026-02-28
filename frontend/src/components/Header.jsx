@@ -63,44 +63,50 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <Link to="/" ref={logoRef} className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gray-900 dark:bg-gray-100 rounded-lg flex items-center justify-center logo" tabIndex="0">
+            <div className="w-10 h-10 bg-black dark:bg-gray-100 rounded-lg flex items-center justify-center logo transition-all duration-300" tabIndex="0">
               <span className="text-white dark:text-gray-900 font-bold text-lg">C</span>
             </div>
-            <span className="text-gray-900 dark:text-gray-100 font-bold text-xl tracking-tight theme-transition">ContentGenie</span>
+            <span className="text-black dark:text-gray-100 font-bold text-xl tracking-tight theme-transition">ContentGenie</span>
           </Link>
           
           <nav ref={navRef} className="hidden md:flex space-x-8">
             {currentUser ? (
               <>
-                <Link to="/dashboard" className="text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-100 font-medium">
+                <Link to="/dashboard" className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium">
                   Dashboard
                 </Link>
-                <Link to="/creator" className="text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-100 font-medium">
+                <Link to="/creator" className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium">
                   Creator
                 </Link>
-                <Link to="/analytics" className="text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-100 font-medium">
+                <Link to="/analytics" className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium">
                   Analytics
                 </Link>
-                <Link to="/linkogenei" className="text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-100 font-medium">
+                <Link to="/linkogenei" className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium">
                   LinkoGenei
                 </Link>
-                <Link to="/about" className="text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-100 font-medium">
+                <Link to="/about" className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium">
                   About Us
+                </Link>
+                <Link to="/contact" className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium">
+                  Contact
                 </Link>
               </>
             ) : (
               <>
-                <button onClick={() => navigate('/signin')} className="text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-100 font-medium">
+                <button onClick={() => navigate('/signin')} className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium">
                   Dashboard
                 </button>
-                <button onClick={() => navigate('/signin')} className="text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-100 font-medium">
+                <button onClick={() => navigate('/signin')} className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium">
                   Creator
                 </button>
-                <button onClick={() => navigate('/signin')} className="text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-100 font-medium">
+                <button onClick={() => navigate('/signin')} className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium">
                   Analytics
                 </button>
-                <Link to="/about" className="text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-100 font-medium">
+                <Link to="/about" className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium">
                   About Us
+                </Link>
+                <Link to="/contact" className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium">
+                  Contact
                 </Link>
               </>
             )}
@@ -114,16 +120,16 @@ const Header = () => {
                   onClick={() => setShowDropdown(!showDropdown)}
                   className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-black to-gray-700 dark:from-blue-600 dark:to-indigo-700 rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-semibold">
                       {currentUser.displayName?.charAt(0) || currentUser.email?.charAt(0) || 'U'}
                     </span>
                   </div>
-                  <span className="text-gray-700 dark:text-gray-300 font-medium theme-transition hidden sm:block">
+                  <span className="text-black dark:text-gray-300 font-medium theme-transition hidden sm:block">
                     {currentUser.displayName?.split(' ')[0] || 'User'}
                   </span>
                   <svg 
-                    className={`w-4 h-4 text-gray-700 dark:text-gray-300 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`}
+                    className={`w-4 h-4 text-black dark:text-gray-300 transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`}
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
@@ -194,7 +200,7 @@ const Header = () => {
               </div>
             ) : (
               <>
-                <Link to="/login" className="text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-100 font-medium px-3 py-2 text-sm btn-ripple">
+                <Link to="/login" className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium px-3 py-2 text-sm btn-ripple">
                   Sign In
                 </Link>
                 <Link to="/signin" className="btn-primary btn-ripple text-white px-5 py-2 rounded-lg font-semibold text-sm">

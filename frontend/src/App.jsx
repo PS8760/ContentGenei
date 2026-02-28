@@ -16,6 +16,7 @@ import SocialScheduler from './pages/SocialScheduler'
 import ContentOptimizer from './pages/ContentOptimizer'
 import TeamCollaboration from './pages/TeamCollaboration'
 import AboutUs from './pages/AboutUs'
+import ContactUs from './pages/ContactUs'
 import LinkoGenei from './pages/LinkoGenei'
 // import GeneiLink from './pages/GeneiLink' // TODO: Enable in future
 
@@ -33,6 +34,7 @@ function App() {
               <Route path="/signin" element={<SignIn />} />
               <Route path="/login" element={<Login />} />
               <Route path="/about" element={<AboutUs />} />
+              <Route path="/contact" element={<ContactUs />} />
               
               {/* Protected Routes */}
               <Route path="/dashboard" element={

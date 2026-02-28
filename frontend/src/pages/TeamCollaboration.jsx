@@ -452,7 +452,7 @@ const TeamCollaboration = () => {
           <div className="grid md:grid-cols-4 gap-6 mb-8">
             <div className="glass-card rounded-xl p-6 theme-transition">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-900 dark:from-blue-500 dark:to-blue-600 rounded-lg flex items-center justify-center">
                   <span className="text-2xl">👥</span>
                 </div>
                 <div>
@@ -463,7 +463,7 @@ const TeamCollaboration = () => {
             </div>
             <div className="glass-card rounded-xl p-6 theme-transition">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-gray-800 to-black dark:from-purple-500 dark:to-purple-600 rounded-lg flex items-center justify-center">
                   <span className="text-2xl">📁</span>
                 </div>
                 <div>
@@ -474,7 +474,7 @@ const TeamCollaboration = () => {
             </div>
             <div className="glass-card rounded-xl p-6 theme-transition">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-black to-gray-700 dark:from-green-500 dark:to-green-600 rounded-lg flex items-center justify-center">
                   <span className="text-2xl">📝</span>
                 </div>
                 <div>
@@ -485,7 +485,7 @@ const TeamCollaboration = () => {
             </div>
             <div className="glass-card rounded-xl p-6 theme-transition">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-gray-600 to-gray-800 dark:from-orange-500 dark:to-orange-600 rounded-lg flex items-center justify-center">
                   <span className="text-2xl">📬</span>
                 </div>
                 <div>
@@ -584,10 +584,10 @@ const TeamCollaboration = () => {
 
               {/* Current User */}
               <div className="mb-4">
-                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl p-4 border-2 border-purple-200 dark:border-purple-800">
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-xl p-4 border-2 border-gray-400 dark:border-purple-800">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center">
+                      <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 dark:from-purple-500 dark:to-indigo-600 rounded-full flex items-center justify-center">
                         <span className="text-white font-bold">
                           {currentUser?.email?.[0].toUpperCase() || 'Y'}
                         </span>
@@ -630,7 +630,7 @@ const TeamCollaboration = () => {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                          <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 dark:from-blue-500 dark:to-indigo-600 rounded-full flex items-center justify-center">
                             <span className="text-white font-bold">
                               {member.member_email[0].toUpperCase()}
                             </span>
@@ -718,7 +718,7 @@ const TeamCollaboration = () => {
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-teal-600 rounded-lg flex items-center justify-center">
+                          <div className="w-10 h-10 bg-gradient-to-br from-gray-800 to-black dark:from-green-500 dark:to-teal-600 rounded-lg flex items-center justify-center">
                             <span className="text-xl">📁</span>
                           </div>
                           <div>
@@ -789,7 +789,7 @@ const TeamCollaboration = () => {
                         }`}
                       >
                         <div className="flex items-center space-x-3 mb-2">
-                          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center">
+                          <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 dark:from-purple-500 dark:to-indigo-600 rounded-full flex items-center justify-center">
                             <span className="text-white font-bold">
                               {conv.user_name[0].toUpperCase()}
                             </span>
@@ -828,7 +828,7 @@ const TeamCollaboration = () => {
                       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center">
+                            <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 dark:from-purple-500 dark:to-indigo-600 rounded-full flex items-center justify-center">
                               <span className="text-white font-bold">
                                 {selectedChat.user_name[0].toUpperCase()}
                               </span>
@@ -1032,11 +1032,11 @@ const TeamCollaboration = () => {
                     requests.map((request) => (
                       <div
                         key={request.id}
-                        className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border-2 border-blue-200 dark:border-blue-800 theme-transition"
+                        className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border-2 border-gray-400 dark:border-blue-800 theme-transition"
                       >
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center space-x-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                            <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-900 dark:from-blue-500 dark:to-indigo-600 rounded-full flex items-center justify-center">
                               <span className="text-white font-bold text-lg">
                                 {(request.from_email || request.from_name || '?')[0].toUpperCase()}
                               </span>
@@ -1090,7 +1090,7 @@ const TeamCollaboration = () => {
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 theme-transition">
               📊 Team Activity
             </h2>
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 rounded-xl p-12 text-center theme-transition">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl p-12 text-center theme-transition border border-gray-300 dark:border-gray-600">
               <div className="text-6xl mb-4">🚀</div>
               <p className="text-gray-600 dark:text-gray-400 theme-transition">
                 Activity feed coming soon - track your team's content creation and collaboration

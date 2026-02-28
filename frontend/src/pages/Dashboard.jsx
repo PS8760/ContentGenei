@@ -177,28 +177,28 @@ const Dashboard = () => {
       value: dashboardData.stats.total_content.toString(), 
       icon: '📝',
       change: `+${dashboardData.stats.content_this_week} this week`,
-      color: 'from-blue-500 to-blue-600'
+      color: 'from-black to-gray-700 dark:from-blue-500 dark:to-blue-600'
     },
     { 
       label: 'Total Views', 
       value: formatNumber(dashboardData.stats.total_views), 
       icon: '👁️',
       change: 'All time',
-      color: 'from-purple-500 to-purple-600'
+      color: 'from-gray-700 to-gray-900 dark:from-purple-500 dark:to-purple-600'
     },
     { 
       label: 'Engagement', 
       value: `${dashboardData.stats.avg_engagement_rate}%`, 
       icon: '📈',
       change: 'Average rate',
-      color: 'from-green-500 to-green-600'
+      color: 'from-gray-600 to-black dark:from-green-500 dark:to-green-600'
     },
     { 
       label: 'Avg Read Time', 
       value: `${Math.round(dashboardData.stats.avg_read_time)}s`, 
       icon: '⏱️',
       change: 'Per content',
-      color: 'from-orange-500 to-orange-600'
+      color: 'from-gray-800 to-gray-600 dark:from-orange-500 dark:to-orange-600'
     }
   ]
 
@@ -208,56 +208,56 @@ const Dashboard = () => {
       description: 'Generate articles, posts, and more with AI',
       icon: '✨',
       action: () => navigate('/creator'),
-      color: 'from-blue-600 to-indigo-700'
+      color: 'from-black to-gray-700 dark:from-blue-600 dark:to-indigo-700'
     },
     {
       title: 'Content Library',
       description: 'Browse and manage your content',
       icon: '📚',
       action: () => navigate('/library'),
-      color: 'from-indigo-600 to-purple-700'
+      color: 'from-gray-800 to-gray-600 dark:from-indigo-600 dark:to-purple-700'
     },
     {
       title: 'Social Scheduler',
       description: 'Plan and schedule social media posts',
       icon: '📅',
       action: () => navigate('/scheduler'),
-      color: 'from-purple-600 to-pink-700'
+      color: 'from-gray-700 to-black dark:from-purple-600 dark:to-pink-700'
     },
     {
       title: 'Analytics Dashboard',
       description: 'Track performance and insights',
       icon: '📊',
       action: () => navigate('/analytics'),
-      color: 'from-pink-600 to-red-700'
+      color: 'from-gray-900 to-gray-700 dark:from-pink-600 dark:to-red-700'
     },
     {
       title: 'Content Optimizer',
       description: 'Improve SEO and readability',
       icon: '🎯',
       action: () => navigate('/optimizer'),
-      color: 'from-red-600 to-orange-700'
+      color: 'from-black to-gray-800 dark:from-red-600 dark:to-orange-700'
     },
     {
       title: 'AI Writing Assistant',
       description: 'Get creative suggestions and ideas',
       icon: '💡',
       action: () => navigate('/assistant'),
-      color: 'from-orange-600 to-yellow-700'
+      color: 'from-gray-600 to-gray-900 dark:from-orange-600 dark:to-yellow-700'
     },
     {
       title: 'Content Tagging',
       description: 'Auto-tag and organize content',
       icon: '🏷️',
       action: () => navigate('/tagging'),
-      color: 'from-yellow-600 to-green-700'
+      color: 'from-gray-800 to-black dark:from-yellow-600 dark:to-green-700'
     },
     {
       title: 'Team Collaboration',
       description: 'Work together with your team',
       icon: '👥',
       action: () => navigate('/team'),
-      color: 'from-green-600 to-teal-700'
+      color: 'from-gray-700 to-gray-900 dark:from-green-600 dark:to-teal-700'
     }
   ]
 
@@ -282,7 +282,7 @@ const Dashboard = () => {
 
           {/* Error State (non-blocking) */}
           {error && !loading && (
-            <div className="glass-card rounded-2xl p-6 mb-8 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+            <div className="glass-card rounded-2xl p-6 mb-8 bg-gray-50 dark:bg-orange-900/20 border border-gray-300 dark:border-orange-800">
               <div className="flex items-start space-x-3">
                 <span className="text-2xl">⚠️</span>
                 <div>
@@ -302,7 +302,7 @@ const Dashboard = () => {
             <>
               {/* Welcome Section */}
               <div ref={titleRef} className="text-center mb-12">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight tracking-tight">
+                <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 leading-tight tracking-tight ">
                   Welcome back, <span className="gradient-text">{currentUser?.displayName?.split(' ')[0] || 'Creator'}</span>
                 </h1>
                 <p className="text-gray-700 dark:text-blue-200 text-lg font-normal max-w-2xl mx-auto theme-transition">
@@ -349,9 +349,9 @@ const Dashboard = () => {
                   <div className="relative w-full h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-2">
                     <div 
                       className={`absolute top-0 left-0 h-full transition-all duration-500 ${
-                        dashboardData.usageStats.percentage_used >= 90 ? 'bg-gradient-to-r from-red-500 to-red-600' :
-                        dashboardData.usageStats.percentage_used >= 70 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
-                        'bg-gradient-to-r from-green-500 to-green-600'
+                        dashboardData.usageStats.percentage_used >= 90 ? 'bg-gradient-to-r from-gray-800 to-black dark:from-red-500 dark:to-red-600' :
+                        dashboardData.usageStats.percentage_used >= 70 ? 'bg-gradient-to-r from-gray-600 to-gray-800 dark:from-yellow-500 dark:to-yellow-600' :
+                        'bg-gradient-to-r from-gray-700 to-gray-900 dark:from-green-500 dark:to-green-600'
                       }`}
                       style={{ width: `${Math.min(dashboardData.usageStats.percentage_used, 100)}%` }}
                     ></div>
@@ -365,8 +365,8 @@ const Dashboard = () => {
                     </span>
                   </div>
                   {dashboardData.usageStats.percentage_used >= 80 && (
-                    <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                      <p className="text-sm text-orange-800 dark:text-orange-200">
+                    <div className="mt-4 p-3 bg-gray-100 dark:bg-orange-900/20 rounded-lg border border-gray-300 dark:border-orange-800">
+                      <p className="text-sm text-gray-800 dark:text-orange-200">
                         ⚠️ You're approaching your monthly limit. Consider upgrading for unlimited content!
                       </p>
                     </div>
@@ -377,7 +377,7 @@ const Dashboard = () => {
                 <div className="glass-card rounded-2xl p-6 theme-transition">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Trending Type</h3>
                   <div className="flex flex-col items-center justify-center py-4">
-                    <div className="w-20 h-20 bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl flex items-center justify-center mb-3">
+                    <div className="w-20 h-20 bg-gradient-to-br from-black to-gray-700 dark:from-pink-500 dark:to-rose-600 rounded-2xl flex items-center justify-center mb-3">
                       <span className="text-3xl">🔥</span>
                     </div>
                     <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 capitalize">
@@ -409,9 +409,9 @@ const Dashboard = () => {
                         <div 
                           key={index}
                           onClick={() => navigate('/analytics')}
-                          className="flex items-start space-x-3 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all cursor-pointer"
+                          className="flex items-start space-x-3 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-blue-500 transition-all cursor-pointer"
                         >
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <div className="w-10 h-10 bg-gradient-to-br from-black to-gray-700 dark:from-blue-500 dark:to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
                             <span className="text-lg">
                               {item.content_type === 'article' ? '📝' :
                                item.content_type === 'social-post' ? '📱' :
@@ -449,11 +449,11 @@ const Dashboard = () => {
                         const total = dashboardData.stats.total_content
                         const percentage = total > 0 ? Math.round((item.count / total) * 100) : 0
                         const colors = [
-                          'from-blue-500 to-blue-600',
-                          'from-purple-500 to-purple-600',
-                          'from-green-500 to-green-600',
-                          'from-orange-500 to-orange-600',
-                          'from-pink-500 to-pink-600'
+                          'from-black to-gray-700 dark:from-blue-500 dark:to-blue-600',
+                          'from-gray-800 to-gray-600 dark:from-purple-500 dark:to-purple-600',
+                          'from-gray-700 to-gray-900 dark:from-green-500 dark:to-green-600',
+                          'from-gray-900 to-black dark:from-orange-500 dark:to-orange-600',
+                          'from-gray-600 to-gray-800 dark:from-pink-500 dark:to-pink-600'
                         ]
                         return (
                           <div key={index}>
@@ -513,31 +513,31 @@ const Dashboard = () => {
               {/* Insights & Tips */}
               <div className="glass-card rounded-2xl p-6 theme-transition">
                 <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-black to-gray-700 dark:from-yellow-500 dark:to-orange-600 rounded-xl flex items-center justify-center">
                     <span className="text-xl">💡</span>
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Quick Tips</h3>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                  <div className="p-4 bg-gray-100 dark:bg-blue-900/20 rounded-xl border border-gray-300 dark:border-blue-800">
                     <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">🚀 Boost Productivity</h4>
                     <p className="text-sm text-gray-700 dark:text-gray-300">
                       Create content in batches to maintain consistency and save time.
                     </p>
                   </div>
-                  <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                  <div className="p-4 bg-gray-100 dark:bg-green-900/20 rounded-xl border border-gray-300 dark:border-green-800">
                     <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">📊 Track Performance</h4>
                     <p className="text-sm text-gray-700 dark:text-gray-300">
                       Check Analytics regularly to understand what content performs best.
                     </p>
                   </div>
-                  <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                  <div className="p-4 bg-gray-100 dark:bg-purple-900/20 rounded-xl border border-gray-300 dark:border-purple-800">
                     <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">✨ Use AI Features</h4>
                     <p className="text-sm text-gray-700 dark:text-gray-300">
                       Try Chat Assistant and Summarize tabs for faster content creation.
                     </p>
                   </div>
-                  <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-200 dark:border-orange-800">
+                  <div className="p-4 bg-gray-100 dark:bg-orange-900/20 rounded-xl border border-gray-300 dark:border-orange-800">
                     <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">🎯 Set Goals</h4>
                     <p className="text-sm text-gray-700 dark:text-gray-300">
                       Aim to create {Math.max(5, Math.ceil(dashboardData.stats.content_this_week * 1.5))} pieces this week to grow your content library.

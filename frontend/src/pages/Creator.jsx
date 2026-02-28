@@ -641,7 +641,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div ref={titleRef} className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4 theme-transition">
-              AI <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-500 bg-clip-text text-transparent">Content Creator</span>
+              AI <span className="bg-gradient-to-r from-black to-gray-700 dark:from-blue-400 dark:to-purple-500 bg-clip-text text-transparent">Content Creator</span>
             </h1>
             <p className="text-gray-700 dark:text-gray-400 text-lg max-w-2xl mx-auto theme-transition">
               Generate, chat, summarize, and improve your content with AI-powered tools.
@@ -655,7 +655,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                 onClick={() => setActiveTab('generate')}
                 className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center space-x-2 ${
                   activeTab === 'generate'
-                    ? 'bg-blue-600 text-white shadow-lg'
+                    ? 'bg-gray-800 dark:bg-blue-600 text-white shadow-lg'
                     : 'text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white theme-transition'
                 }`}
               >
@@ -666,7 +666,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                 onClick={() => setActiveTab('chat')}
                 className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center space-x-2 ${
                   activeTab === 'chat'
-                    ? 'bg-blue-600 text-white shadow-lg'
+                    ? 'bg-gray-800 dark:bg-blue-600 text-white shadow-lg'
                     : 'text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white theme-transition'
                 }`}
               >
@@ -677,7 +677,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                 onClick={() => setActiveTab('summarize')}
                 className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center space-x-2 ${
                   activeTab === 'summarize'
-                    ? 'bg-blue-600 text-white shadow-lg'
+                    ? 'bg-gray-800 dark:bg-blue-600 text-white shadow-lg'
                     : 'text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white theme-transition'
                 }`}
               >
@@ -688,7 +688,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                 onClick={() => setActiveTab('improve')}
                 className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center space-x-2 ${
                   activeTab === 'improve'
-                    ? 'bg-blue-600 text-white shadow-lg'
+                    ? 'bg-gray-800 dark:bg-blue-600 text-white shadow-lg'
                     : 'text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white theme-transition'
                 }`}
               >
@@ -704,7 +704,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
               {/* Left Panel - AI Content Creator */}
               <div ref={formRef} className="glass-card rounded-2xl p-6 shadow-lg theme-transition">
                 <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 dark:bg-blue-600 rounded-lg flex items-center justify-center">
                     <span className="text-white text-lg">✏️</span>
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white theme-transition">AI Content Creator</h3>
@@ -803,7 +803,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
               {/* Right Panel - Generated Content */}
               <div ref={resultRef} className="glass-card rounded-2xl p-6 shadow-lg theme-transition">
                 <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 dark:bg-blue-600 rounded-lg flex items-center justify-center">
                     <span className="text-white text-lg">📄</span>
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white theme-transition">Generated Content</h3>
@@ -819,20 +819,20 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                     <div className="grid grid-cols-4 gap-2">
                       <button 
                         onClick={handleCopy}
-                        className="bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-3 rounded-xl transition-all text-sm font-medium"
+                        className="bg-gray-700 hover:bg-gray-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white py-2.5 px-3 rounded-xl transition-all text-sm font-medium"
                       >
                         Copy
                       </button>
                       <button 
                         onClick={handleEdit}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-xl transition-all text-sm font-medium"
+                        className="bg-gray-800 hover:bg-black dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white py-2.5 px-3 rounded-xl transition-all text-sm font-medium"
                       >
                         Edit
                       </button>
                       <button 
                         onClick={handleImprove}
                         disabled={isGenerating}
-                        className="bg-purple-600 hover:bg-purple-700 text-white py-2.5 px-3 rounded-xl transition-all text-sm font-medium disabled:opacity-50"
+                        className="bg-black hover:bg-gray-900 dark:bg-purple-600 dark:hover:bg-purple-700 text-white py-2.5 px-3 rounded-xl transition-all text-sm font-medium disabled:opacity-50"
                       >
                         Improve
                       </button>
@@ -865,7 +865,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
               <div className="glass-card rounded-2xl p-6 shadow-lg theme-transition">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-gray-800 to-black dark:bg-green-600 rounded-lg flex items-center justify-center">
                       <span className="text-white text-lg">💬</span>
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white theme-transition">Alex - Chat Assistant</h3>
@@ -894,31 +894,31 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                 <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6 h-96 overflow-y-auto mb-4 space-y-4 theme-transition border border-gray-100 dark:border-gray-800">
                   {chatMessages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center space-y-6 h-full">
-                      <div className="w-20 h-20 bg-green-600 dark:bg-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <div className="w-20 h-20 bg-gradient-to-br from-gray-800 to-black dark:bg-green-600 rounded-2xl flex items-center justify-center shadow-lg">
                         <span className="text-4xl">💬</span>
                       </div>
                       <div className="text-center">
                         <p className="text-gray-900 dark:text-gray-200 text-lg font-medium mb-2 theme-transition">
-                          Hey! I'm <span className="text-green-600 dark:text-green-400 font-bold">Alex</span>, your content buddy 👋
+                          Hey! I'm <span className="text-gray-900 dark:text-green-400 font-bold">Alex</span>, your content buddy 👋
                         </p>
                         <p className="text-gray-600 dark:text-gray-400 text-sm theme-transition">Let's chat about your writing!</p>
                       </div>
                       <div className="flex flex-wrap justify-center gap-3">
                         <button 
                           onClick={() => setChatInput('Help with blog post')}
-                          className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
+                          className="bg-gray-700 hover:bg-gray-800 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
                         >
                           Help with blog post
                         </button>
                         <button 
                           onClick={() => setChatInput('Need ideas')}
-                          className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
+                          className="bg-gray-800 hover:bg-black dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
                         >
                           Need ideas
                         </button>
                         <button 
                           onClick={() => setChatInput('Improve my writing')}
-                          className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
+                          className="bg-black hover:bg-gray-900 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
                         >
                           Improve my writing
                         </button>
@@ -930,7 +930,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                         <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                           <div className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
                             msg.role === 'user' 
-                              ? 'bg-blue-600 text-white' 
+                              ? 'bg-gray-700 dark:bg-blue-600 text-white' 
                               : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-700 theme-transition'
                           }`}>
                             {msg.content}
@@ -959,7 +959,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                   <button
                     onClick={handleChatSend}
                     disabled={!chatInput.trim() || isGenerating}
-                    className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+                    className="bg-gray-800 hover:bg-black dark:bg-green-600 dark:hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
                   >
                     Send
                   </button>
@@ -1034,7 +1034,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                       <button
                         onClick={handleUrlExtraction}
                         disabled={!urlInput.trim() || isGenerating}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        className="bg-gray-700 hover:bg-gray-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                       >
                         Extract
                       </button>
@@ -1088,7 +1088,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                   {summarizedContent && (
                     <button
                       onClick={() => setShowChatAssistant(!showChatAssistant)}
-                      className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm"
+                      className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm"
                     >
                       <span>💬</span>
                       <span>{showChatAssistant ? 'Hide' : 'Ask Questions'}</span>
@@ -1106,7 +1106,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
 
                     {/* SamAI Chat Assistant */}
                     {showChatAssistant && (
-                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800 theme-transition">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-gray-300 dark:border-blue-800 theme-transition">
                         <div className="flex items-center space-x-2 mb-3">
                           <span className="text-lg">🤖</span>
                           <h4 className="font-semibold text-gray-900 dark:text-white text-sm theme-transition">SamAI - Summarization Assistant</h4>
@@ -1118,7 +1118,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                             <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                               <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
                                 msg.role === 'user' 
-                                  ? 'bg-blue-600 text-white' 
+                                  ? 'bg-gray-700 dark:bg-blue-600 text-white' 
                                   : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300'
                               }`}>
                                 {msg.content}
@@ -1142,12 +1142,12 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                             onChange={(e) => setAssistantInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleAssistantChat()}
                             placeholder="Ask about the content..."
-                            className="flex-1 bg-white dark:bg-[#0f1419] border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 theme-transition"
+                            className="flex-1 bg-white dark:bg-[#0f1419] border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-gray-700 dark:focus:border-blue-500 theme-transition"
                           />
                           <button
                             onClick={handleAssistantChat}
                             disabled={!assistantInput.trim() || isAssistantThinking}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            className="bg-gray-700 hover:bg-gray-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                           >
                             Send
                           </button>
@@ -1160,7 +1160,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                               setAssistantInput('Can you provide more details?')
                               setTimeout(() => handleAssistantChat(), 100)
                             }}
-                            className="text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all"
+                            className="text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-gray-700 dark:hover:border-blue-500 transition-all"
                           >
                             📝 More Details
                           </button>
@@ -1169,7 +1169,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                               setAssistantInput('What are the key takeaways?')
                               setTimeout(() => handleAssistantChat(), 100)
                             }}
-                            className="text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all"
+                            className="text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-gray-700 dark:hover:border-blue-500 transition-all"
                           >
                             🎯 Key Points
                           </button>
@@ -1178,7 +1178,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                               setAssistantInput('Explain this in simpler terms')
                               setTimeout(() => handleAssistantChat(), 100)
                             }}
-                            className="text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all"
+                            className="text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-gray-700 dark:hover:border-blue-500 transition-all"
                           >
                             💡 Simplify
                           </button>
@@ -1188,7 +1188,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                   </div>
                 ) : (
                   <div className="text-center py-20">
-                    <div className="w-16 h-16 bg-orange-100 dark:bg-orange-800 rounded-2xl flex items-center justify-center mx-auto mb-4 theme-transition">
+                    <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 dark:bg-orange-100 dark:dark:bg-orange-800 rounded-2xl flex items-center justify-center mx-auto mb-4 theme-transition">
                       <span className="text-3xl">📄</span>
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 text-base mb-2 theme-transition">
@@ -1209,7 +1209,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
               <div className="glass-card rounded-2xl p-6 shadow-lg theme-transition">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-gray-700 to-gray-900 dark:bg-purple-600 rounded-lg flex items-center justify-center">
                       <span className="text-white text-lg">🎯</span>
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white theme-transition">Growth Suggestions</h3>
@@ -1217,7 +1217,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                   <button
                     onClick={fetchImprovements}
                     disabled={loadingImprovements}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+                    className="bg-gray-700 hover:bg-gray-800 dark:bg-purple-600 dark:hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
                   >
                     Refresh
                   </button>
@@ -1226,7 +1226,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                 {improvements.length > 0 ? (
                   <div className="space-y-3">
                     {improvements.map((improvement, idx) => (
-                      <div key={idx} className="bg-gray-50 dark:bg-[#0f1419] border border-gray-200 dark:border-gray-800 rounded-xl p-4 hover:border-purple-600 dark:hover:border-purple-600 transition-colors theme-transition">
+                      <div key={idx} className="bg-gray-50 dark:bg-[#0f1419] border border-gray-200 dark:border-gray-800 rounded-xl p-4 hover:border-gray-700 dark:hover:border-purple-600 transition-colors theme-transition">
                         <p className="text-gray-900 dark:text-gray-300 theme-transition">{improvement}</p>
                       </div>
                     ))}
@@ -1243,7 +1243,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
                     <button
                       onClick={fetchImprovements}
                       disabled={loadingImprovements}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all disabled:opacity-50"
+                      className="bg-gray-700 hover:bg-gray-800 dark:bg-purple-600 dark:hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all disabled:opacity-50"
                     >
                       {loadingImprovements ? 'Analyzing...' : 'Analyze Now'}
                     </button>
