@@ -3,6 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, ContentItem, User
 from services.ai_service import AIContentGenerator
 from services.ocr_service import ocr_service
+from services.video_service import video_service
+from services.url_service import url_service
 from datetime import datetime, timezone
 import json
 import base64
@@ -479,20 +481,32 @@ def extract_text_from_image():
 def check_ocr_status():
     """Check if OCR service is available and working"""
     try:
-        # Try to initialize the OCR reader
+        # Check if Groq API key is configured
+        api_key = current_app.config.get('GROQ_API_KEY')
+        
+        if not api_key:
+            return jsonify({
+                'success': False,
+                'available': False,
+                'error': 'Groq API key not configured',
+                'message': 'OCR service requires Groq API configuration.'
+            })
+        
+        # Try to initialize the client
         try:
-            reader = ocr_service._get_reader()
+            client = ocr_service._get_client()
             return jsonify({
                 'success': True,
                 'available': True,
-                'message': 'OCR service is available and ready'
+                'message': 'OCR service is available and ready',
+                'method': 'groq-vision-api'
             })
         except Exception as e:
             return jsonify({
                 'success': False,
                 'available': False,
                 'error': str(e),
-                'message': 'OCR service is not available. Text extraction will not work.'
+                'message': 'OCR service initialization failed.'
             })
     except Exception as e:
         return jsonify({
@@ -502,3 +516,203 @@ def check_ocr_status():
             'message': 'Failed to check OCR status'
         })
 
+
+
+@content_bp.route('/transcribe-video', methods=['POST'])
+@jwt_required()
+def transcribe_video():
+    """Transcribe video to text using Groq Whisper API"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'video' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Video data is required',
+                'transcription': '',
+                'word_count': 0
+            }), 400
+        
+        video_data = data['video']
+        filename = data.get('filename', 'video.mp4')
+        
+        # Validate video data
+        if not video_data or len(video_data) < 1000:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid or empty video data',
+                'transcription': '',
+                'word_count': 0
+            }), 400
+        
+        # Transcribe video
+        current_app.logger.info(f"Starting video transcription for: {filename}")
+        result = video_service.transcribe_from_base64(video_data, filename)
+        
+        if result['success']:
+            current_app.logger.info(f"Transcription successful: {result.get('word_count', 0)} words")
+            return jsonify({
+                'success': True,
+                'transcription': result['transcription'],
+                'word_count': result.get('word_count', 0),
+                'duration': result.get('duration'),
+                'language': result.get('language', 'en'),
+                'message': 'Video transcribed successfully'
+            })
+        else:
+            error_msg = result.get('error', 'Transcription failed')
+            current_app.logger.warning(f"Transcription failed: {error_msg}")
+            
+            # Provide helpful error messages
+            if 'too large' in error_msg.lower():
+                user_message = error_msg
+            elif 'No speech detected' in error_msg:
+                user_message = 'No speech detected in video. Please ensure the video contains clear audio.'
+            elif 'not available' in error_msg.lower():
+                user_message = 'Video transcription service is not available. Please try again later.'
+            else:
+                user_message = error_msg
+            
+            return jsonify({
+                'success': False,
+                'error': user_message,
+                'transcription': '',
+                'word_count': 0
+            }), 200
+            
+    except Exception as e:
+        current_app.logger.error(f"Video transcription endpoint error: {str(e)}")
+        import traceback
+        current_app.logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': 'An unexpected error occurred during video transcription. Please try again.',
+            'transcription': '',
+            'word_count': 0
+        }), 200
+
+
+@content_bp.route('/video-status', methods=['GET'])
+@jwt_required()
+def check_video_status():
+    """Check if video transcription service is available"""
+    try:
+        api_key = current_app.config.get('GROQ_API_KEY')
+        
+        if not api_key:
+            return jsonify({
+                'success': False,
+                'available': False,
+                'error': 'Groq API key not configured',
+                'message': 'Video transcription requires Groq API configuration.'
+            })
+        
+        try:
+            client = video_service._get_client()
+            return jsonify({
+                'success': True,
+                'available': True,
+                'message': 'Video transcription service is available and ready',
+                'method': 'groq-whisper-api',
+                'max_size_mb': 25
+            })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'available': False,
+                'error': str(e),
+                'message': 'Video transcription service initialization failed.'
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'available': False,
+            'error': str(e),
+            'message': 'Failed to check video transcription status'
+        })
+
+
+@content_bp.route('/extract-url', methods=['POST'])
+@jwt_required()
+def extract_url_content():
+    """Extract content from URL for summarization"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'url' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'URL is required',
+                'content': '',
+                'word_count': 0
+            }), 400
+        
+        url = data['url']
+        
+        # Validate URL
+        if not url or not url.strip():
+            return jsonify({
+                'success': False,
+                'error': 'URL cannot be empty',
+                'content': '',
+                'word_count': 0
+            }), 400
+        
+        # Extract content from URL
+        current_app.logger.info(f"Extracting content from URL: {url}")
+        result = url_service.extract_content_from_url(url)
+        
+        if result['success']:
+            current_app.logger.info(f"URL extraction successful: {result.get('word_count', 0)} words")
+            return jsonify({
+                'success': True,
+                'content': result['content'],
+                'word_count': result.get('word_count', 0),
+                'title': result.get('title', ''),
+                'url': result.get('url', url),
+                'message': 'Content extracted successfully'
+            })
+        else:
+            error_msg = result.get('error', 'Failed to extract content')
+            current_app.logger.warning(f"URL extraction failed: {error_msg}")
+            
+            return jsonify({
+                'success': False,
+                'error': error_msg,
+                'content': '',
+                'word_count': 0
+            }), 200
+            
+    except Exception as e:
+        current_app.logger.error(f"URL extraction endpoint error: {str(e)}")
+        import traceback
+        current_app.logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({
+            'success': False,
+            'error': 'An unexpected error occurred while extracting URL content. Please try again.',
+            'content': '',
+            'word_count': 0
+        }), 200
+
+
+@content_bp.route('/test-url', methods=['GET'])
+def test_url_service():
+    """Test URL service availability"""
+    try:
+        # Test with a simple URL
+        test_url = "https://example.com"
+        result = url_service.extract_content_from_url(test_url)
+        
+        return jsonify({
+            'success': True,
+            'test_result': result,
+            'message': 'URL service test completed'
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc(),
+            'message': 'URL service test failed'
+        })

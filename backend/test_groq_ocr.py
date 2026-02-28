@@ -1,62 +1,44 @@
 """
-Test script to verify OCR functionality
+Test script for Groq Vision API OCR functionality
 """
 
 import sys
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-def test_ocr_import():
-    """Test if OCR dependencies can be imported"""
+def test_groq_api_key():
+    """Test if Groq API key is configured"""
     print("=" * 60)
-    print("Testing OCR Dependencies")
+    print("Testing Groq API Configuration")
     print("=" * 60)
     
-    try:
-        import easyocr
-        print("✅ easyocr imported successfully")
-        print(f"   Version: {easyocr.__version__ if hasattr(easyocr, '__version__') else 'unknown'}")
-    except ImportError as e:
-        print(f"❌ Failed to import easyocr: {e}")
-        print("\n💡 To install: pip install easyocr")
+    api_key = os.environ.get('GROQ_API_KEY')
+    if api_key:
+        print(f"✅ Groq API key found: {api_key[:10]}...")
+        return True
+    else:
+        print("❌ Groq API key not found in environment")
+        print("\n💡 Set GROQ_API_KEY in your .env file")
         return False
-    
-    try:
-        from PIL import Image
-        print("✅ PIL (Pillow) imported successfully")
-    except ImportError as e:
-        print(f"❌ Failed to import PIL: {e}")
-        print("\n💡 To install: pip install Pillow")
-        return False
-    
-    return True
 
-def test_ocr_service():
-    """Test OCR service initialization"""
+def test_ocr_service_import():
+    """Test if OCR service can be imported"""
     print("\n" + "=" * 60)
-    print("Testing OCR Service")
+    print("Testing OCR Service Import")
     print("=" * 60)
     
     try:
         from services.ocr_service import ocr_service
         print("✅ OCR service imported successfully")
-    except Exception as e:
-        print(f"❌ Failed to import OCR service: {e}")
-        return False
-    
-    try:
-        print("\n📥 Initializing OCR reader (this may take a moment)...")
-        reader = ocr_service._get_reader()
-        print("✅ OCR reader initialized successfully")
         return True
     except Exception as e:
-        print(f"❌ Failed to initialize OCR reader: {e}")
-        print("\n💡 Common issues:")
-        print("   - Missing model files (will download on first run)")
-        print("   - Insufficient disk space")
-        print("   - Network issues (for model download)")
+        print(f"❌ Failed to import OCR service: {e}")
         return False
 
 def test_ocr_with_sample():
@@ -71,12 +53,12 @@ def test_ocr_with_sample():
         
         # Create a simple test image with text
         print("\n📝 Creating test image with text...")
-        img = Image.new('RGB', (400, 100), color='white')
+        img = Image.new('RGB', (600, 200), color='white')
         draw = ImageDraw.Draw(img)
         
-        # Draw text
-        text = "Hello World! OCR Test 123"
-        draw.text((10, 30), text, fill='black')
+        # Draw text (larger and clearer)
+        text = "Hello World!\nOCR Test 2024\nGroq Vision API"
+        draw.text((20, 50), text, fill='black')
         
         # Convert to bytes
         img_bytes = io.BytesIO()
@@ -95,6 +77,7 @@ def test_ocr_with_sample():
             print(f"   Extracted text: '{result['text']}'")
             print(f"   Word count: {result['word_count']}")
             print(f"   Confidence: {result['avg_confidence']}%")
+            print(f"   Method: {result.get('method', 'unknown')}")
             return True
         else:
             print(f"❌ OCR failed: {result.get('error', 'Unknown error')}")
@@ -108,17 +91,17 @@ def test_ocr_with_sample():
 
 def main():
     """Run all tests"""
-    print("\n🚀 OCR Service Test Suite")
+    print("\n🚀 Groq Vision OCR Test Suite")
     print("=" * 60)
     
     results = []
     
-    # Test 1: Dependencies
-    results.append(("Dependencies", test_ocr_import()))
+    # Test 1: API Key
+    results.append(("API Key", test_groq_api_key()))
     
     if results[-1][1]:
-        # Test 2: Service initialization
-        results.append(("Service Init", test_ocr_service()))
+        # Test 2: Service import
+        results.append(("Service Import", test_ocr_service_import()))
         
         if results[-1][1]:
             # Test 3: Sample OCR
@@ -138,13 +121,17 @@ def main():
     print("\n" + "=" * 60)
     if all_passed:
         print("🎉 All tests passed! OCR service is working correctly.")
+        print("\n✨ Benefits of Groq Vision API:")
+        print("   • No heavy dependencies (no EasyOCR installation)")
+        print("   • Cloud-based processing (no local models)")
+        print("   • High accuracy with vision-language models")
+        print("   • Fast and efficient")
     else:
         print("⚠️  Some tests failed. Please check the errors above.")
         print("\n💡 Common solutions:")
-        print("   1. Install missing dependencies: pip install easyocr Pillow")
-        print("   2. Ensure sufficient disk space for model files (~100MB)")
-        print("   3. Check internet connection (for first-time model download)")
-        print("   4. Try running with: python test_ocr.py")
+        print("   1. Ensure GROQ_API_KEY is set in .env file")
+        print("   2. Check internet connection")
+        print("   3. Verify Groq API key is valid")
     print("=" * 60)
     
     return 0 if all_passed else 1

@@ -6,7 +6,14 @@ from flask_jwt_extended import JWTManager
 from config import config
 from models import db
 import os
+import logging
 from datetime import timedelta
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 def create_app(config_name=None):
     """Application factory pattern"""
@@ -47,11 +54,13 @@ def create_app(config_name=None):
     from routes.content import content_bp
     from routes.analytics import analytics_bp
     from routes.team import team_bp
+    # from routes.geneilink import geneilink_bp  # TODO: Enable in future
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(content_bp, url_prefix='/api/content')
     app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
     app.register_blueprint(team_bp, url_prefix='/api/team')
+    # app.register_blueprint(geneilink_bp, url_prefix='/api/geneilink')  # TODO: Enable in future
     
     # Health check endpoint
     @app.route('/api/health', methods=['GET'])
@@ -137,4 +146,4 @@ def create_app(config_name=None):
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)

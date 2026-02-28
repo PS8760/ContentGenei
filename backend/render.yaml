@@ -19,7 +19,7 @@ services:
           name: contentgenie-db
           property: connectionString
       - key: GROQ_API_KEY
-        sync: false
+        sync: false  # Set this in Render dashboard
       - key: FIREBASE_CREDENTIALS_PATH
         sync: false
 

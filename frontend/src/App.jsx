@@ -16,6 +16,7 @@ import SocialScheduler from './pages/SocialScheduler'
 import ContentOptimizer from './pages/ContentOptimizer'
 import TeamCollaboration from './pages/TeamCollaboration'
 import AboutUs from './pages/AboutUs'
+// import GeneiLink from './pages/GeneiLink' // TODO: Enable in future
 
 import './index.css'
 
@@ -68,6 +69,12 @@ function App() {
                   <TeamCollaboration />
                 </ProtectedRoute>
               } />
+              {/* TODO: Enable GeneiLink in future */}
+              {/* <Route path="/geneilink" element={
+                <ProtectedRoute>
+                  <GeneiLink />
+                </ProtectedRoute>
+              } /> */}
               
               {/* Redirect any unknown routes to home */}
               <Route path="*" element={<Navigate to="/" replace />} />

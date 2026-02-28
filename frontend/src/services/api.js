@@ -4,7 +4,7 @@ import { auth } from '../config/firebase'
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.MODE === 'production' 
     ? 'https://contentgenei.onrender.com/api'  // Production backend URL
-    : 'http://localhost:5000/api')
+    : 'http://localhost:5001/api')
 
 class ApiService {
   constructor() {
@@ -196,6 +196,22 @@ class ApiService {
     return this.request('/content/extract-text', {
       method: 'POST',
       body: JSON.stringify({ image: imageBase64 })
+    })
+  }
+
+  // Video Transcription - Extract text from video
+  async transcribeVideo(videoBase64, filename) {
+    return this.request('/content/transcribe-video', {
+      method: 'POST',
+      body: JSON.stringify({ video: videoBase64, filename })
+    })
+  }
+
+  // URL Content Extraction - Extract text from URL
+  async extractUrlContent(url) {
+    return this.request('/content/extract-url', {
+      method: 'POST',
+      body: JSON.stringify({ url })
     })
   }
 

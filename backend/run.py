@@ -19,7 +19,7 @@ if __name__ == '__main__':
         db.create_all()
     
     # Run the application
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 5001))
     debug = env == 'development'
     
     app.run(

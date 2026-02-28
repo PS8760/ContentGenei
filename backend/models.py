@@ -295,3 +295,195 @@ class TeamChat(db.Model):
             'is_read': self.is_read,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
+
+
+# ==================== GENEILINK MODELS ====================
+
+class PlatformConnection(db.Model):
+    __tablename__ = 'platform_connections'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)
+    
+    # Platform details
+    platform_name = db.Column(db.String(20), nullable=False, index=True)  # instagram, linkedin, twitter, facebook
+    platform_user_id = db.Column(db.String(255), nullable=False)
+    platform_username = db.Column(db.String(255), nullable=False)
+    platform_display_name = db.Column(db.String(255), nullable=True)
+    
+    # OAuth tokens (encrypted)
+    access_token = db.Column(db.Text, nullable=False)  # Encrypted
+    refresh_token = db.Column(db.Text, nullable=True)  # Encrypted
+    token_expires_at = db.Column(db.DateTime, nullable=True)
+    
+    # Profile information
+    profile_url = db.Column(db.String(500), nullable=True)
+    profile_image_url = db.Column(db.String(500), nullable=True)
+    
+    # Status
+    is_active = db.Column(db.Boolean, default=True)
+    last_synced_at = db.Column(db.DateTime, nullable=True)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    # Unique constraint: one user can't connect the same platform account twice
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'platform_name', 'platform_user_id', name='unique_platform_connection'),
+        db.Index('idx_user_platform', 'user_id', 'platform_name'),
+    )
+    
+    # Relationships
+    posts = db.relationship('AggregatedPost', backref='connection', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def to_dict(self, include_tokens=False):
+        data = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'platform_name': self.platform_name,
+            'platform_user_id': self.platform_user_id,
+            'platform_username': self.platform_username,
+            'platform_display_name': self.platform_display_name,
+            'profile_url': self.profile_url,
+            'profile_image_url': self.profile_image_url,
+            'is_active': self.is_active,
+            'last_synced_at': self.last_synced_at.isoformat() if self.last_synced_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'token_expires_at': self.token_expires_at.isoformat() if self.token_expires_at else None
+        }
+        
+        # Only include tokens if explicitly requested (for internal use)
+        if include_tokens:
+            data['access_token'] = self.access_token
+            data['refresh_token'] = self.refresh_token
+        
+        return data
+
+
+class AggregatedPost(db.Model):
+    __tablename__ = 'aggregated_posts'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)
+    connection_id = db.Column(db.String(36), db.ForeignKey('platform_connections.id'), nullable=False, index=True)
+    
+    # Platform details
+    platform_name = db.Column(db.String(20), nullable=False, index=True)
+    platform_post_id = db.Column(db.String(255), nullable=False)
+    
+    # Post content
+    content = db.Column(db.Text, nullable=True)
+    media_urls = db.Column(db.Text, nullable=True)  # JSON array of media URLs
+    post_url = db.Column(db.String(500), nullable=True)
+    
+    # Engagement metrics
+    likes_count = db.Column(db.Integer, default=0)
+    comments_count = db.Column(db.Integer, default=0)
+    shares_count = db.Column(db.Integer, default=0)
+    views_count = db.Column(db.Integer, nullable=True)
+    
+    # Save functionality
+    is_saved = db.Column(db.Boolean, default=False, index=True)
+    saved_at = db.Column(db.DateTime, nullable=True)
+    
+    # Timestamps
+    published_at = db.Column(db.DateTime, nullable=True, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    # Unique constraint: one post per platform
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'platform_name', 'platform_post_id', name='unique_platform_post'),
+        db.Index('idx_user_saved', 'user_id', 'is_saved'),
+        db.Index('idx_user_connection', 'user_id', 'connection_id'),
+    )
+    
+    # Relationships
+    category_assignments = db.relationship('PostCategoryAssignment', backref='post', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'connection_id': self.connection_id,
+            'platform_name': self.platform_name,
+            'platform_post_id': self.platform_post_id,
+            'content': self.content,
+            'media_urls': json.loads(self.media_urls) if self.media_urls else [],
+            'post_url': self.post_url,
+            'likes_count': self.likes_count,
+            'comments_count': self.comments_count,
+            'shares_count': self.shares_count,
+            'views_count': self.views_count,
+            'is_saved': self.is_saved,
+            'saved_at': self.saved_at.isoformat() if self.saved_at else None,
+            'published_at': self.published_at.isoformat() if self.published_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'categories': [assignment.category.to_dict() for assignment in self.category_assignments.all()]
+        }
+
+
+class PostCategory(db.Model):
+    __tablename__ = 'post_categories'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)
+    
+    # Category details
+    name = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    color = db.Column(db.String(7), nullable=True)  # Hex color code (e.g., #FF5733)
+    is_default = db.Column(db.Boolean, default=False)
+    post_count = db.Column(db.Integer, default=0)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    # Unique constraint: category names must be unique per user
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'name', name='unique_category_name'),
+    )
+    
+    # Relationships
+    post_assignments = db.relationship('PostCategoryAssignment', backref='category', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'name': self.name,
+            'description': self.description,
+            'color': self.color,
+            'is_default': self.is_default,
+            'post_count': self.post_count,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+
+class PostCategoryAssignment(db.Model):
+    __tablename__ = 'post_category_assignments'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    post_id = db.Column(db.String(36), db.ForeignKey('aggregated_posts.id'), nullable=False, index=True)
+    category_id = db.Column(db.String(36), db.ForeignKey('post_categories.id'), nullable=False, index=True)
+    
+    # Timestamp
+    assigned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    # Unique constraint: one post can't be assigned to the same category twice
+    __table_args__ = (
+        db.UniqueConstraint('post_id', 'category_id', name='unique_post_category'),
+    )
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'post_id': self.post_id,
+            'category_id': self.category_id,
+            'assigned_at': self.assigned_at.isoformat() if self.assigned_at else None
+        }

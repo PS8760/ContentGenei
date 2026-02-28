@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import ParticlesBackground from '../components/ParticlesBackground'
 import FloatingEmojis from '../components/FloatingEmojis'
@@ -9,6 +10,7 @@ import apiService from '../services/api'
 
 const Creator = () => {
   const { currentUser } = useAuth()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [contentType, setContentType] = useState('article')
   const [prompt, setPrompt] = useState('')
@@ -16,33 +18,27 @@ const Creator = () => {
   const [generatedContent, setGeneratedContent] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [activeTab, setActiveTab] = useState('generate')
-  
-  // Chat Assistant state
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
-  const chatEndRef = useRef(null)
-  const chatContainerRef = useRef(null)
-  
-  // Summarize state
-  const [uploadedFile, setUploadedFile] = useState(null)
   const [summarizeText, setSummarizeText] = useState('')
   const [summarizedContent, setSummarizedContent] = useState('')
-  const [fileType, setFileType] = useState(null)
-  
-  // Improve state
+  const [uploadedFile, setUploadedFile] = useState(null)
   const [improvements, setImprovements] = useState([])
   const [loadingImprovements, setLoadingImprovements] = useState(false)
   
-  // Usage stats state
-  const [usageStats, setUsageStats] = useState({
-    current_count: 0,
-    monthly_limit: 500,
-    percentage_used: 0
-  })
+  // Chat assistant for summarized content
+  const [showChatAssistant, setShowChatAssistant] = useState(false)
+  const [assistantMessages, setAssistantMessages] = useState([])
+  const [assistantInput, setAssistantInput] = useState('')
+  const [isAssistantThinking, setIsAssistantThinking] = useState(false)
+  
+  // URL input for content extraction
+  const [urlInput, setUrlInput] = useState('')
   
   const titleRef = useRef(null)
   const formRef = useRef(null)
   const resultRef = useRef(null)
+  const chatEndRef = useRef(null)
 
   useEffect(() => {
     const tl = gsap.timeline({ delay: 0.3 })
@@ -58,45 +54,17 @@ const Creator = () => {
     )
   }, [])
 
-  // Scroll to bottom of chat smoothly without causing layout shift
   useEffect(() => {
-    if (chatContainerRef.current) {
-      const container = chatContainerRef.current
-      // Use requestAnimationFrame to ensure smooth scroll after render
-      requestAnimationFrame(() => {
-        container.scrollTop = container.scrollHeight
-      })
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' })
     }
   }, [chatMessages])
 
-  // Fetch improvements when Improve tab is activated
   useEffect(() => {
     if (activeTab === 'improve' && improvements.length === 0) {
       fetchImprovements()
     }
   }, [activeTab])
-
-  // Fetch usage stats on mount
-  useEffect(() => {
-    const fetchUsageStats = async () => {
-      try {
-        const response = await apiService.getProfile()
-        if (response.success && response.user) {
-          setUsageStats({
-            current_count: response.user.content_generated_count || 0,
-            monthly_limit: response.user.monthly_content_limit || 500,
-            percentage_used: Math.round((response.user.content_generated_count / response.user.monthly_content_limit) * 100)
-          })
-        }
-      } catch (error) {
-        console.error('Error fetching usage stats:', error)
-      }
-    }
-    
-    if (currentUser) {
-      fetchUsageStats()
-    }
-  }, [currentUser])
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -110,24 +78,6 @@ const Creator = () => {
       return
     }
 
-    if (prompt.length > 5000) {
-      setGeneratedContent('⚠️ Prompt too long. Please limit to 5000 characters.')
-      return
-    }
-
-    // Validation: Check for inappropriate requests
-    const inappropriatePatterns = [
-      /\b(illegal|harmful|violence|explicit|adult)\b/i,
-      /\b(hack|crack|pirate|steal)\b/i
-    ]
-    
-    for (const pattern of inappropriatePatterns) {
-      if (pattern.test(prompt)) {
-        setGeneratedContent('⚠️ I cannot assist with that request. I\'m designed to help with professional content creation only. Please provide a different prompt focused on legitimate content needs.')
-        return
-      }
-    }
-
     setIsGenerating(true)
     setGeneratedContent('')
     
@@ -139,24 +89,36 @@ const Creator = () => {
     })
 
     try {
+      // Enhanced prompt engineering for better content generation
+      const enhancedPrompt = `Create ${contentType} content with the following specifications:
+
+Topic/Request: ${prompt}
+
+Requirements:
+- Tone: ${tone}
+- Style: ${contentType === 'social-post' ? 'Engaging and shareable' : contentType === 'email' ? 'Professional and clear' : contentType === 'blog' ? 'Informative and well-structured' : contentType === 'caption' ? 'Catchy and concise' : contentType === 'script' ? 'Conversational and engaging' : contentType === 'ad-copy' ? 'Persuasive and action-oriented' : 'Well-researched and comprehensive'}
+- Target audience: General audience (adjust based on context)
+- Length: ${contentType === 'caption' ? 'Short (50-150 words)' : contentType === 'social-post' ? 'Medium (100-300 words)' : 'Comprehensive (300-800 words)'}
+
+Additional guidelines:
+- Make it engaging and valuable
+- Use clear, ${tone} language
+- Include relevant examples or details when appropriate
+- Ensure proper structure and flow
+- Make it ready to use with minimal editing
+
+Generate high-quality content that meets these specifications.`
+      
       const data = await apiService.generateContent({
-        prompt: prompt,
+        prompt: enhancedPrompt,
         type: contentType,
-        tone: tone,
-        skip_save: false  // Explicitly set to false for Generate tab
+        tone: tone
       })
       
       if (data.success) {
-        // Add disclaimer for AI-generated content
-        const contentWithDisclaimer = data.content.content + '\n\n---\n💡 AI-Generated Content: Please review and edit as needed before publishing.'
-        setGeneratedContent(contentWithDisclaimer)
-        
-        // Update usage stats
-        setUsageStats(prev => ({
-          ...prev,
-          current_count: prev.current_count + 1,
-          percentage_used: Math.round(((prev.current_count + 1) / prev.monthly_limit) * 100)
-        }))
+        // Add helpful disclaimer
+        const contentWithNote = `${data.content.content}\n\n---\n💡 AI-Generated Content: Please review and edit as needed before publishing.`
+        setGeneratedContent(contentWithNote)
         
         gsap.to(resultRef.current, {
           scale: 1,
@@ -169,14 +131,7 @@ const Creator = () => {
       }
     } catch (error) {
       console.error('Error generating content:', error)
-      const errorMessage = error.message || 'Failed to generate content'
-      
-      // Check if it's a limit error
-      if (errorMessage.includes('Monthly content limit reached') || errorMessage.includes('limit reached')) {
-        setGeneratedContent(`❌ Error: Monthly content limit reached\n\nYou've reached your monthly content generation limit. Your generated content is automatically saved to Analytics.\n\nTo continue:\n• Wait for your limit to reset next month\n• Upgrade to premium for unlimited content\n\nNote: Chat, Summarize, and Improve tabs don't count toward your limit!`)
-      } else {
-        setGeneratedContent(`❌ Error: ${errorMessage}\n\nPlease check if the backend server is running and try again.`)
-      }
+      setGeneratedContent(`❌ Error: ${error.message || 'Failed to generate content. Please check if the backend server is running and try again.'}`)
       
       gsap.to(resultRef.current, {
         scale: 1,
@@ -213,14 +168,10 @@ const Creator = () => {
     
     try {
       setLoading(true)
-      
-      // Note: Content is already saved to database when generated
-      // This button just confirms and shows success message
-      alert('✅ Content saved successfully! You can view and manage it in the Analytics page.')
-      
+      alert('✅ Content saved successfully!')
     } catch (error) {
       console.error('Error saving content:', error)
-      alert('❌ Failed to save content: ' + (error.message || 'Unknown error'))
+      alert('❌ Failed to save content')
     } finally {
       setLoading(false)
     }
@@ -243,47 +194,48 @@ const Creator = () => {
     }
   }
 
+  const handleImprove = async () => {
+    if (!generatedContent) return
+    
+    setIsGenerating(true)
+    
+    try {
+      // Enhanced improvement prompt
+      const improvePrompt = `You are a professional content editor. Improve the following ${contentType} content by:
+
+1. Enhancing clarity and readability
+2. Strengthening the message and impact
+3. Improving flow and structure
+4. Making it more engaging for the audience
+5. Maintaining the ${tone} tone
+6. Fixing any grammatical or stylistic issues
+7. Adding compelling elements where appropriate
+
+Original content:
+${generatedContent.replace(/\n---\n💡.*$/s, '')}
+
+Provide an improved version that is significantly better while keeping the core message intact. Make it publication-ready.`
+      
+      const response = await apiService.generateContent({
+        prompt: improvePrompt,
+        type: contentType,
+        tone: tone
+      })
+      
+      if (response.success) {
+        const improvedContent = `${response.content.content}\n\n---\n✨ Improved by AI: This is an enhanced version of your content.`
+        setGeneratedContent(improvedContent)
+      }
+    } catch (error) {
+      console.error('Error improving content:', error)
+      alert('❌ Failed to improve content. Please try again.')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
   const handleChatSend = async () => {
     if (!chatInput.trim()) return
-    
-    // Validation: Check message length
-    if (chatInput.length < 3) {
-      alert('⚠️ Message too short. Please provide at least 3 characters.')
-      return
-    }
-    
-    if (chatInput.length > 4000) {
-      alert('⚠️ Message too long. Please limit to 4000 characters.')
-      return
-    }
-    
-    // Validation: Check for inappropriate content
-    const inappropriatePatterns = [
-      /\b(hate|violence|harm|illegal|explicit)\b/i,
-      /\b(personal\s+info|credit\s+card|password)\b/i
-    ]
-    
-    for (const pattern of inappropriatePatterns) {
-      if (pattern.test(chatInput)) {
-        const warningMessage = { 
-          role: 'assistant', 
-          content: '⚠️ I cannot assist with that request. I\'m designed to help with content creation, writing, and creative tasks only. Please keep our conversation professional and focused on content-related topics.' 
-        }
-        setChatMessages(prev => [...prev, warningMessage])
-        setChatInput('')
-        return
-      }
-    }
-    
-    // Validation: Rate limiting (max 50 messages per session - increased from 20)
-    if (chatMessages.length >= 100) { // 50 exchanges = 100 messages
-      const limitMessage = { 
-        role: 'assistant', 
-        content: '⚠️ Chat session limit reached. Please refresh the page to start a new conversation. This helps ensure quality responses and fair usage.' 
-      }
-      setChatMessages(prev => [...prev, limitMessage])
-      return
-    }
     
     const userMessage = { role: 'user', content: chatInput }
     setChatMessages(prev => [...prev, userMessage])
@@ -295,44 +247,74 @@ const Creator = () => {
       let contextualPrompt = ''
       
       // Check if this is a greeting
-      const greetings = ['hello', 'hi', 'hey', 'greetings', 'good morning', 'good afternoon', 'good evening', 'sup', 'yo', 'howdy', 'what\'s up', 'whats up']
+      const greetings = ['hello', 'hi', 'hey', 'greetings', 'good morning', 'good afternoon', 'good evening', 'sup', 'yo', 'howdy', "what's up", 'whats up', 'wassup', 'heya']
       const isGreeting = greetings.some(greeting => 
         chatInput.toLowerCase().trim().startsWith(greeting) || 
         chatInput.toLowerCase().trim() === greeting
       )
       
       if (isGreeting && chatMessages.length === 0) {
-        // First message greeting - respond like a friendly buddy
-        contextualPrompt = `Your friend just said: "${chatInput}"
+        // First message greeting - respond like Alex in the image
+        contextualPrompt = `You are Alex, a friendly AI content buddy. Your friend just said: "${chatInput}"
 
-This is your first message to them! Respond super casually and warmly like you're texting a close friend. Say hi back, introduce yourself as Alex, their AI content buddy, and ask what they're working on today. Keep it SHORT (2-3 sentences max), friendly, and use 1-2 emojis naturally. Sound excited to help them!
+Respond EXACTLY like this style:
+"Hey hey! 👋 I'm your AI content buddy, here to help you brainstorm, write, and make stuff awesome. What are you working on today? 😊"
 
-Example vibe: "Hey! 👋 I'm Alex, your AI content buddy - I love helping with writing, brainstorming ideas, and making content awesome. What're you working on today?"`
+Keep it:
+- Super warm and welcoming
+- Use emojis naturally (👋 😊)
+- SHORT (1-2 sentences)
+- Ask what they're working on
+- Sound genuinely excited to help`
       } else if (chatMessages.length > 0) {
         // Include conversation history for context
         const recentHistory = chatMessages.slice(-6).map(msg => 
-          `${msg.role === 'user' ? 'Friend' : 'You'}: ${msg.content}`
+          `${msg.role === 'user' ? 'Friend' : 'Alex'}: ${msg.content}`
         ).join('\n')
         
-        contextualPrompt = `You're texting with a friend about content and writing. Here's your recent chat:
+        contextualPrompt = `You are Alex, a friendly AI content buddy helping with content creation. Here's your recent chat:
 
 ${recentHistory}
 
 Friend: ${chatInput}
 
-Respond naturally like you're texting! Keep it SHORT (2-4 sentences) unless they specifically ask for detailed help. Use contractions (you're, let's, I'd), be encouraging, and match their energy. If they're excited, be excited! If they need help, jump in with specific advice. Sound human and friendly, not like a formal assistant.`
-      } else {
-        // First message but not a greeting
-        contextualPrompt = `Your friend just messaged: "${chatInput}"
+Respond like Alex in these examples:
+- "Hey, I'm doing great, thanks for asking! 😊 How's your day going? Anything fun you're working on?"
+- "Sure thing! 🎯 Here's a quick 30-day flow: Week 1 – bite-size tips & hacks; Week 2 – behind-the-scenes or process vids; Week 3 – user stories or case studies; Week 4 – deep-dive guides or interviews, then repeat with fresh angles. What niche or platform are you targeting so I can tweak it for you? 😊"
+- "Awesome! 🎬 For cinematography, try a mix of gear demos, quick lighting hacks, behind-the-scenes clips, and short 'how I shot this' breakdowns. Want a day-by-day calendar or just some starter ideas? 😊"
 
-This is your first response! If it's about content/writing, jump right in with helpful, specific advice. If it's something else, answer briefly and ask what they're working on. Keep it casual and SHORT (2-4 sentences). Sound like a helpful friend texting back, not a formal assistant.`
+Key style rules:
+- Start with casual acknowledgment (Sure thing!, Awesome!, Hey!, Nice!)
+- Use emojis naturally (😊 🎯 🎬 👋 💡 ✨)
+- Give SPECIFIC, ACTIONABLE advice with details
+- Break down complex ideas into clear steps
+- Ask follow-up questions to personalize help
+- Keep it conversational and friendly
+- Sound like a supportive friend who's genuinely excited to help
+- Use contractions (I'm, you're, let's, that's)
+- Be encouraging and positive`
+      } else {
+        // First message but not a greeting - jump right into helping
+        contextualPrompt = `You are Alex, a friendly AI content buddy. Your friend just asked: "${chatInput}"
+
+Respond with SPECIFIC, ACTIONABLE advice like these examples:
+- "Sure thing! 🎯 Here's a quick 30-day flow: Week 1 – bite-size tips & hacks; Week 2 – behind-the-scenes or process vids; Week 3 – user stories or case studies; Week 4 – deep-dive guides or interviews, then repeat with fresh angles. What niche or platform are you targeting so I can tweak it for you? 😊"
+- "Awesome! 🎬 For cinematography, try a mix of gear demos, quick lighting hacks, behind-the-scenes clips, and short 'how I shot this' breakdowns. Want a day-by-day calendar or just some starter ideas? 😊"
+
+Key style:
+- Start with casual acknowledgment (Sure thing!, Awesome!, Great question!)
+- Give SPECIFIC details and examples
+- Break things into clear steps or categories
+- Use emojis naturally (😊 🎯 💡)
+- Ask follow-up questions to help more
+- Sound like an excited friend sharing tips
+- Keep it practical and actionable`
       }
       
       const response = await apiService.generateContent({
         prompt: contextualPrompt,
         type: 'chat',
-        tone: 'conversational',
-        skip_save: true  // Explicitly set - chat messages should never be saved
+        tone: 'conversational'
       })
       
       if (response.success) {
@@ -341,10 +323,7 @@ This is your first response! If it's about content/writing, jump right in with h
       }
     } catch (error) {
       console.error('Error in chat:', error)
-      const errorMessage = { 
-        role: 'assistant', 
-        content: 'Oops, something went wrong on my end 😅 Mind trying that again?' 
-      }
+      const errorMessage = { role: 'assistant', content: 'Oops, something went wrong 😅 Mind trying that again?' }
       setChatMessages(prev => [...prev, errorMessage])
     } finally {
       setIsGenerating(false)
@@ -355,200 +334,297 @@ This is your first response! If it's about content/writing, jump right in with h
     const file = event.target.files[0]
     if (!file) return
     
-    // Validation: File size limit (10MB - increased from 5MB)
-    const maxSize = 10 * 1024 * 1024 // 10MB in bytes
-    if (file.size > maxSize) {
-      alert('⚠️ File too large. Please upload a file smaller than 10MB.')
-      event.target.value = '' // Reset input
-      return
-    }
-    
-    // Validation: File type
-    const allowedTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'text/plain', 'text/csv', 'text/html',
-      'application/pdf'
-    ]
-    
-    if (!allowedTypes.includes(file.type)) {
-      alert('⚠️ Unsupported file type. Please upload: Images (JPEG, PNG, GIF, WebP), Text files, or PDFs.')
-      event.target.value = '' // Reset input
-      return
-    }
-    
     setUploadedFile(file)
-    setFileType(file.type)
-    setIsGenerating(true) // Show loading for OCR
+    setIsGenerating(true)
+    setSummarizeText('')
     
-    if (file.type.startsWith('image/')) {
-      try {
-        // Convert image to base64
+    try {
+      if (file.type.startsWith('text/')) {
+        // Handle text files
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          setSummarizeText(e.target.result)
+          setIsGenerating(false)
+        }
+        reader.onerror = () => {
+          alert('❌ Failed to read text file')
+          setIsGenerating(false)
+        }
+        reader.readAsText(file)
+      } else if (file.type.startsWith('image/')) {
+        // Handle image files with OCR
         const reader = new FileReader()
         reader.onload = async (e) => {
-          const base64Image = e.target.result
-          
           try {
-            // Extract text from image using OCR
-            const ocrResponse = await apiService.extractTextFromImage(base64Image)
+            const base64Image = e.target.result
             
-            if (ocrResponse.success && ocrResponse.text && ocrResponse.text.trim().length > 0) {
-              setSummarizeText(ocrResponse.text)
-              alert(`✅ Text extracted from image!\n\nConfidence: ${ocrResponse.confidence}%\nWords found: ${ocrResponse.word_count}\n\nThe extracted text has been pasted in the text area. You can now summarize it.`)
+            // Call OCR API to extract text
+            const response = await apiService.extractTextFromImage(base64Image)
+            
+            if (response.success && response.text) {
+              setSummarizeText(response.text)
+              alert(`✅ Text extracted successfully! Found ${response.word_count} words with ${response.confidence}% confidence.`)
             } else {
-              // Clear the file input and uploaded file state
-              event.target.value = ''
-              setUploadedFile(null)
-              setSummarizeText('')
-              alert('❌ Text extraction failed. The image may not contain readable text or the text quality is too low.\n\nPlease try:\n- A clearer image with better contrast\n- Higher resolution image\n- Better lighting\n- Or paste text manually in the text area below')
+              const errorMsg = response.error || 'Failed to extract text from image'
+              alert(`⚠️ ${errorMsg}`)
+              setSummarizeText(`[Image: ${file.name}]\n\nNo text could be extracted. Please try:\n• A clearer image with better lighting\n• Higher resolution image\n• Or paste text manually`)
             }
-          } catch (ocrError) {
-            console.error('OCR error:', ocrError)
-            // Clear the file input and uploaded file state
-            event.target.value = ''
-            setUploadedFile(null)
-            setSummarizeText('')
-            alert('❌ Failed to extract text from image. Please paste text manually in the text area below.')
+          } catch (error) {
+            console.error('OCR error:', error)
+            alert('❌ Failed to extract text from image. Please try again or paste text manually.')
+            setSummarizeText(`[Image: ${file.name}]\n\nOCR failed. Please paste text manually.`)
           } finally {
             setIsGenerating(false)
           }
         }
-        reader.readAsDataURL(file)
-      } catch (error) {
-        console.error('File read error:', error)
-        setSummarizeText(`[Image File: ${file.name}]\nError reading file.`)
-        setIsGenerating(false)
-      }
-    } else if (file.type === 'application/pdf') {
-      setSummarizeText(`[PDF File: ${file.name}]\nNote: PDF text extraction is limited. For best results, please copy and paste the text directly.`)
-      setIsGenerating(false)
-    } else if (file.type.startsWith('text/')) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const text = e.target.result
-        
-        // Validation: Text length
-        if (text.length > 20000) {
-          setSummarizeText(text.substring(0, 20000) + '\n\n[Text truncated to 20,000 characters for processing]')
-          alert('⚠️ Text file is very large. Only the first 20,000 characters will be processed.')
-        } else {
-          setSummarizeText(text)
+        reader.onerror = () => {
+          alert('❌ Failed to read image file')
+          setIsGenerating(false)
         }
+        reader.readAsDataURL(file)
+      } else if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
+        // Handle video and audio files with transcription
+        const reader = new FileReader()
+        reader.onload = async (e) => {
+          try {
+            const base64Data = e.target.result
+            
+            const fileType = file.type.startsWith('video/') ? 'video' : 'audio'
+            alert(`🎬 Transcribing ${fileType}... This may take a moment.`)
+            
+            // Call video transcription API (works for both video and audio)
+            const response = await apiService.transcribeVideo(base64Data, file.name)
+            
+            if (response.success && response.transcription) {
+              setSummarizeText(response.transcription)
+              const duration = response.duration ? ` (${Math.round(response.duration)}s)` : ''
+              alert(`✅ ${fileType.charAt(0).toUpperCase() + fileType.slice(1)} transcribed successfully! Found ${response.word_count} words${duration}.`)
+            } else {
+              const errorMsg = response.error || `Failed to transcribe ${fileType}`
+              alert(`⚠️ ${errorMsg}`)
+              setSummarizeText(`[${fileType.charAt(0).toUpperCase() + fileType.slice(1)}: ${file.name}]\n\nTranscription failed. Please try:\n• A ${fileType} with clear audio\n• Smaller file (max 25MB)\n• Supported formats: MP3, MP4, WAV, M4A, WebM\n• Or paste text manually`)
+            }
+          } catch (error) {
+            console.error('Transcription error:', error)
+            const fileType = file.type.startsWith('video/') ? 'video' : 'audio'
+            alert(`❌ Failed to transcribe ${fileType}. Please try again or paste text manually.`)
+            setSummarizeText(`[${fileType.charAt(0).toUpperCase() + fileType.slice(1)}: ${file.name}]\n\nTranscription failed. Please paste text manually.`)
+          } finally {
+            setIsGenerating(false)
+          }
+        }
+        reader.onerror = () => {
+          alert('❌ Failed to read file')
+          setIsGenerating(false)
+        }
+        reader.readAsDataURL(file)
+      } else {
+        // Unsupported file type
+        alert('⚠️ Unsupported file type. Please upload a text file, image, or video.')
+        setSummarizeText(`[File: ${file.name}]\n\nUnsupported file type. Please upload .txt, image, or video files.`)
         setIsGenerating(false)
       }
-      reader.readAsText(file)
+    } catch (error) {
+      console.error('File upload error:', error)
+      alert('❌ Failed to process file')
+      setIsGenerating(false)
     }
   }
 
-  const handleSummarizeFile = async () => {
-    if (!uploadedFile && !summarizeText.trim()) {
-      alert('⚠️ Please upload a file or paste text to summarize.')
+  const handleUrlExtraction = async () => {
+    if (!urlInput.trim()) {
+      alert('⚠️ Please enter a URL')
       return
-    }
-    
-    // Check if text extraction failed (error message in textarea)
-    if (summarizeText.includes('❌ Text extraction failed') || summarizeText.includes('⚠️ Could not extract text')) {
-      alert('⚠️ Cannot summarize - text extraction failed. Please paste text manually or try a different image.')
-      return
-    }
-    
-    // Validation: Text length for pasted content
-    if (!uploadedFile && summarizeText.trim().length < 50) {
-      alert('⚠️ Text too short to summarize. Please provide at least 50 characters.')
-      return
-    }
-    
-    if (summarizeText.length > 20000) {
-      alert('⚠️ Text too long. Please limit to 20,000 characters for optimal results.')
-      return
-    }
-    
-    // Validation: Check for sensitive content patterns
-    const sensitivePatterns = [
-      /\b(password|credit\s*card|ssn|social\s*security)\b/i,
-      /\b\d{3}-\d{2}-\d{4}\b/, // SSN pattern
-      /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/ // Credit card pattern
-    ]
-    
-    for (const pattern of sensitivePatterns) {
-      if (pattern.test(summarizeText)) {
-        alert('⚠️ Your text appears to contain sensitive information (passwords, credit cards, etc.). Please remove any personal or sensitive data before summarizing.')
-        return
-      }
     }
     
     setIsGenerating(true)
-    setSummarizedContent('') // Clear previous summary
+    setSummarizeText('')
     
     try {
-      let promptText = summarizeText
+      alert('🌐 Extracting content from URL... This may take a moment.')
       
-      if (uploadedFile) {
-        promptText = `Summarize this ${fileType} content creatively and professionally. Focus on key points and main ideas:\n\n${summarizeText}`
-      }
+      const response = await apiService.extractUrlContent(urlInput.trim())
       
-      const response = await apiService.generateContent({
-        prompt: `Provide a creative, professional, and insightful summary. Focus on main ideas, key points, and actionable insights. Keep it concise and valuable:\n\n${promptText}`,
-        type: 'article',
-        tone: 'creative',
-        max_tokens: 12000,  // Increased from 6000 to 12000 for more comprehensive summaries
-        skip_save: true  // Don't save to database or count toward usage limits
-      })
-      
-      if (response.success) {
-        // Add disclaimer to summary
-        const summaryWithDisclaimer = response.content.content + '\n\n---\n💡 Note: This is an AI-generated summary. Please verify important details from the original source.'
-        setSummarizedContent(summaryWithDisclaimer)
+      if (response.success && response.content) {
+        setSummarizeText(response.content)
+        const title = response.title ? `\n\nTitle: ${response.title}` : ''
+        alert(`✅ Content extracted successfully! Found ${response.word_count} words.${title}`)
       } else {
-        throw new Error(response.error || 'Summarization failed')
+        const errorMsg = response.error || 'Failed to extract content from URL'
+        alert(`⚠️ ${errorMsg}`)
+        setSummarizeText(`[URL: ${urlInput}]\n\nExtraction failed. Please try:\n• A different URL\n• Checking if the URL is accessible\n• Or paste text manually`)
       }
     } catch (error) {
-      console.error('Error summarizing:', error)
-      const errorMessage = error.message || 'Unknown error'
-      
-      // Check if it's a limit error
-      if (errorMessage.includes('Monthly content limit reached') || errorMessage.includes('limit reached')) {
-        alert('❌ This shouldn\'t happen! Summaries should not count toward your limit. Please refresh the page and try again.')
-      } else {
-        alert(`❌ Failed to summarize content: ${errorMessage}\n\nThis could be due to:\n- Network connectivity issues\n- API rate limits\n- Content restrictions\n\nPlease try again in a moment.`)
-      }
+      console.error('URL extraction error:', error)
+      alert('❌ Failed to extract content from URL. Please try again or paste text manually.')
+      setSummarizeText(`[URL: ${urlInput}]\n\nExtraction failed. Please paste text manually.`)
     } finally {
       setIsGenerating(false)
     }
   }
 
-  const fetchImprovements = async () => {
-    if (!currentUser) return
+  const handleSummarize = async () => {
+    if (!summarizeText.trim()) {
+      alert('⚠️ Please upload a file or paste text to summarize.')
+      return
+    }
     
+    // Validation: Text length
+    if (summarizeText.trim().length < 50) {
+      alert('⚠️ Text too short to summarize. Please provide at least 50 characters.')
+      return
+    }
+    
+    setIsGenerating(true)
+    setSummarizedContent('')
+    
+    try {
+      // Ultra-concise summarization prompt (5-10 lines max)
+      const summaryPrompt = `You are an expert at creating ultra-concise summaries. Summarize the following content:
+
+STRICT REQUIREMENTS:
+- Maximum 5-10 lines (about 100-150 words)
+- Use bullet points for clarity
+- Include ONLY the most critical information
+- Be extremely concise and direct
+- No fluff or unnecessary words
+
+Content to summarize:
+${summarizeText}
+
+Provide an ultra-brief summary following the requirements above.`
+      
+      const response = await apiService.generateContent({
+        prompt: summaryPrompt,
+        type: 'article',
+        tone: 'professional'
+      })
+      
+      if (response.success) {
+        setSummarizedContent(response.content.content)
+        // Initialize SamAI chat assistant with context
+        setAssistantMessages([
+          {
+            role: 'assistant',
+            content: '👋 Hi! I\'m SamAI, your summarization assistant. Ask me anything about the summary or the original content!'
+          }
+        ])
+      }
+    } catch (error) {
+      console.error('Error summarizing:', error)
+      alert('❌ Failed to summarize content. Please try again.')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleAssistantChat = async () => {
+    if (!assistantInput.trim()) return
+    
+    const userMessage = assistantInput.trim()
+    setAssistantInput('')
+    
+    // Add user message
+    setAssistantMessages(prev => [...prev, { role: 'user', content: userMessage }])
+    setIsAssistantThinking(true)
+    
+    try {
+      // Create context-aware prompt for SamAI
+      const contextPrompt = `You are SamAI, a helpful AI summarization assistant. The user has summarized some content and now has questions about it.
+
+Original Content:
+${summarizeText.substring(0, 2000)}...
+
+Summary:
+${summarizedContent}
+
+User Question: ${userMessage}
+
+As SamAI, provide a helpful, concise answer (2-4 sentences) based on the content above. If the question is about getting more details, provide them from the original content.`
+      
+      const response = await apiService.generateContent({
+        prompt: contextPrompt,
+        type: 'chat',
+        tone: 'conversational'
+      })
+      
+      if (response.success) {
+        setAssistantMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: response.content.content 
+        }])
+      }
+    } catch (error) {
+      console.error('Error in assistant chat:', error)
+      setAssistantMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: '❌ Sorry, I encountered an error. Please try again.' 
+      }])
+    } finally {
+      setIsAssistantThinking(false)
+    }
+  }
+
+  const fetchImprovements = async () => {
     setLoadingImprovements(true)
     try {
+      // Fetch user's content history and analytics
       const contentResponse = await apiService.getContent({ per_page: 10 })
-      const analyticsResponse = await apiService.getAnalyticsOverview(30)
+      const analyticsResponse = await apiService.getContentStats()
       
       if (contentResponse.success && analyticsResponse.success) {
         const contentHistory = contentResponse.content || []
-        const analytics = analyticsResponse.overview || {}
+        const stats = analyticsResponse.stats || {}
         
-        const analysisPrompt = `Based on this content creation history:
-- Total content created: ${analytics.total_content || 0}
-- Average engagement: ${analytics.avg_engagement_rate || 0}%
-- Content types: ${contentHistory.map(c => c.content_type).join(', ')}
+        // Build comprehensive analysis prompt
+        const analysisPrompt = `You are a content strategy expert. Analyze this creator's performance and provide 5 specific, actionable growth suggestions.
 
-Provide 5 specific, actionable suggestions to improve content creation and grow as a creator.`
+Creator's Data:
+- Total content created: ${contentHistory.length}
+- Content types: ${contentHistory.map(c => c.content_type).join(', ') || 'None yet'}
+- Recent activity: ${contentHistory.length > 0 ? 'Active' : 'Just starting'}
+
+Provide 5 SPECIFIC, ACTIONABLE suggestions to help them:
+1. Improve content quality
+2. Increase engagement
+3. Grow their audience
+4. Optimize their workflow
+5. Develop their unique voice
+
+Format each suggestion as a clear, actionable statement (not numbered). Make them practical and immediately implementable. Focus on what they can do TODAY to improve.`
         
         const response = await apiService.generateContent({
           prompt: analysisPrompt,
           type: 'article',
-          tone: 'professional',
-          skip_save: true  // Don't save to database or count toward usage limits
+          tone: 'professional'
         })
         
         if (response.success) {
-          const suggestions = response.content.content.split('\n').filter(line => line.trim())
-          setImprovements(suggestions.slice(0, 5))
+          // Parse suggestions from response
+          const suggestions = response.content.content
+            .split('\n')
+            .filter(line => line.trim() && line.length > 20)
+            .slice(0, 5)
+          
+          setImprovements(suggestions.length > 0 ? suggestions : [
+            'Create a consistent posting schedule to build audience expectations',
+            'Experiment with different content formats to find what resonates',
+            'Engage with your audience through questions and calls-to-action',
+            'Analyze your top-performing content and create similar pieces',
+            'Develop a unique voice that sets you apart from competitors'
+          ])
         }
       }
     } catch (error) {
       console.error('Error fetching improvements:', error)
+      // Provide default helpful suggestions
+      setImprovements([
+        'Start by creating diverse content types to discover your strengths',
+        'Focus on solving specific problems for your target audience',
+        'Use storytelling techniques to make your content more engaging',
+        'Optimize your headlines and opening lines to capture attention',
+        'Build a content calendar to maintain consistency and quality'
+      ])
     } finally {
       setLoadingImprovements(false)
     }
@@ -561,112 +637,86 @@ Provide 5 specific, actionable suggestions to improve content creation and grow 
       
       <Header />
 
-      <main className="pt-24 pb-12 relative z-10 content-layer">
+      <main className="pt-24 pb-12 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div ref={titleRef} className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight tracking-tight">
-              AI <span className="gradient-text">Content Creator</span>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4 theme-transition">
+              AI <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-500 bg-clip-text text-transparent">Content Creator</span>
             </h1>
-            <p className="text-gray-700 dark:text-blue-200 text-lg font-normal max-w-2xl mx-auto theme-transition">
+            <p className="text-gray-700 dark:text-gray-400 text-lg max-w-2xl mx-auto theme-transition">
               Generate, chat, summarize, and improve your content with AI-powered tools.
             </p>
           </div>
 
-          {/* Usage Stats Widget */}
-          <div className="max-w-2xl mx-auto mb-8">
-            <div className="glass-card rounded-xl p-4 theme-transition">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2">
-                  <span className="text-lg">📊</span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Monthly Usage</span>
-                </div>
-                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                  {usageStats.current_count} / {usageStats.monthly_limit}
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
-                <div 
-                  className={`h-2 rounded-full transition-all duration-500 ${
-                    usageStats.percentage_used >= 90 ? 'bg-red-500' :
-                    usageStats.percentage_used >= 70 ? 'bg-yellow-500' :
-                    'bg-green-500'
-                  }`}
-                  style={{ width: `${Math.min(usageStats.percentage_used, 100)}%` }}
-                ></div>
-              </div>
-              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-                <span>{usageStats.percentage_used}% used</span>
-                <span className="flex items-center space-x-1">
-                  <span>💡</span>
-                  <span>Chat & Summarize don't count!</span>
-                </span>
-              </div>
-            </div>
-          </div>
-
+          {/* Tab Navigation */}
           <div className="flex justify-center mb-8">
-            <div className="glass-card rounded-2xl p-2 inline-flex space-x-2 theme-transition">
+            <div className="glass-card rounded-2xl p-1.5 inline-flex space-x-1 shadow-lg theme-transition">
               <button
                 onClick={() => setActiveTab('generate')}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center space-x-2 ${
                   activeTab === 'generate'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white theme-transition'
                 }`}
               >
-                ✨ Generate
+                <span>✨</span>
+                <span>Generate</span>
               </button>
               <button
                 onClick={() => setActiveTab('chat')}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center space-x-2 ${
                   activeTab === 'chat'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white theme-transition'
                 }`}
               >
-                💬 Chat Assistant
+                <span>💬</span>
+                <span>Chat Assistant</span>
               </button>
               <button
                 onClick={() => setActiveTab('summarize')}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center space-x-2 ${
                   activeTab === 'summarize'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white theme-transition'
                 }`}
               >
-                📄 Summarize
+                <span>📄</span>
+                <span>Summarize</span>
               </button>
               <button
                 onClick={() => setActiveTab('improve')}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center space-x-2 ${
                   activeTab === 'improve'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white theme-transition'
                 }`}
               >
-                🎯 Improve
+                <span>🎯</span>
+                <span>Improve</span>
               </button>
             </div>
           </div>
 
           {/* GENERATE TAB */}
           {activeTab === 'generate' && (
-            <div className="grid lg:grid-cols-2 gap-12">
-              <div ref={formRef} className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 theme-transition">
-                <div className="flex items-center space-x-3 mb-8">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center">
-                    <span className="text-white text-xl">✏️</span>
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Left Panel - AI Content Creator */}
+              <div ref={formRef} className="glass-card rounded-2xl p-6 shadow-lg theme-transition">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-lg">✏️</span>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 theme-transition">AI Content Creator</h3>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white theme-transition">AI Content Creator</h3>
                 </div>
 
-                {/* Usage Guidelines */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 mb-6 border border-blue-200 dark:border-blue-800">
+                {/* Content Guidelines */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl p-4 mb-6 theme-transition">
                   <div className="flex items-start space-x-2">
-                    <span className="text-lg">💡</span>
+                    <span className="text-blue-600 dark:text-blue-400">💡</span>
                     <div className="flex-1">
-                      <p className="text-sm text-gray-800 dark:text-gray-200 font-semibold mb-1">Content Guidelines:</p>
-                      <ul className="text-xs text-gray-700 dark:text-gray-300 space-y-1">
+                      <p className="text-sm text-blue-900 dark:text-blue-300 font-semibold mb-2 theme-transition">Content Guidelines:</p>
+                      <ul className="text-xs text-blue-800 dark:text-gray-400 space-y-1 theme-transition">
                         <li>• Prompt length: 10-5000 characters for best results</li>
                         <li>• Focus on professional, legitimate content creation</li>
                         <li>• AI-generated content requires human review before publishing</li>
@@ -677,15 +727,15 @@ Provide 5 specific, actionable suggestions to improve content creation and grow 
                   </div>
                 </div>
                 
-                <div className="space-y-6">
+                <div className="space-y-5">
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 dark:text-gray-200 mb-3 theme-transition">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide theme-transition">
                       Content Type
                     </label>
                     <select
                       value={contentType}
                       onChange={(e) => setContentType(e.target.value)}
-                      className="form-input w-full p-4 rounded-xl transition-all duration-200 text-gray-900 dark:text-gray-100"
+                      className="w-full bg-gray-50 dark:bg-[#0f1419] border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors theme-transition"
                     >
                       <option value="article">Article</option>
                       <option value="social-post">Social Media Post</option>
@@ -698,7 +748,7 @@ Provide 5 specific, actionable suggestions to improve content creation and grow 
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 dark:text-gray-200 mb-3 theme-transition">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide theme-transition">
                       Content Prompt (10-3000 chars)
                     </label>
                     <textarea
@@ -706,24 +756,21 @@ Provide 5 specific, actionable suggestions to improve content creation and grow 
                       onChange={(e) => setPrompt(e.target.value)}
                       placeholder="Describe what content you want to create..."
                       maxLength={5000}
-                      className="form-input w-full p-4 rounded-xl h-32 resize-none text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 theme-transition"
+                      className="w-full bg-gray-50 dark:bg-[#0f1419] border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors h-32 resize-none theme-transition"
                     />
-                    <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mt-2">
+                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500 mt-1 theme-transition">
                       <span>Characters: {prompt.length}/5000</span>
-                      {prompt.length > 4500 && (
-                        <span className="text-orange-600 dark:text-orange-400">⚠️ Approaching limit</span>
-                      )}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 dark:text-gray-200 mb-3 theme-transition">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide theme-transition">
                       Tone & Style
                     </label>
                     <select
                       value={tone}
                       onChange={(e) => setTone(e.target.value)}
-                      className="form-input w-full p-4 rounded-xl transition-all duration-200 text-gray-900 dark:text-gray-100"
+                      className="w-full bg-gray-50 dark:bg-[#0f1419] border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors theme-transition"
                     >
                       <option value="professional">Professional</option>
                       <option value="casual">Casual</option>
@@ -739,12 +786,12 @@ Provide 5 specific, actionable suggestions to improve content creation and grow 
                   <button
                     onClick={handleGenerate}
                     disabled={!prompt || isGenerating}
-                    className="w-full btn-primary btn-ripple text-white py-4 px-6 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="w-full bg-indigo-400 hover:bg-indigo-500 dark:bg-gray-400 dark:hover:bg-gray-500 text-white dark:text-gray-900 font-semibold py-3.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed theme-transition"
                   >
                     {isGenerating ? (
                       <div className="flex items-center justify-center space-x-2">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full loading-spinner"></div>
-                        <span>Generating...</span>
+                        <div className="w-5 h-5 border-2 border-white/30 dark:border-gray-700/30 border-t-white dark:border-t-gray-700 rounded-full animate-spin"></div>
+                        <span>Generating Content...</span>
                       </div>
                     ) : (
                       'Generate Content'
@@ -753,56 +800,57 @@ Provide 5 specific, actionable suggestions to improve content creation and grow 
                 </div>
               </div>
 
-              <div ref={resultRef} className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 theme-transition">
-                <div className="flex items-center space-x-3 mb-8">
-                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-xl flex items-center justify-center">
-                    <span className="text-white text-xl">📄</span>
+              {/* Right Panel - Generated Content */}
+              <div ref={resultRef} className="glass-card rounded-2xl p-6 shadow-lg theme-transition">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-lg">📄</span>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 theme-transition">Generated Content</h3>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white theme-transition">Generated Content</h3>
                 </div>
                 
                 {generatedContent ? (
-                  <div className="space-y-6">
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 theme-transition max-h-96 overflow-y-auto">
-                      <pre className="generated-content-text text-gray-900 dark:text-gray-200 whitespace-pre-wrap leading-relaxed theme-transition font-sans text-sm">
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 dark:bg-[#0f1419] rounded-xl p-5 border border-gray-200 dark:border-gray-800 max-h-96 overflow-y-auto theme-transition">
+                      <pre className="generated-content-text text-gray-900 dark:text-gray-300 whitespace-pre-wrap leading-relaxed font-sans text-sm theme-transition">
                         {generatedContent}
                       </pre>
                     </div>
-                    <div className="grid grid-cols-4 gap-3">
+                    <div className="grid grid-cols-4 gap-2">
                       <button 
                         onClick={handleCopy}
-                        className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple"
+                        className="bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-3 rounded-xl transition-all text-sm font-medium"
                       >
                         Copy
                       </button>
                       <button 
                         onClick={handleEdit}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-xl transition-all text-sm font-medium"
                       >
                         Edit
                       </button>
                       <button 
-                        onClick={handleGenerate}
+                        onClick={handleImprove}
                         disabled={isGenerating}
-                        className="bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple disabled:opacity-50"
+                        className="bg-purple-600 hover:bg-purple-700 text-white py-2.5 px-3 rounded-xl transition-all text-sm font-medium disabled:opacity-50"
                       >
-                        Regenerate
+                        Improve
                       </button>
                       <button 
                         onClick={handleSave}
                         disabled={loading}
-                        className="bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple disabled:opacity-50"
+                        className="bg-gray-600 hover:bg-gray-700 text-white py-2.5 px-3 rounded-xl transition-all text-sm font-medium disabled:opacity-50"
                       >
                         Save
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-16">
-                    <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-6 theme-transition">
+                  <div className="text-center py-20">
+                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4 theme-transition">
                       <span className="text-3xl">✨</span>
                     </div>
-                    <p className="text-gray-800 dark:text-gray-400 text-lg font-normal theme-transition">
+                    <p className="text-gray-600 dark:text-gray-400 text-base theme-transition">
                       Your generated content will appear here
                     </p>
                   </div>
@@ -814,139 +862,107 @@ Provide 5 specific, actionable suggestions to improve content creation and grow 
           {/* CHAT ASSISTANT TAB */}
           {activeTab === 'chat' && (
             <div className="max-w-5xl mx-auto">
-              <div ref={formRef} className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 theme-transition">
+              <div className="glass-card rounded-2xl p-6 shadow-lg theme-transition">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-teal-700 rounded-xl flex items-center justify-center">
-                      <span className="text-white text-xl">💬</span>
+                    <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white text-lg">💬</span>
                     </div>
-                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 theme-transition">Alex - Chat Assistant</h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white theme-transition">Alex - Chat Assistant</h3>
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {chatMessages.length}/100 messages
-                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400 theme-transition">{chatMessages.length}/100 messages</span>
                 </div>
 
                 {/* Usage Guidelines */}
-                <div className="bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 rounded-xl p-4 mb-4 border border-green-200 dark:border-green-800">
+                <div className="bg-gray-100 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 rounded-xl p-4 mb-6 theme-transition">
                   <div className="flex items-start space-x-2">
-                    <span className="text-lg">ℹ️</span>
+                    <span className="text-gray-600 dark:text-gray-400">📘</span>
                     <div className="flex-1">
-                      <p className="text-sm text-gray-800 dark:text-gray-200 font-semibold mb-1">Usage Guidelines:</p>
-                      <ul className="text-xs text-gray-700 dark:text-gray-300 space-y-1">
+                      <p className="text-sm text-gray-900 dark:text-gray-200 font-semibold mb-2 theme-transition">Usage Guidelines:</p>
+                      <ul className="text-xs text-gray-700 dark:text-gray-400 space-y-1 theme-transition">
                         <li>• Focus on content creation, writing, and creative tasks</li>
                         <li>• Messages: 3-4000 characters | Session limit: 50 exchanges</li>
                         <li>• No personal info, illegal content, or harmful requests</li>
                         <li>• AI responses are suggestions - always review before use</li>
-                        <li>• ℹ️ Chat conversations are not saved to Analytics</li>
+                        <li>• 💬 Chat conversations are not saved to Analytics</li>
                       </ul>
                     </div>
                   </div>
                 </div>
-
-                <div 
-                  ref={chatContainerRef}
-                  className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700 theme-transition h-96 overflow-y-auto mb-4 scroll-smooth"
-                >
+                
+                {/* Chat Messages */}
+                <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6 h-96 overflow-y-auto mb-4 space-y-4 theme-transition border border-gray-100 dark:border-gray-800">
                   {chatMessages.length === 0 ? (
-                    <div className="text-center py-16">
-                      <div className="w-20 h-20 bg-gradient-to-br from-green-100 to-teal-100 dark:from-green-900 dark:to-teal-900 rounded-2xl flex items-center justify-center mx-auto mb-6 theme-transition">
-                        <span className="text-3xl">💬</span>
+                    <div className="flex flex-col items-center justify-center space-y-6 h-full">
+                      <div className="w-20 h-20 bg-green-600 dark:bg-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                        <span className="text-4xl">💬</span>
                       </div>
-                      <p className="text-gray-800 dark:text-gray-400 text-lg font-normal mb-2 theme-transition">
-                        Hey! I'm <span className="font-bold text-green-600 dark:text-green-400">Alex</span>, your content buddy 👋
-                      </p>
-                      <p className="text-gray-600 dark:text-gray-500 text-sm mb-4 theme-transition">
-                        Let's chat about your writing!
-                      </p>
-                      <div className="flex flex-wrap gap-2 justify-center">
-                        <button
-                          onClick={() => setChatInput('Hey Alex! Can you help me write a blog post?')}
-                          className="px-4 py-2 bg-green-100 dark:bg-green-900 text-gray-900 dark:text-gray-100 rounded-lg text-sm hover:bg-green-200 dark:hover:bg-green-800 transition-all"
+                      <div className="text-center">
+                        <p className="text-gray-900 dark:text-gray-200 text-lg font-medium mb-2 theme-transition">
+                          Hey! I'm <span className="text-green-600 dark:text-green-400 font-bold">Alex</span>, your content buddy 👋
+                        </p>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm theme-transition">Let's chat about your writing!</p>
+                      </div>
+                      <div className="flex flex-wrap justify-center gap-3">
+                        <button 
+                          onClick={() => setChatInput('Help with blog post')}
+                          className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
                         >
                           Help with blog post
                         </button>
-                        <button
-                          onClick={() => setChatInput('I need some content ideas!')}
-                          className="px-4 py-2 bg-teal-100 dark:bg-teal-900 text-gray-900 dark:text-gray-100 rounded-lg text-sm hover:bg-teal-200 dark:hover:bg-teal-800 transition-all"
+                        <button 
+                          onClick={() => setChatInput('Need ideas')}
+                          className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
                         >
                           Need ideas
                         </button>
-                        <button
-                          onClick={() => setChatInput('How can I make my writing better?')}
-                          className="px-4 py-2 bg-green-100 dark:bg-green-900 text-gray-900 dark:text-gray-100 rounded-lg text-sm hover:bg-green-200 dark:hover:bg-green-800 transition-all"
+                        <button 
+                          onClick={() => setChatInput('Improve my writing')}
+                          className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
                         >
                           Improve my writing
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-4 min-h-full">
-                      {chatMessages.map((message, index) => (
-                        <div
-                          key={index}
-                          className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                        >
-                          <div className="flex items-start space-x-2 max-w-[80%]">
-                            {message.role === 'assistant' && (
-                              <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center">
-                                <span className="text-white text-sm font-bold">A</span>
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              {message.role === 'assistant' && (
-                                <div className="text-xs font-semibold text-green-700 dark:text-green-400 mb-1 ml-1">
-                                  Alex
-                                </div>
-                              )}
-                              <div
-                                className={`p-4 rounded-2xl ${
-                                  message.role === 'user'
-                                    ? 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-600 dark:to-indigo-700 text-gray-900 dark:text-white border border-blue-200 dark:border-transparent'
-                                    : 'bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-600 dark:to-teal-700 text-gray-900 dark:text-white border border-green-200 dark:border-transparent'
-                                }`}
-                              >
-                                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                              </div>
-                            </div>
-                            {message.role === 'user' && (
-                              <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-full flex items-center justify-center">
-                                <span className="text-white text-xs font-bold">You</span>
-                              </div>
-                            )}
+                    <>
+                      {chatMessages.map((msg, idx) => (
+                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
+                            msg.role === 'user' 
+                              ? 'bg-blue-600 text-white' 
+                              : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-700 theme-transition'
+                          }`}>
+                            {msg.content}
                           </div>
                         </div>
                       ))}
-                      <div ref={chatEndRef} className="h-0" />
-                    </div>
+                      <div ref={chatEndRef} />
+                    </>
                   )}
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-                    <span>Message length: {chatInput.length}/4000</span>
-                    {chatInput.length > 3600 && (
-                      <span className="text-orange-600 dark:text-orange-400">⚠️ Approaching limit</span>
-                    )}
-                  </div>
-                  <div className="flex space-x-3">
-                    <input
-                      type="text"
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleChatSend()}
-                      placeholder="Type your message..."
-                      maxLength={4000}
-                      className="form-input flex-1 p-4 rounded-xl text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                    />
-                    <button
-                      onClick={handleChatSend}
-                      disabled={!chatInput.trim() || isGenerating || chatMessages.length >= 100}
-                      className="bg-gradient-to-br from-green-600 to-teal-700 hover:from-green-700 hover:to-teal-800 text-white py-4 px-8 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all btn-ripple"
-                    >
-                      {isGenerating ? '...' : 'Send'}
-                    </button>
-                  </div>
+                
+                {/* Chat Input */}
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="text-xs text-gray-500 dark:text-gray-500 theme-transition">Message length: {chatInput.length}/4000</div>
+                </div>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleChatSend()}
+                    placeholder="Type your message..."
+                    maxLength={4000}
+                    className="flex-1 bg-white dark:bg-gray-900/30 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors theme-transition"
+                  />
+                  <button
+                    onClick={handleChatSend}
+                    disabled={!chatInput.trim() || isGenerating}
+                    className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+                  >
+                    Send
+                  </button>
                 </div>
               </div>
             </div>
@@ -954,52 +970,88 @@ Provide 5 specific, actionable suggestions to improve content creation and grow 
 
           {/* SUMMARIZE TAB */}
           {activeTab === 'summarize' && (
-            <div className="grid lg:grid-cols-2 gap-12">
-              <div ref={formRef} className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 theme-transition">
-                <div className="flex items-center space-x-3 mb-8">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-600 to-red-700 rounded-xl flex items-center justify-center">
-                    <span className="text-white text-xl">📄</span>
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Left Panel - Summarize Content */}
+              <div className="glass-card rounded-2xl p-6 shadow-lg theme-transition">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-lg">📄</span>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 theme-transition">Summarize Content</h3>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white theme-transition">Summarize Content</h3>
                 </div>
 
-                {/* Usage Guidelines */}
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-xl p-4 mb-6 border border-orange-200 dark:border-orange-800">
+                {/* Safety Guidelines */}
+                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/50 rounded-xl p-4 mb-6 theme-transition">
                   <div className="flex items-start space-x-2">
-                    <span className="text-lg">⚠️</span>
+                    <span className="text-orange-600 dark:text-orange-400">⚠️</span>
                     <div className="flex-1">
-                      <p className="text-sm text-gray-800 dark:text-gray-200 font-semibold mb-1">Safety Guidelines:</p>
-                      <ul className="text-xs text-gray-700 dark:text-gray-300 space-y-1">
-                        <li>• File limit: 10MB | Text limit: 20,000 characters</li>
-                        <li>• Supported: JPEG, PNG, GIF, WebP, Text, PDF</li>
+                      <p className="text-sm text-orange-900 dark:text-orange-300 font-semibold mb-2 theme-transition">Safety Guidelines:</p>
+                      <ul className="text-xs text-orange-800 dark:text-gray-400 space-y-1 theme-transition">
+                        <li>• File limit: 25MB | Text limit: 20,000 characters</li>
+                        <li>• Supported: Images (JPEG, PNG, GIF, WebP), Audio/Video (MP3, MP4, WAV, M4A, WebM), Text, PDF</li>
                         <li>• Never upload sensitive data (passwords, credit cards, SSN)</li>
                         <li>• AI summaries are for reference - verify important details</li>
-                        <li>• ℹ️ Summaries are not saved to Analytics</li>
+                        <li>• 📊 Summaries are not saved to Analytics</li>
                       </ul>
                     </div>
                   </div>
                 </div>
                 
-                <div className="space-y-6">
+                <div className="space-y-5">
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 dark:text-gray-200 mb-3 theme-transition">
-                      Upload File (Max 10MB)
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide theme-transition">
+                      Upload File (Max 25MB) - Text, Image, Audio, or Video
                     </label>
                     <input
                       type="file"
-                      accept="image/*,text/*,.pdf"
                       onChange={handleFileUpload}
-                      className="form-input w-full p-4 rounded-xl transition-all duration-200 text-gray-900 dark:text-gray-100"
+                      accept=".txt,.pdf,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.avi,.mkv,.webm,.mp3,.wav,.m4a,.mpeg,.mpga"
+                      className="w-full bg-gray-50 dark:bg-[#0f1419] border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer theme-transition"
                     />
-                    {uploadedFile && (
-                      <p className="text-sm text-green-600 dark:text-green-400 mt-2">
-                        ✓ Uploaded: {uploadedFile.name} ({(uploadedFile.size / 1024).toFixed(1)} KB)
-                      </p>
-                    )}
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white dark:bg-[#1a1f2e] text-gray-500 dark:text-gray-400">OR</span>
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 dark:text-gray-200 mb-3 theme-transition">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide theme-transition">
+                      Paste URL to Extract Content
+                    </label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="url"
+                        value={urlInput}
+                        onChange={(e) => setUrlInput(e.target.value)}
+                        placeholder="https://example.com/article"
+                        className="flex-1 bg-gray-50 dark:bg-[#0f1419] border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 focus:outline-none focus:border-orange-500 transition-colors theme-transition"
+                      />
+                      <button
+                        onClick={handleUrlExtraction}
+                        disabled={!urlInput.trim() || isGenerating}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        Extract
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white dark:bg-[#1a1f2e] text-gray-500 dark:text-gray-400">OR</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide theme-transition">
                       Or Paste Text (50-20,000 chars)
                     </label>
                     <textarea
@@ -1007,79 +1059,142 @@ Provide 5 specific, actionable suggestions to improve content creation and grow 
                       onChange={(e) => setSummarizeText(e.target.value)}
                       placeholder="Paste your text here to summarize..."
                       maxLength={20000}
-                      className="form-input w-full p-4 rounded-xl h-48 resize-none text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 theme-transition"
+                      className="w-full bg-gray-50 dark:bg-[#0f1419] border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 focus:outline-none focus:border-orange-500 transition-colors h-48 resize-none theme-transition"
                     />
-                    <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mt-2">
+                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500 mt-1 theme-transition">
                       <span>Characters: {summarizeText.length}/20,000</span>
-                      {summarizeText.length > 18000 && (
-                        <span className="text-orange-600 dark:text-orange-400">⚠️ Approaching limit</span>
-                      )}
                     </div>
                   </div>
 
                   <button
-                    onClick={handleSummarizeFile}
-                    disabled={(!uploadedFile && !summarizeText.trim()) || isGenerating}
-                    className="w-full bg-gradient-to-br from-orange-600 to-red-700 hover:from-orange-700 hover:to-red-800 text-white py-4 px-6 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all btn-ripple"
+                    onClick={handleSummarize}
+                    disabled={!summarizeText.trim() || isGenerating}
+                    className="w-full bg-red-300 hover:bg-red-400 dark:bg-orange-600 dark:hover:bg-orange-700 text-gray-900 dark:text-white font-semibold py-3.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed theme-transition"
                   >
-                    {isGenerating ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full loading-spinner"></div>
-                        <span>Summarizing...</span>
-                      </div>
-                    ) : (
-                      'Summarize'
-                    )}
+                    {isGenerating ? 'Summarizing...' : 'Summarize'}
                   </button>
                 </div>
               </div>
 
-              <div ref={resultRef} className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 theme-transition">
-                <div className="flex items-center space-x-3 mb-8">
-                  <div className="w-12 h-12 bg-gradient-to-br from-red-600 to-orange-700 rounded-xl flex items-center justify-center">
-                    <span className="text-white text-xl">✨</span>
+              {/* Right Panel - Summary Result */}
+              <div className="glass-card rounded-2xl p-6 shadow-lg theme-transition">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white text-lg">✨</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white theme-transition">Summary Result</h3>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 theme-transition">Summary Result</h3>
+                  {summarizedContent && (
+                    <button
+                      onClick={() => setShowChatAssistant(!showChatAssistant)}
+                      className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm"
+                    >
+                      <span>💬</span>
+                      <span>{showChatAssistant ? 'Hide' : 'Ask Questions'}</span>
+                    </button>
+                  )}
                 </div>
                 
                 {summarizedContent ? (
-                  <div className="space-y-6">
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 theme-transition max-h-96 overflow-y-auto">
-                      <pre className="text-gray-900 dark:text-gray-200 whitespace-pre-wrap leading-relaxed theme-transition font-sans text-sm">
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 dark:bg-[#0f1419] rounded-xl p-5 border border-gray-200 dark:border-gray-800 max-h-[300px] overflow-y-auto theme-transition">
+                      <p className="text-gray-900 dark:text-gray-300 whitespace-pre-wrap leading-relaxed text-sm theme-transition">
                         {summarizedContent}
-                      </pre>
+                      </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button 
-                        onClick={async () => {
-                          await navigator.clipboard.writeText(summarizedContent)
-                          alert('Summary copied!')
-                        }}
-                        className="bg-orange-600 hover:bg-orange-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple"
-                      >
-                        Copy Summary
-                      </button>
-                      <button 
-                        onClick={() => {
-                          setSummarizedContent('')
-                          setSummarizeText('')
-                          setUploadedFile(null)
-                        }}
-                        className="bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-xl transition-all duration-75 font-semibold text-sm btn-ripple"
-                      >
-                        Clear
-                      </button>
-                    </div>
+
+                    {/* SamAI Chat Assistant */}
+                    {showChatAssistant && (
+                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800 theme-transition">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <span className="text-lg">🤖</span>
+                          <h4 className="font-semibold text-gray-900 dark:text-white text-sm theme-transition">SamAI - Summarization Assistant</h4>
+                        </div>
+                        
+                        {/* Messages */}
+                        <div className="bg-white dark:bg-[#0f1419] rounded-lg p-3 mb-3 max-h-[200px] overflow-y-auto space-y-2 theme-transition">
+                          {assistantMessages.map((msg, idx) => (
+                            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                              <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                                msg.role === 'user' 
+                                  ? 'bg-blue-600 text-white' 
+                                  : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300'
+                              }`}>
+                                {msg.content}
+                              </div>
+                            </div>
+                          ))}
+                          {isAssistantThinking && (
+                            <div className="flex justify-start">
+                              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-2 text-sm text-gray-600 dark:text-gray-400">
+                                Thinking...
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Input */}
+                        <div className="flex space-x-2">
+                          <input
+                            type="text"
+                            value={assistantInput}
+                            onChange={(e) => setAssistantInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && handleAssistantChat()}
+                            placeholder="Ask about the content..."
+                            className="flex-1 bg-white dark:bg-[#0f1419] border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 theme-transition"
+                          />
+                          <button
+                            onClick={handleAssistantChat}
+                            disabled={!assistantInput.trim() || isAssistantThinking}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                          >
+                            Send
+                          </button>
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            onClick={() => {
+                              setAssistantInput('Can you provide more details?')
+                              setTimeout(() => handleAssistantChat(), 100)
+                            }}
+                            className="text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all"
+                          >
+                            📝 More Details
+                          </button>
+                          <button
+                            onClick={() => {
+                              setAssistantInput('What are the key takeaways?')
+                              setTimeout(() => handleAssistantChat(), 100)
+                            }}
+                            className="text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all"
+                          >
+                            🎯 Key Points
+                          </button>
+                          <button
+                            onClick={() => {
+                              setAssistantInput('Explain this in simpler terms')
+                              setTimeout(() => handleAssistantChat(), 100)
+                            }}
+                            className="text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transition-all"
+                          >
+                            💡 Simplify
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="text-center py-16">
-                    <div className="w-20 h-20 bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900 dark:to-red-900 rounded-2xl flex items-center justify-center mx-auto mb-6 theme-transition">
-                      <span className="text-3xl">📝</span>
+                  <div className="text-center py-20">
+                    <div className="w-16 h-16 bg-orange-100 dark:bg-orange-800 rounded-2xl flex items-center justify-center mx-auto mb-4 theme-transition">
+                      <span className="text-3xl">📄</span>
                     </div>
-                    <p className="text-gray-800 dark:text-gray-400 text-lg font-normal theme-transition">
+                    <p className="text-gray-600 dark:text-gray-400 text-base mb-2 theme-transition">
                       Your creative summary will appear here
                     </p>
-                    <p className="text-gray-600 dark:text-gray-500 text-sm mt-2 theme-transition">
+                    <p className="text-gray-500 dark:text-gray-500 text-sm theme-transition">
                       Upload a file or paste text to get started
                     </p>
                   </div>
@@ -1091,84 +1206,46 @@ Provide 5 specific, actionable suggestions to improve content creation and grow 
           {/* IMPROVE TAB */}
           {activeTab === 'improve' && (
             <div className="max-w-5xl mx-auto">
-              <div ref={formRef} className="glass-card rounded-2xl md:rounded-3xl p-6 md:p-8 theme-transition">
-                <div className="flex items-center justify-between mb-8">
+              <div className="glass-card rounded-2xl p-6 shadow-lg theme-transition">
+                <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-xl flex items-center justify-center">
-                      <span className="text-white text-xl">🎯</span>
+                    <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white text-lg">🎯</span>
                     </div>
-                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 theme-transition">Growth Suggestions</h3>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white theme-transition">Growth Suggestions</h3>
                   </div>
                   <button
                     onClick={fetchImprovements}
                     disabled={loadingImprovements}
-                    className="bg-gradient-to-br from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white py-2 px-6 rounded-xl font-semibold disabled:opacity-50 transition-all btn-ripple"
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
                   >
-                    {loadingImprovements ? 'Analyzing...' : 'Refresh'}
+                    Refresh
                   </button>
                 </div>
-
-                {loadingImprovements ? (
-                  <div className="text-center py-16">
-                    <div className="w-16 h-16 border-4 border-purple-200 dark:border-purple-800 border-t-purple-600 rounded-full loading-spinner mx-auto mb-4"></div>
-                    <p className="text-gray-800 dark:text-gray-400 text-lg font-normal theme-transition">
-                      Analyzing your content history...
-                    </p>
-                  </div>
-                ) : improvements.length > 0 ? (
-                  <div className="space-y-4">
-                    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-800 theme-transition mb-6">
-                      <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
-                        📊 Content Analysis Complete
-                      </h4>
-                      <p className="text-gray-700 dark:text-gray-300 text-sm">
-                        Based on your content history and performance metrics, here are personalized suggestions to help you grow:
-                      </p>
-                    </div>
-
-                    {improvements.map((suggestion, index) => (
-                      <div
-                        key={index}
-                        className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 theme-transition hover:shadow-lg transition-all"
-                      >
-                        <div className="flex items-start space-x-4">
-                          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-xl flex items-center justify-center flex-shrink-0">
-                            <span className="text-white font-bold">{index + 1}</span>
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-gray-900 dark:text-gray-100 leading-relaxed">
-                              {suggestion}
-                            </p>
-                          </div>
-                        </div>
+                
+                {improvements.length > 0 ? (
+                  <div className="space-y-3">
+                    {improvements.map((improvement, idx) => (
+                      <div key={idx} className="bg-gray-50 dark:bg-[#0f1419] border border-gray-200 dark:border-gray-800 rounded-xl p-4 hover:border-purple-600 dark:hover:border-purple-600 transition-colors theme-transition">
+                        <p className="text-gray-900 dark:text-gray-300 theme-transition">{improvement}</p>
                       </div>
                     ))}
-
-                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 border border-indigo-200 dark:border-indigo-800 theme-transition mt-6">
-                      <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
-                        💡 Pro Tip
-                      </h4>
-                      <p className="text-gray-700 dark:text-gray-300 text-sm">
-                        Implement these suggestions gradually and track your progress. Click "Refresh" to get updated recommendations based on your latest content.
-                      </p>
-                    </div>
                   </div>
                 ) : (
-                  <div className="text-center py-16">
-                    <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900 dark:to-indigo-900 rounded-2xl flex items-center justify-center mx-auto mb-6 theme-transition">
+                  <div className="text-center py-20">
+                    <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                       <span className="text-3xl">🎯</span>
                     </div>
-                    <p className="text-gray-800 dark:text-gray-400 text-lg font-normal mb-4 theme-transition">
-                      No suggestions available yet
-                    </p>
-                    <p className="text-gray-600 dark:text-gray-500 text-sm mb-6 theme-transition">
+                    <p className="text-gray-900 dark:text-white text-lg font-medium mb-2 theme-transition">No suggestions available yet</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-6 theme-transition">
                       Create some content first, then come back for personalized growth suggestions
                     </p>
                     <button
                       onClick={fetchImprovements}
-                      className="bg-gradient-to-br from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white py-3 px-8 rounded-xl font-semibold transition-all btn-ripple"
+                      disabled={loadingImprovements}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all disabled:opacity-50"
                     >
-                      Analyze Now
+                      {loadingImprovements ? 'Analyzing...' : 'Analyze Now'}
                     </button>
                   </div>
                 )}
