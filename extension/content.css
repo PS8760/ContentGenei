@@ -1,0 +1,130 @@
+/* Styles for LinkoGenei save buttons and notifications */
+
+.linkogenei-save-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.linkogenei-save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+.linkogenei-save-btn:active {
+  transform: translateY(0);
+}
+
+.linkogenei-save-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.linkogenei-save-btn.saved {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+}
+
+.linkogenei-save-btn svg {
+  flex-shrink: 0;
+}
+
+/* Spinner animation */
+.linkogenei-save-btn .spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Notification styles */
+.linkogenei-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 999999;
+  padding: 14px 20px;
+  background: white;
+  color: #333;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateX(400px);
+  transition: all 0.3s ease;
+}
+
+.linkogenei-notification.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.linkogenei-notification.success {
+  border-left: 4px solid #4caf50;
+}
+
+.linkogenei-notification.error {
+  border-left: 4px solid #f44336;
+}
+
+/* Platform-specific adjustments */
+
+/* Instagram */
+body[class*="instagram"] .linkogenei-save-btn {
+  top: 8px;
+  right: 8px;
+}
+
+/* LinkedIn */
+body[class*="linkedin"] .linkogenei-save-btn {
+  top: 16px;
+  right: 16px;
+}
+
+/* Twitter/X */
+body[class*="twitter"] .linkogenei-save-btn,
+body[class*="x.com"] .linkogenei-save-btn {
+  top: 10px;
+  right: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .linkogenei-save-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .linkogenei-save-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .linkogenei-notification {
+    right: 10px;
+    left: 10px;
+    top: 10px;
+  }
+}

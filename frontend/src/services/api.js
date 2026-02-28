@@ -305,6 +305,14 @@ class ApiService {
   async exportChat(otherUserId) {
     return this.request(`/team/chat/${otherUserId}/export`)
   }
+
+  // ==================== LINKOGENEI ====================
+  
+  async generateLinkoGeneiToken() {
+    return this.request('/linkogenei/generate-token', {
+      method: 'POST'
+    })
+  }
 }
 
 export default new ApiService()

@@ -42,24 +42,68 @@ def create_app(config_name=None):
         "https://*.vercel.app"
     ]
     
+    # Add support for Chrome extensions and social media sites
     CORS(app, 
          origins=cors_origins,
          supports_credentials=True,
          allow_headers=["Content-Type", "Authorization"],
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         expose_headers=["Content-Type", "Authorization"],
+         resources={
+             r"/api/*": {
+                 "origins": "*",  # Allow all origins for API
+                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                 "allow_headers": ["Content-Type", "Authorization"],
+                 "expose_headers": ["Content-Type", "Authorization"],
+                 "supports_credentials": False  # Must be False when origins is *
+             }
+         }
     )
+    
+    # Additional CORS handling for all requests (including preflight)
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            response = app.make_default_options_response()
+            origin = request.headers.get('Origin')
+            
+            # Allow any origin for OPTIONS requests
+            response.headers['Access-Control-Allow-Origin'] = origin if origin else '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+            response.headers['Access-Control-Max-Age'] = '3600'
+            
+            return response
+    
+    @app.after_request
+    def after_request(response):
+        origin = request.headers.get('Origin')
+        
+        # Set CORS headers for all responses
+        if origin:
+            response.headers['Access-Control-Allow-Origin'] = origin
+        else:
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Expose-Headers'] = 'Content-Type, Authorization'
+        
+        return response
     
     # Register blueprints
     from routes.auth import auth_bp
     from routes.content import content_bp
     from routes.analytics import analytics_bp
     from routes.team import team_bp
+    from routes.linkogenei import linkogenei_bp
     # from routes.geneilink import geneilink_bp  # TODO: Enable in future
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(content_bp, url_prefix='/api/content')
     app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
     app.register_blueprint(team_bp, url_prefix='/api/team')
+    app.register_blueprint(linkogenei_bp)  # Already has url_prefix in blueprint
     # app.register_blueprint(geneilink_bp, url_prefix='/api/geneilink')  # TODO: Enable in future
     
     # Health check endpoint

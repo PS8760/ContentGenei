@@ -17,3 +17,4 @@ Pillow>=10.2.0
 validators==0.22.0
 cryptography==46.0.4
 beautifulsoup4==4.12.2
+pymongo==4.6.1
