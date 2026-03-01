@@ -1,0 +1,732 @@
+import { useEffect, useState, useRef } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { gsap } from 'gsap'
+import { 
+  User, MapPin, Briefcase, Edit2, Save, X, Check, AlertCircle,
+  Linkedin, Twitter, Instagram, Youtube, TrendingUp, Clock, FileText,
+  Target, Sparkles, Link as LinkIcon, Star, Trash2, MessageCircle, Users
+} from 'lucide-react'
+import Footer from '../components/Footer'
+import ParticlesBackground from '../components/ParticlesBackground'
+
+const Profile = () => {
+  const { currentUser } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [message, setMessage] = useState({ type: '', text: '' })
+  
+  // Local stats from localStorage
+  const [localStats, setLocalStats] = useState({
+    postsCreated: 0,
+    topNiche: 'Web Development',
+    timeSaved: 0
+  })
+
+  const [formData, setFormData] = useState({
+    full_name: '',
+    professional_title: '',
+    location: '',
+    bio: '',
+    niche_tags: [],
+    content_tone: 'professional',
+    target_audience: '',
+    platforms: {
+      instagram: false,
+      twitter: false,
+      linkedin: false,
+      youtube: false
+    }
+  })
+
+  const [newTag, setNewTag] = useState('')
+  const [favorites, setFavorites] = useState([])
+  const [expandedFavorite, setExpandedFavorite] = useState(null)
+  const [collaborators, setCollaborators] = useState([])
+  const heroRef = useRef(null)
+  const cardsRef = useRef([])
+  const statsRef = useRef([])
+
+  useEffect(() => {
+    const tl = gsap.timeline({ delay: 0.3 })
+    
+    if (heroRef.current && cardsRef.current.length > 0) {
+      tl.fromTo(heroRef.current,
+        { y: 50, opacity: 0 },
+        { y: 0, opacity: 1, duration: 1, ease: "power3.out" }
+      )
+      .fromTo(cardsRef.current,
+        { y: 50, opacity: 0, scale: 0.95 },
+        { y: 0, opacity: 1, scale: 1, duration: 0.8, stagger: 0.1, ease: "back.out(1.1)" },
+        "-=0.5"
+      )
+      .fromTo(statsRef.current,
+        { y: 30, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "power2.out" },
+        "-=0.4"
+      )
+    }
+  }, [loading])
+
+  useEffect(() => {
+    // ONE-TIME MIGRATION: Move old collaborators to new standardized key
+    const oldCollaborators = localStorage.getItem('collaborators')
+    const newCollaborators = localStorage.getItem('content_genie_collaborators')
+    
+    if (oldCollaborators && !newCollaborators) {
+      console.log('🔄 Migrating collaborators to standardized key...')
+      localStorage.setItem('content_genie_collaborators', oldCollaborators)
+      localStorage.removeItem('collaborators')
+      console.log('✅ Migration complete!')
+    }
+
+    // Load from localStorage
+    const savedProfile = localStorage.getItem('user_profile')
+    if (savedProfile) {
+      const parsed = JSON.parse(savedProfile)
+      setFormData({
+        full_name: parsed.full_name || '',
+        professional_title: parsed.professional_title || '',
+        location: parsed.location || '',
+        bio: parsed.bio || '',
+        niche_tags: parsed.niche_tags || [],
+        content_tone: parsed.content_tone || 'professional',
+        target_audience: parsed.target_audience || '',
+        platforms: parsed.platforms || {
+          instagram: false,
+          twitter: false,
+          linkedin: false,
+          youtube: false
+        }
+      })
+    }
+
+    // Load local stats
+    const stats = localStorage.getItem('user_stats')
+    if (stats) {
+      setLocalStats(JSON.parse(stats))
+    }
+
+    // Load favorites
+    const savedFavorites = localStorage.getItem('favorites_content')
+    if (savedFavorites) {
+      setFavorites(JSON.parse(savedFavorites))
+    }
+
+    // Load collaborators using standardized key
+    const savedCollabs = JSON.parse(localStorage.getItem('content_genie_collaborators') || '[]')
+    console.log('📊 Loaded collaborators from localStorage:', savedCollabs)
+    setCollaborators(savedCollabs)
+
+    setLoading(false)
+  }, [])
+
+  const handleSave = async () => {
+    try {
+      setSaving(true)
+      
+      // Save to localStorage
+      localStorage.setItem('user_profile', JSON.stringify(formData))
+      
+      setIsEditing(false)
+      setMessage({ type: 'success', text: '✨ Profile updated successfully!' })
+      
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+    } catch (error) {
+      console.error('Failed to update profile:', error)
+      setMessage({ type: 'error', text: 'Failed to update profile' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancel = () => {
+    setIsEditing(false)
+    const savedProfile = localStorage.getItem('user_profile')
+    if (savedProfile) {
+      setFormData(JSON.parse(savedProfile))
+    }
+  }
+
+  const handleAddTag = () => {
+    if (newTag.trim() && !formData.niche_tags.includes(newTag.trim())) {
+      setFormData({
+        ...formData,
+        niche_tags: [...formData.niche_tags, newTag.trim()]
+      })
+      setNewTag('')
+    }
+  }
+
+  const handleRemoveTag = (tagToRemove) => {
+    setFormData({
+      ...formData,
+      niche_tags: formData.niche_tags.filter(tag => tag !== tagToRemove)
+    })
+  }
+
+  const handleRemoveFavorite = (favoriteId) => {
+    const updatedFavorites = favorites.filter(fav => fav.id !== favoriteId)
+    setFavorites(updatedFavorites)
+    localStorage.setItem('favorites_content', JSON.stringify(updatedFavorites))
+    setMessage({ type: 'success', text: '🗑️ Removed from favorites' })
+    setTimeout(() => setMessage({ type: '', text: '' }), 2000)
+  }
+
+  const toggleExpandFavorite = (favoriteId) => {
+    setExpandedFavorite(expandedFavorite === favoriteId ? null : favoriteId)
+  }
+
+  const platforms = [
+    {
+      name: 'LinkedIn',
+      icon: Linkedin,
+      color: 'from-blue-600 to-blue-700',
+      connected: formData.platforms?.linkedin || false,
+      username: '@kajol_khatri',
+      id: 'linkedin'
+    },
+    {
+      name: 'Twitter/X',
+      icon: Twitter,
+      color: 'from-sky-500 to-sky-600',
+      connected: formData.platforms?.twitter || false,
+      username: '@kajol_khatri',
+      id: 'twitter'
+    },
+    {
+      name: 'Instagram',
+      icon: Instagram,
+      color: 'from-pink-500 to-purple-600',
+      connected: formData.platforms?.instagram || false,
+      username: '@kajol_khatri',
+      id: 'instagram'
+    },
+    {
+      name: 'YouTube',
+      icon: Youtube,
+      color: 'from-red-500 to-red-600',
+      connected: formData.platforms?.youtube || false,
+      username: '@kajolkhatri',
+      id: 'youtube'
+    }
+  ]
+
+  const togglePlatform = (platformId) => {
+    setFormData(prev => ({
+      ...prev,
+      platforms: {
+        ...prev.platforms,
+        [platformId]: !prev.platforms[platformId]
+      }
+    }))
+  }
+
+  const stats = [
+    {
+      label: 'Posts Created',
+      value: localStats.postsCreated,
+      icon: FileText,
+      color: 'from-indigo-500 to-indigo-600',
+      description: 'Total sessions'
+    },
+    {
+      label: 'Top Niche',
+      value: localStats.topNiche,
+      icon: TrendingUp,
+      color: 'from-purple-500 to-purple-600',
+      description: 'Most frequent'
+    },
+    {
+      label: 'Time Saved',
+      value: `${localStats.timeSaved}h`,
+      icon: Clock,
+      color: 'from-pink-500 to-pink-600',
+      description: 'Automated'
+    }
+  ]
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-900">
+        <div className="pt-24 flex items-center justify-center">
+          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-900 relative">
+      <ParticlesBackground />
+
+      <main className="pt-24 pb-12 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Message Toast */}
+          {message.text && (
+            <div className={`mb-6 p-4 rounded-2xl flex items-center space-x-3 animate-fadeIn ${
+              message.type === 'success' ? 'bg-green-900/30 border border-green-700 text-green-300' :
+              message.type === 'error' ? 'bg-red-900/30 border border-red-700 text-red-300' :
+              'bg-blue-900/30 border border-blue-700 text-blue-300'
+            }`}>
+              {message.type === 'success' ? <Check className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+              <span className="font-medium">{message.text}</span>
+            </div>
+          )}
+
+          {/* Hero Section */}
+          <div ref={heroRef} className="mb-8">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 mb-6 relative overflow-hidden">
+              <div className="absolute inset-0 bg-black/20"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-6">
+                    <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border-4 border-white/30">
+                      <span className="text-white text-3xl font-bold">
+                        {formData.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </span>
+                    </div>
+                    <div>
+                      <h1 className="text-4xl font-bold text-white mb-2">{formData.full_name}</h1>
+                      <p className="text-indigo-100 text-lg font-medium mb-2">{formData.professional_title}</p>
+                      <div className="flex items-center space-x-2 text-white/90">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-sm">{formData.location}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {!isEditing ? (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="flex items-center space-x-2 px-6 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-xl transition-all border border-white/30"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      <span className="font-medium">Edit Profile</span>
+                    </button>
+                  ) : (
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="flex items-center space-x-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all disabled:opacity-50"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span className="font-medium">{saving ? 'Saving...' : 'Save'}</span>
+                      </button>
+                      <button
+                        onClick={handleCancel}
+                        className="flex items-center space-x-2 px-6 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-xl transition-all border border-white/30"
+                      >
+                        <X className="w-4 h-4" />
+                        <span className="font-medium">Cancel</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Professional Identity - 3 Column Grid */}
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Column 1: Brand Story */}
+              <div ref={el => cardsRef.current[0] = el} className="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <User className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Brand Story</h3>
+                </div>
+                <textarea
+                  value={formData.bio}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  disabled={!isEditing}
+                  rows={8}
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-70 resize-none"
+                  placeholder="Tell your professional story... What drives you? What are your goals?"
+                />
+              </div>
+
+              {/* Column 2: Tech Stack & Interests */}
+              <div ref={el => cardsRef.current[1] = el} className="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Tech Stack & Interests</h3>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {formData.niche_tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-indigo-900/50 to-purple-900/50 border border-indigo-700 text-indigo-200 rounded-xl text-sm font-medium"
+                    >
+                      <span>{tag}</span>
+                      {isEditing && (
+                        <button
+                          onClick={() => handleRemoveTag(tag)}
+                          className="hover:text-red-400 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </span>
+                  ))}
+                </div>
+                {isEditing && (
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={newTag}
+                      onChange={(e) => setNewTag(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
+                      className="flex-1 px-4 py-2 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="Add a skill or interest"
+                    />
+                    <button
+                      onClick={handleAddTag}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors font-medium"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Column 3: AI Voice Settings */}
+              <div ref={el => cardsRef.current[2] = el} className="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-rose-600 rounded-xl flex items-center justify-center">
+                    <Target className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">AI Voice Settings</h3>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Default Tone
+                    </label>
+                    <select
+                      value={formData.content_tone}
+                      onChange={(e) => setFormData({ ...formData, content_tone: e.target.value })}
+                      disabled={!isEditing}
+                      className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-70"
+                    >
+                      <option value="professional">Professional</option>
+                      <option value="witty">Witty</option>
+                      <option value="casual">Casual</option>
+                      <option value="friendly">Friendly</option>
+                      <option value="formal">Formal</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Target Audience
+                    </label>
+                    <select
+                      value={formData.target_audience}
+                      onChange={(e) => setFormData({ ...formData, target_audience: e.target.value })}
+                      disabled={!isEditing}
+                      className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-70"
+                    >
+                      <option value="professionals">Professionals</option>
+                      <option value="students">Students</option>
+                      <option value="general">General Audience</option>
+                      <option value="technical">Technical Experts</option>
+                      <option value="business">Business Leaders</option>
+                    </select>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-700">
+                    <p className="text-xs text-slate-400">
+                      These settings help the AI generate content that matches your unique voice and resonates with your audience.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Integration Hub - Social Media Cards */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-3">
+              <LinkIcon className="w-6 h-6 text-indigo-400" />
+              <span>Integration Hub</span>
+            </h2>
+            
+            <div className="grid md:grid-cols-4 gap-6">
+              {platforms.map((platform, index) => {
+                const Icon = platform.icon
+                return (
+                  <div
+                    key={index}
+                    ref={el => cardsRef.current[index + 3] = el}
+                    className="bg-slate-800 rounded-2xl p-6 border border-slate-700 hover:border-slate-600 transition-all shadow-xl"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className={`w-14 h-14 bg-gradient-to-br ${platform.color} rounded-xl flex items-center justify-center`}>
+                        <Icon className="w-7 h-7 text-white" />
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-2 ${
+                        platform.connected 
+                          ? 'bg-green-900/30 text-green-400 border border-green-700' 
+                          : 'bg-slate-700 text-slate-400 border border-slate-600'
+                      }`}>
+                        {platform.connected && <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>}
+                        <span>{platform.connected ? 'Enabled' : 'Disabled'}</span>
+                      </div>
+                    </div>
+                    
+                    <h4 className="text-lg font-semibold text-white mb-2">{platform.name}</h4>
+                    
+                    {platform.connected ? (
+                      <p className="text-sm text-slate-400 mb-4">Content generation enabled</p>
+                    ) : (
+                      <p className="text-sm text-slate-400 mb-4">Enable to create content</p>
+                    )}
+                    
+                    <button
+                      onClick={() => isEditing && togglePlatform(platform.id)}
+                      disabled={!isEditing}
+                      className={`w-full px-4 py-2 rounded-xl transition-colors text-sm font-medium ${
+                        platform.connected
+                          ? 'bg-red-600 hover:bg-red-700 text-white'
+                          : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {platform.connected ? 'Disable' : 'Enable'}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+            
+            {!isEditing && (
+              <p className="text-sm text-slate-400 mt-4 text-center">
+                💡 Click "Edit Profile" to enable/disable platforms for content generation
+              </p>
+            )}
+          </div>
+
+          {/* My Featured Creations - Favorites Section */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-3">
+              <span className="text-2xl">⭐</span>
+              <span>My Featured Creations</span>
+              <span className="text-sm font-normal text-slate-400">({favorites.length})</span>
+            </h2>
+            
+            {favorites.length > 0 ? (
+              <div className="grid md:grid-cols-3 gap-6">
+                {favorites.map((favorite, index) => (
+                  <div
+                    key={favorite.id}
+                    className="bg-slate-800 rounded-3xl p-6 border border-slate-700 hover:border-slate-600 transition-all shadow-xl group"
+                  >
+                    {/* Content Type Badge */}
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="px-3 py-1 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 text-yellow-400 rounded-full text-xs font-medium">
+                        {favorite.contentType || 'Content'}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {favorite.createdAt}
+                      </span>
+                    </div>
+
+                    {/* Content Preview */}
+                    <div className="mb-4">
+                      <div className="bg-slate-900/50 rounded-2xl p-4 border border-slate-700">
+                        <p className="text-sm text-slate-300 leading-relaxed">
+                          {expandedFavorite === favorite.id 
+                            ? favorite.text 
+                            : favorite.text.length > 150 
+                              ? `${favorite.text.substring(0, 150)}...` 
+                              : favorite.text
+                          }
+                        </p>
+                      </div>
+                      
+                      {favorite.text.length > 150 && (
+                        <button
+                          onClick={() => toggleExpandFavorite(favorite.id)}
+                          className="text-xs text-indigo-400 hover:text-indigo-300 mt-2 font-medium"
+                        >
+                          {expandedFavorite === favorite.id ? '▲ Show Less' : '▼ Read More'}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Tone Badge */}
+                    {favorite.tone && (
+                      <div className="mb-4">
+                        <span className="px-2 py-1 bg-slate-700 text-slate-300 rounded-lg text-xs">
+                          Tone: {favorite.tone}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(favorite.text)
+                          setMessage({ type: 'success', text: '📋 Copied to clipboard!' })
+                          setTimeout(() => setMessage({ type: '', text: '' }), 2000)
+                        }}
+                        className="flex-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-2xl text-xs font-medium transition-all"
+                      >
+                        📋 Copy
+                      </button>
+                      <button
+                        onClick={() => handleRemoveFavorite(favorite.id)}
+                        className="px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/30 rounded-2xl text-xs font-medium transition-all"
+                      >
+                        🗑️ Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-slate-800 rounded-3xl p-12 border border-slate-700 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-4xl">⭐</span>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">No favorites yet</h3>
+                <p className="text-slate-400 mb-4">
+                  Start creating amazing content and save your favorites!
+                </p>
+                <button
+                  onClick={() => window.location.href = '/creator'}
+                  className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white rounded-2xl font-medium transition-all"
+                >
+                  ✨ Go to Creator
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Professional Network - Collaborators Section */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-3">
+              <Users className="w-6 h-6 text-indigo-400" />
+              <span>🤝 Professional Network</span>
+              <span className="text-sm font-normal text-slate-400">({collaborators.length})</span>
+            </h2>
+            
+            {collaborators.length > 0 ? (
+              <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {collaborators.map((collaborator) => (
+                  <div
+                    key={collaborator.id}
+                    className="bg-slate-800 rounded-3xl p-6 border border-slate-700 hover:border-indigo-500 transition-all shadow-xl group"
+                  >
+                    {/* Avatar */}
+                    <div className="flex flex-col items-center mb-4">
+                      <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <span className="text-white text-2xl font-bold">
+                          {collaborator.avatar}
+                        </span>
+                      </div>
+                      
+                      {/* Name */}
+                      <h3 className="text-lg font-bold text-white text-center mb-1">
+                        {collaborator.name}
+                      </h3>
+                      
+                      {/* Title */}
+                      <p className="text-sm text-slate-400 text-center mb-2">
+                        {collaborator.title}
+                      </p>
+                      
+                      {/* Email */}
+                      <p className="text-xs text-slate-500 text-center truncate w-full px-2">
+                        {collaborator.email}
+                      </p>
+                    </div>
+
+                    {/* Accepted Date */}
+                    <div className="mb-4 text-center">
+                      <span className="px-3 py-1 bg-green-900/30 border border-green-700 text-green-400 rounded-full text-xs font-medium">
+                        ✓ Connected
+                      </span>
+                    </div>
+
+                    {/* Message Button */}
+                    <button
+                      onClick={() => window.location.href = '/team?tab=chat'}
+                      className="w-full px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-2xl font-medium transition-all flex items-center justify-center space-x-2 group-hover:shadow-lg"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span>💬 Message</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-slate-800 rounded-3xl p-12 border border-slate-700 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-10 h-10 text-indigo-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">No collaborators yet</h3>
+                <p className="text-slate-400 mb-4">
+                  Join a team to start building your professional network!
+                </p>
+                <button
+                  onClick={() => window.location.href = '/team'}
+                  className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-2xl font-medium transition-all"
+                >
+                  🤝 Go to Team Collaboration
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Analytics Dashboard - Local Stats */}
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center space-x-3">
+              <TrendingUp className="w-6 h-6 text-indigo-400" />
+              <span>Stats at a Glance</span>
+            </h2>
+            
+            <div className="grid md:grid-cols-3 gap-6">
+              {stats.map((stat, index) => {
+                const Icon = stat.icon
+                return (
+                  <div
+                    key={index}
+                    ref={el => statsRef.current[index] = el}
+                    className="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center`}>
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                    <div className="text-3xl font-bold text-white mb-1">
+                      {stat.value}
+                    </div>
+                    <div className="text-sm font-medium text-slate-300 mb-1">
+                      {stat.label}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {stat.description}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  )
+}
+
+export default Profile

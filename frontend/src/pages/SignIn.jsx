@@ -6,6 +6,7 @@ import ParticlesBackground from '../components/ParticlesBackground'
 import FloatingEmojis from '../components/FloatingEmojis'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import apiService from '../services/api'
 
 const SignIn = () => {
   const [formData, setFormData] = useState({
@@ -60,12 +61,14 @@ const SignIn = () => {
       setError('')
       setLoading(true)
       await signup(formData.email, formData.password, formData.name)
-      navigate('/dashboard')
+      
+      // New users always go to onboarding
+      // The route guard will handle redirecting if they've already completed it
+      navigate('/onboarding')
     } catch (error) {
       setError('Failed to create an account: ' + error.message)
+      setLoading(false)
     }
-    
-    setLoading(false)
   }
 
   const handleGoogleSignIn = async () => {
@@ -73,11 +76,18 @@ const SignIn = () => {
       setError('')
       setLoading(true)
       await signInWithGoogle()
-      navigate('/dashboard')
+      
+      // Check if onboarding is complete
+      const onboardingComplete = localStorage.getItem('onboarding_complete') === 'true'
+      if (onboardingComplete) {
+        navigate('/dashboard')
+      } else {
+        navigate('/onboarding')
+      }
     } catch (error) {
       setError('Failed to sign in with Google: ' + error.message)
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (

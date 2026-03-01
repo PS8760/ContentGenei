@@ -4,7 +4,7 @@ import { auth } from '../config/firebase'
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.MODE === 'production' 
     ? 'https://contentgenei.onrender.com/api'  // Production backend URL
-    : 'http://localhost:5001/api')
+    : 'http://localhost:5000/api')
 
 class ApiService {
   constructor() {
@@ -15,22 +15,59 @@ class ApiService {
     // Try to get stored access token first
     const accessToken = localStorage.getItem('access_token')
     if (accessToken) {
+      console.log('🔑 Using stored access token')
       return {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       }
     }
     
-    // Fallback to Firebase token
-    const user = auth.currentUser
-    if (user) {
-      const token = await user.getIdToken()
-      return {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+    console.log('⚠️ No stored token, attempting to get fresh token...')
+    
+    // Fallback: try to get fresh Firebase token and exchange it
+    try {
+      const user = auth.currentUser
+      if (user) {
+        console.log('👤 Current user found, getting Firebase token...')
+        const idToken = await user.getIdToken(true) // force refresh
+        console.log('✅ Got Firebase token, exchanging for JWT...')
+        
+        // Try to exchange for JWT
+        const response = await fetch(`${this.baseURL}/auth/verify-token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken })
+        })
+        
+        const data = await response.json()
+        console.log('📡 Token exchange response:', data)
+        
+        if (data.access_token) {
+          localStorage.setItem('access_token', data.access_token)
+          if (data.refresh_token) {
+            localStorage.setItem('refresh_token', data.refresh_token)
+          }
+          if (data.session_token) {
+            localStorage.setItem('session_token', data.session_token)
+          }
+          
+          console.log('✅ JWT token stored successfully')
+          
+          return {
+            'Authorization': `Bearer ${data.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        } else {
+          console.error('❌ No access_token in response:', data)
+        }
+      } else {
+        console.warn('⚠️ No current user found')
       }
+    } catch (err) {
+      console.error('❌ Token refresh failed:', err)
     }
     
+    console.log('⚠️ Returning headers without auth token')
     return {
       'Content-Type': 'application/json'
     }
@@ -47,6 +84,29 @@ class ApiService {
 
     try {
       const response = await fetch(url, config)
+      
+      // If 401, clear token and try once more with fresh token
+      if (response.status === 401) {
+        console.warn('Token expired or invalid, attempting refresh...')
+        localStorage.removeItem('access_token')
+        
+        const freshHeaders = await this.getAuthHeaders()
+        const retryResponse = await fetch(url, { ...config, headers: freshHeaders })
+        
+        // Handle non-JSON responses
+        const contentType = retryResponse.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error(`Server returned non-JSON response: ${retryResponse.status} ${retryResponse.statusText}`)
+        }
+        
+        const retryData = await retryResponse.json()
+        
+        if (!retryResponse.ok) {
+          throw new Error(retryData.error || `HTTP error! status: ${retryResponse.status}`)
+        }
+        
+        return retryData
+      }
       
       // Handle non-JSON responses
       const contentType = response.headers.get('content-type')
@@ -89,13 +149,31 @@ class ApiService {
   }
 
   async getProfile() {
-    return this.request('/auth/profile')
+    return this.request('/profile')
   }
 
   async updateProfile(profileData) {
-    return this.request('/auth/profile', {
+    return this.request('/profile', {
       method: 'PUT',
       body: JSON.stringify(profileData)
+    })
+  }
+
+  async completeOnboarding(onboardingData) {
+    return this.request('/profile/onboarding', {
+      method: 'POST',
+      body: JSON.stringify(onboardingData)
+    })
+  }
+
+  async getOnboardingStatus() {
+    return this.request('/profile/onboarding/status')
+  }
+
+  async updatePlatformConnection(platform, connectionData) {
+    return this.request(`/profile/platform/${platform}`, {
+      method: 'PUT',
+      body: JSON.stringify(connectionData)
     })
   }
 
@@ -250,6 +328,52 @@ class ApiService {
   async deleteTeamProject(projectId) {
     return this.request(`/team/projects/${projectId}`, {
       method: 'DELETE'
+    })
+  }
+
+  async addProjectMember(projectId, email) {
+    return this.request(`/team/projects/${projectId}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    })
+  }
+
+  async removeProjectMember(projectId, memberEmail) {
+    return this.request(`/team/projects/${projectId}/members/${memberEmail}`, {
+      method: 'DELETE'
+    })
+  }
+
+  async updateProjectTasks(projectId, tasks) {
+    return this.request(`/team/projects/${projectId}/tasks`, {
+      method: 'PUT',
+      body: JSON.stringify({ tasks })
+    })
+  }
+
+  // Send task notification
+  async sendTaskNotification(assigneeEmail, taskTitle, projectName, projectId, type = 'task_assigned') {
+    return this.request('/team/notifications/task', {
+      method: 'POST',
+      body: JSON.stringify({
+        assignee_email: assigneeEmail,
+        task_title: taskTitle,
+        project_name: projectName,
+        project_id: projectId,
+        type: type
+      })
+    })
+  }
+
+  // Get all notifications
+  async getNotifications() {
+    return this.request('/team/notifications')
+  }
+
+  // Mark notification as read
+  async markNotificationRead(notificationId) {
+    return this.request(`/team/notifications/${notificationId}/read`, {
+      method: 'POST'
     })
   }
 

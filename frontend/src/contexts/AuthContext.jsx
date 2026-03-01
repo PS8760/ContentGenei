@@ -74,8 +74,12 @@ export function AuthProvider({ children }) {
   // Authenticate with backend
   async function authenticateWithBackend(user) {
     try {
+      console.log('🔐 Authenticating with backend...')
       const idToken = await user.getIdToken()
+      console.log('✅ Got Firebase ID token')
+      
       const response = await apiService.verifyFirebaseToken(idToken)
+      console.log('📡 Backend response:', response)
       
       if (response.success) {
         setBackendUser(response.user)
@@ -83,9 +87,12 @@ export function AuthProvider({ children }) {
         localStorage.setItem('access_token', response.access_token)
         localStorage.setItem('refresh_token', response.refresh_token)
         localStorage.setItem('session_token', response.session_token)
+        console.log('✅ Backend authentication successful, tokens stored')
+      } else {
+        console.error('❌ Backend authentication failed:', response)
       }
     } catch (error) {
-      console.error('Backend authentication error:', error)
+      console.error('❌ Backend authentication error:', error)
       // Don't throw error - allow user to continue with Firebase auth only
     }
   }

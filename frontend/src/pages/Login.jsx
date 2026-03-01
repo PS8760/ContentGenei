@@ -6,6 +6,7 @@ import ParticlesBackground from '../components/ParticlesBackground'
 import FloatingEmojis from '../components/FloatingEmojis'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import apiService from '../services/api'
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -50,12 +51,18 @@ const Login = () => {
       setError('')
       setLoading(true)
       await login(formData.email, formData.password)
-      navigate('/dashboard')
+      
+      // Check if onboarding is complete
+      const onboardingComplete = localStorage.getItem('onboarding_complete') === 'true'
+      if (onboardingComplete) {
+        navigate('/dashboard')
+      } else {
+        navigate('/onboarding')
+      }
     } catch (error) {
       setError('Failed to sign in: ' + error.message)
+      setLoading(false)
     }
-    
-    setLoading(false)
   }
 
   const handleGoogleSignIn = async () => {
@@ -63,11 +70,18 @@ const Login = () => {
       setError('')
       setLoading(true)
       await signInWithGoogle()
-      navigate('/dashboard')
+      
+      // Check if onboarding is complete
+      const onboardingComplete = localStorage.getItem('onboarding_complete') === 'true'
+      if (onboardingComplete) {
+        navigate('/dashboard')
+      } else {
+        navigate('/onboarding')
+      }
     } catch (error) {
       setError('Failed to sign in with Google: ' + error.message)
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (
