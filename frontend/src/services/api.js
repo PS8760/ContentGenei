@@ -4,7 +4,7 @@ import { auth } from '../config/firebase'
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.MODE === 'production' 
     ? 'https://contentgenei.onrender.com/api'  // Production backend URL
-    : 'http://localhost:5000/api')
+    : 'http://localhost:5001/api')
 
 class ApiService {
   constructor() {
@@ -332,6 +332,8 @@ class ApiService {
   }
 
   async addProjectMember(projectId, email) {
+    console.log('🔄 API: Adding project member', { projectId, email })
+    console.log('📍 URL:', `${this.baseURL}/team/projects/${projectId}/members`)
     return this.request(`/team/projects/${projectId}/members`, {
       method: 'POST',
       body: JSON.stringify({ email })
@@ -375,6 +377,31 @@ class ApiService {
     return this.request(`/team/notifications/${notificationId}/read`, {
       method: 'POST'
     })
+  }
+
+  // Delete single notification
+  async deleteNotification(notificationId) {
+    console.log('🗑️ Deleting notification:', notificationId);
+    return this.request(`/team/notifications/${notificationId}`, { 
+      method: 'DELETE' 
+    });
+  }
+
+  // Clear all notifications
+  async clearAllNotifications() {
+    console.log('🗑️ Clearing all notifications');
+    return this.request('/team/notifications/clear', { 
+      method: 'DELETE' 
+    });
+  }
+
+  // Review task (approve or revert)
+  async reviewTask(projectId, taskId, action) {
+    console.log('👀 Reviewing task:', { projectId, taskId, action });
+    return this.request(`/team/projects/${projectId}/tasks/${taskId}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ action })
+    });
   }
 
   // Collaboration Requests

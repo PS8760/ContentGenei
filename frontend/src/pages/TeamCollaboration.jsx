@@ -569,7 +569,9 @@ const TeamCollaboration = () => {
     if (!selectedProject) return
     
     try {
+      console.log('🔄 Adding member to project:', selectedProject.id, memberEmail)
       const response = await api.addProjectMember(selectedProject.id, memberEmail)
+      console.log('📡 Response:', response)
       
       if (response.success) {
         alert(`✅ ${memberEmail} added to project! They will see it in their Projects tab.`)
@@ -581,7 +583,8 @@ const TeamCollaboration = () => {
         alert(`⚠️ ${response.error || 'Failed to add member'}`)
       }
     } catch (error) {
-      alert(`⚠️ ${error.message || 'Failed to add member'}`)
+      console.error('❌ Error adding member:', error)
+      alert(`⚠️ Failed to fetch - ${error.message}`)
     }
   }
 
@@ -772,6 +775,74 @@ const TeamCollaboration = () => {
       }
     } catch (error) {
       alert(`⚠️ ${error.message || 'Failed to delete task'}`)
+    }
+  }
+
+  const handleReviewTask = async (taskId, action) => {
+    if (!selectedProject) return
+    
+    const actionText = action === 'approve' ? 'approve' : 'revert'
+    const confirmMsg = action === 'approve' 
+      ? 'Approve this completed task?' 
+      : 'Revert this task back to the assignee? They will be notified to redo it.'
+    
+    if (!window.confirm(confirmMsg)) return
+    
+    try {
+      const response = await api.reviewTask(selectedProject.id, taskId, action)
+      
+      if (response.success) {
+        // Update local tasks
+        if (response.tasks) {
+          setProjectTasks(response.tasks)
+        }
+        
+        alert(action === 'approve' ? '✅ Task approved!' : '🔄 Task reverted. Member has been notified.')
+        
+        // Reload projects and notifications
+        await loadAllData()
+      } else {
+        alert(`⚠️ ${response.error || 'Failed to review task'}`)
+      }
+    } catch (error) {
+      console.error('❌ Error reviewing task:', error)
+      alert(`⚠️ ${error.message || 'Failed to review task'}`)
+    }
+  }
+
+  const handleDeleteNotification = async (notificationId) => {
+    try {
+      const response = await api.deleteNotification(notificationId)
+      
+      if (response.success) {
+        // Remove from local state
+        setRequests(prev => prev.filter(r => r.id !== notificationId))
+        setNotifications(prev => prev.filter(n => n.id !== notificationId))
+      } else {
+        alert(`⚠️ ${response.error || 'Failed to delete notification'}`)
+      }
+    } catch (error) {
+      console.error('❌ Error deleting notification:', error)
+      alert(`⚠️ ${error.message || 'Failed to delete notification'}`)
+    }
+  }
+
+  const handleClearAllNotifications = async () => {
+    if (!window.confirm('Clear all notifications? This cannot be undone.')) return
+    
+    try {
+      const response = await api.clearAllNotifications()
+      
+      if (response.success) {
+        setRequests([])
+        setNotifications([])
+        alert('✅ All notifications cleared')
+      } else {
+        alert(`⚠️ ${response.error || 'Failed to clear notifications'}`)
+      }
+    } catch (error) {
+      console.error('❌ Error clearing notifications:', error)
+      alert(`⚠️ ${error.message || 'Failed to clear notifications'}`)
     }
   }
 
@@ -1565,18 +1636,28 @@ const TeamCollaboration = () => {
                           </div>
                         )}
                         {isProjectLeader(selectedProject) && (
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleUpdateTaskStatus(task.id, 'doing')}
-                              className="flex-1 px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-2xl text-xs font-medium transition-all"
-                            >
-                              Reopen
-                            </button>
+                          <div className="flex flex-col space-y-2">
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleReviewTask(task.id, 'approve')}
+                                className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-2xl text-xs font-medium transition-all flex items-center justify-center space-x-1"
+                              >
+                                <CheckCircle className="w-3 h-3" />
+                                <span>Approve</span>
+                              </button>
+                              <button
+                                onClick={() => handleReviewTask(task.id, 'revert')}
+                                className="flex-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-2xl text-xs font-medium transition-all"
+                              >
+                                🔄 Revert
+                              </button>
+                            </div>
                             <button
                               onClick={() => handleDeleteTask(task.id)}
-                              className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-xs font-medium transition-all"
+                              className="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-xs font-medium transition-all flex items-center justify-center space-x-1"
                             >
                               <Trash2 className="w-3 h-3" />
+                              <span>Delete</span>
                             </button>
                           </div>
                         )}
@@ -1960,6 +2041,15 @@ const TeamCollaboration = () => {
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 theme-transition">
                   Collaboration Requests
                 </h2>
+                {requests.length > 0 && (
+                  <button
+                    onClick={handleClearAllNotifications}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-sm font-medium transition-all flex items-center space-x-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Clear All</span>
+                  </button>
+                )}
               </div>
 
               {loading ? (
@@ -1989,19 +2079,23 @@ const TeamCollaboration = () => {
                         className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border-2 border-gray-400 dark:border-blue-800 theme-transition"
                       >
                         <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-4 flex-1">
                             <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-900 dark:from-blue-500 dark:to-indigo-600 rounded-full flex items-center justify-center">
                               <span className="text-2xl">
                                 {request.request_type === 'project_invitation' ? '📁' : 
                                  request.request_type === 'task_assignment' ? '📋' :
-                                 request.request_type === 'task_completed' ? '✅' : '👥'}
+                                 request.request_type === 'task_completed' ? '✅' :
+                                 request.request_type === 'task_reverted' ? '🔄' :
+                                 request.request_type === 'task_approved' ? '✅' : '👥'}
                               </span>
                             </div>
-                            <div>
+                            <div className="flex-1">
                               <div className="font-bold text-gray-900 dark:text-gray-100 text-lg">
                                 {request.request_type === 'project_invitation' ? 'Project Invitation' :
                                  request.request_type === 'task_assignment' ? 'Task Assigned' :
                                  request.request_type === 'task_completed' ? 'Task Completed' :
+                                 request.request_type === 'task_reverted' ? 'Task Reverted' :
+                                 request.request_type === 'task_approved' ? 'Task Approved' :
                                  request.from_name || request.from_email}
                               </div>
                               <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -2009,15 +2103,27 @@ const TeamCollaboration = () => {
                               </div>
                             </div>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            request.request_type === 'project_invitation' ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400' :
-                            request.request_type === 'task_assignment' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' :
-                            'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400'
-                          }`}>
-                            {request.request_type === 'project_invitation' ? 'Project Invite' :
-                             request.request_type === 'task_assignment' ? 'Task' :
-                             request.request_type === 'task_completed' ? 'Completed' : 'Pending'}
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                              request.request_type === 'project_invitation' ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400' :
+                              request.request_type === 'task_assignment' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' :
+                              request.request_type === 'task_reverted' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400' :
+                              'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
+                            }`}>
+                              {request.request_type === 'project_invitation' ? 'Project Invite' :
+                               request.request_type === 'task_assignment' ? 'Task' :
+                               request.request_type === 'task_completed' ? 'Completed' :
+                               request.request_type === 'task_reverted' ? 'Reverted' :
+                               request.request_type === 'task_approved' ? 'Approved' : 'Pending'}
+                            </span>
+                            <button
+                              onClick={() => handleDeleteNotification(request.id)}
+                              className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full transition-colors"
+                              title="Delete notification"
+                            >
+                              <X className="w-4 h-4 text-red-600 dark:text-red-400" />
+                            </button>
+                          </div>
                         </div>
 
                         <div className="mb-4 p-4 bg-white dark:bg-gray-800 rounded-lg">
@@ -2045,13 +2151,21 @@ const TeamCollaboration = () => {
                           </div>
                         )}
                         
-                        {(request.request_type === 'task_assignment' || request.request_type === 'task_completed') && (
-                          <button
-                            onClick={() => api.markNotificationRead(request.id).then(() => loadAllData())}
-                            className="w-full bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-xl font-semibold transition-colors"
-                          >
-                            ✓ Mark as Read
-                          </button>
+                        {(request.request_type === 'task_assignment' || request.request_type === 'task_completed' || request.request_type === 'task_reverted' || request.request_type === 'task_approved') && (
+                          <div className="flex space-x-3">
+                            <button
+                              onClick={() => api.markNotificationRead(request.id).then(() => loadAllData())}
+                              className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-xl font-semibold transition-colors"
+                            >
+                              ✓ Mark as Read
+                            </button>
+                            <button
+                              onClick={() => handleDeleteNotification(request.id)}
+                              className="px-4 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-semibold transition-colors"
+                            >
+                              🗑️
+                            </button>
+                          </div>
                         )}
                       </div>
                     ))

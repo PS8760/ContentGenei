@@ -1177,11 +1177,22 @@ def get_team_members():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@team_bp.route('/members/invite', methods=['POST'])
-@jwt_required()
+@team_bp.route('/members/invite', methods=['POST', 'OPTIONS'])
+@jwt_required(optional=True)
 def invite_member():
+    # Handle OPTIONS preflight
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', 'http://localhost:5173')
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response, 200
+    
     try:
         current_user_id = get_jwt_identity()
+        if not current_user_id:
+            return jsonify({'error': 'Authorization required'}), 401
+            
         user = User.query.get(current_user_id)
         if not user:
             return jsonify({'error': 'User not found'}), 404
@@ -1262,11 +1273,21 @@ def get_projects():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@team_bp.route('/projects', methods=['POST'])
-@jwt_required()
+@team_bp.route('/projects', methods=['POST', 'OPTIONS'])
+@jwt_required(optional=True)
 def create_project():
+    # Handle OPTIONS preflight
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', 'http://localhost:5173')
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response, 200
+    
     try:
         current_user_id = get_jwt_identity()
+        if not current_user_id:
+            return jsonify({'error': 'Authorization required'}), 401
         user = User.query.get(current_user_id)
         if not user:
             return jsonify({'error': 'User not found'}), 404
@@ -1288,11 +1309,21 @@ def create_project():
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@team_bp.route('/projects/<project_id>', methods=['DELETE'])
-@jwt_required()
+@team_bp.route('/projects/<project_id>', methods=['DELETE', 'OPTIONS'])
+@jwt_required(optional=True)
 def delete_project(project_id):
+    # Handle OPTIONS preflight
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', 'http://localhost:5173')
+        response.headers['Access-Control-Allow-Methods'] = 'DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response, 200
+    
     try:
         current_user_id = get_jwt_identity()
+        if not current_user_id:
+            return jsonify({'error': 'Authorization required'}), 401
         user = User.query.get(current_user_id)
         if not user:
             return jsonify({'error': 'User not found'}), 404
@@ -1309,12 +1340,20 @@ def delete_project(project_id):
 @team_bp.route('/projects/<project_id>/members', methods=['POST', 'OPTIONS'])
 @jwt_required(optional=True)
 def add_project_member(project_id):
-    # Handle OPTIONS preflight
+    # Handle OPTIONS preflight - return immediately without JWT check
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'ok'}), 200
+        response = jsonify({'status': 'ok'})
+        response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', 'http://localhost:5173')
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response, 200
     
+    # For POST requests, require JWT
     try:
         current_user_id = get_jwt_identity()
+        if not current_user_id:
+            return jsonify({'error': 'Authorization required'}), 401
+            
         user = User.query.get(current_user_id)
         if not user:
             return jsonify({'error': 'User not found'}), 404
@@ -1339,7 +1378,8 @@ def add_project_member(project_id):
                 from_user_id=user.id,
                 to_email=member_email,
                 to_user_id=invited_user.id,
-                message=f'{user.email} added you to project "{project.name}" (project_id:{project.id})',
+                project_id=project_id,  # Set project_id properly
+                message=f'{user.email} added you to project "{project.name}"',
                 request_type='project_invitation',
                 status='pending'
             )
@@ -1349,16 +1389,27 @@ def add_project_member(project_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': True, 'message': f'{member_email} added to project successfully', 'members': members_list}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @team_bp.route('/projects/<project_id>/members/<member_email>', methods=['DELETE', 'OPTIONS'])
 @jwt_required(optional=True)
 def remove_project_member(project_id, member_email):
-    # Handle OPTIONS preflight
+    # Handle OPTIONS preflight - return immediately without JWT check
     if request.method == 'OPTIONS':
-        return jsonify({'status': 'ok'}), 200
+        response = jsonify({'status': 'ok'})
+        response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', 'http://localhost:5173')
+        response.headers['Access-Control-Allow-Methods'] = 'DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response, 200
     
+    # For DELETE requests, require JWT
     try:
         current_user_id = get_jwt_identity()
+        if not current_user_id:
+            return jsonify({'error': 'Authorization required'}), 401
         user = User.query.get(current_user_id)
         if not user:
             return jsonify({'error': 'User not found'}), 404
@@ -1405,11 +1456,80 @@ def update_project_tasks(project_id):
             return jsonify({'success': False, 'error': 'Not authorized'}), 403
         data = request.get_json()
         tasks = data.get('tasks', [])
+        
+        # Get old tasks to compare
         try:
             existing = json.loads(project.description) if project.description and project.description.startswith('{') else {}
             desc_text = existing.get('description', project.description or '')
+            old_tasks = existing.get('tasks', [])
         except:
             desc_text = project.description or ''
+            old_tasks = []
+        
+        # Check for newly assigned tasks and completed tasks
+        old_tasks_dict = {task.get('id'): task for task in old_tasks if task.get('id')}
+        
+        for task in tasks:
+            task_id = task.get('id')
+            if not task_id:
+                continue
+                
+            old_task = old_tasks_dict.get(task_id)
+            
+            # Check if task was newly assigned
+            if old_task:
+                old_assignee = old_task.get('assignee')
+                new_assignee = task.get('assignee')
+                
+                # Task newly assigned or reassigned
+                if new_assignee and new_assignee != old_assignee:
+                    assignee_user = User.query.filter_by(email=new_assignee).first()
+                    if assignee_user and is_owner:  # Only owner can assign tasks
+                        notification = CollaborationRequest(
+                            from_user_id=user.id,
+                            to_email=new_assignee,
+                            to_user_id=assignee_user.id,
+                            project_id=project_id,
+                            message=f'{user.email} assigned you task "{task.get("title", "Untitled")}" in project "{project.name}"',
+                            request_type='task_assignment',
+                            status='pending'
+                        )
+                        db.session.add(notification)
+                
+                # Task marked as completed
+                old_status = old_task.get('status', 'todo')
+                new_status = task.get('status', 'todo')
+                if old_status != 'done' and new_status == 'done' and not is_owner:
+                    # Member completed a task, notify owner
+                    owner = User.query.get(project.owner_id)
+                    if owner:
+                        notification = CollaborationRequest(
+                            from_user_id=user.id,
+                            to_email=owner.email,
+                            to_user_id=owner.id,
+                            project_id=project_id,
+                            message=f'{user.email} completed task "{task.get("title", "Untitled")}" in project "{project.name}"',
+                            request_type='task_completed',
+                            status='pending'
+                        )
+                        db.session.add(notification)
+            else:
+                # New task created with assignee
+                new_assignee = task.get('assignee')
+                if new_assignee and is_owner:
+                    assignee_user = User.query.filter_by(email=new_assignee).first()
+                    if assignee_user:
+                        notification = CollaborationRequest(
+                            from_user_id=user.id,
+                            to_email=new_assignee,
+                            to_user_id=assignee_user.id,
+                            project_id=project_id,
+                            message=f'{user.email} assigned you task "{task.get("title", "Untitled")}" in project "{project.name}"',
+                            request_type='task_assignment',
+                            status='pending'
+                        )
+                        db.session.add(notification)
+        
         project.description = json.dumps({'description': desc_text, 'tasks': tasks})
         db.session.commit()
         return jsonify({'success': True, 'message': 'Tasks updated successfully'}), 200
@@ -1453,11 +1573,21 @@ def get_sent_requests():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@team_bp.route('/requests/<request_id>/accept', methods=['POST'])
-@jwt_required()
+@team_bp.route('/requests/<request_id>/accept', methods=['POST', 'OPTIONS'])
+@jwt_required(optional=True)
 def accept_request(request_id):
+    # Handle OPTIONS preflight
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', 'http://localhost:5173')
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response, 200
+    
     try:
         current_user_id = get_jwt_identity()
+        if not current_user_id:
+            return jsonify({'error': 'Authorization required'}), 401
         user = User.query.get(current_user_id)
         if not user:
             return jsonify({'error': 'User not found'}), 404
@@ -1473,10 +1603,9 @@ def accept_request(request_id):
                 member.status = 'active'
                 member.member_id = user.id
         elif req.request_type == 'project_invitation':
-            match = re.search(r'project_id:(\S+)', req.message or '')
-            if match:
-                project_id = match.group(1).rstrip(')')
-                project = TeamProject.query.get(project_id)
+            # Use project_id from the request object
+            if req.project_id:
+                project = TeamProject.query.get(req.project_id)
                 if project:
                     try:
                         members_list = json.loads(project.members) if project.members else []
@@ -1491,6 +1620,7 @@ def accept_request(request_id):
                             from_user_id=user.id,
                             to_email=leader.email,
                             to_user_id=leader.id,
+                            project_id=project.id,
                             message=f'{user.email} accepted your invitation and joined project "{project.name}"',
                             request_type='member_joined',
                             status='pending'
@@ -1502,11 +1632,21 @@ def accept_request(request_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@team_bp.route('/requests/<request_id>/reject', methods=['POST'])
-@jwt_required()
+@team_bp.route('/requests/<request_id>/reject', methods=['POST', 'OPTIONS'])
+@jwt_required(optional=True)
 def reject_request(request_id):
+    # Handle OPTIONS preflight
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', 'http://localhost:5173')
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response, 200
+    
     try:
         current_user_id = get_jwt_identity()
+        if not current_user_id:
+            return jsonify({'error': 'Authorization required'}), 401
         user = User.query.get(current_user_id)
         if not user:
             return jsonify({'error': 'User not found'}), 404
@@ -1630,6 +1770,150 @@ def mark_notification_read(notification_id):
             notif.status = 'read'
             db.session.commit()
         return jsonify({'success': True}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@team_bp.route('/notifications/<notification_id>', methods=['DELETE', 'OPTIONS'])
+@jwt_required(optional=True)
+def delete_notification(notification_id):
+    # Handle OPTIONS preflight
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+    
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        notif = CollaborationRequest.query.filter_by(id=notification_id, to_email=user.email).first()
+        if not notif:
+            return jsonify({'error': 'Notification not found'}), 404
+        
+        db.session.delete(notif)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Notification deleted'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@team_bp.route('/notifications/clear', methods=['DELETE', 'OPTIONS'])
+@jwt_required(optional=True)
+def clear_all_notifications():
+    # Handle OPTIONS preflight
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+    
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Delete all notifications for this user
+        CollaborationRequest.query.filter_by(to_email=user.email).delete()
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'All notifications cleared'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@team_bp.route('/projects/<project_id>/tasks/<task_id>/review', methods=['POST', 'OPTIONS'])
+@jwt_required(optional=True)
+def review_task(project_id, task_id):
+    # Handle OPTIONS preflight
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+    
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        project = TeamProject.query.get(project_id)
+        if not project:
+            return jsonify({'success': False, 'error': 'Project not found'}), 404
+        
+        # Only project owner can review tasks
+        if project.owner_id != user.id:
+            return jsonify({'success': False, 'error': 'Only project owner can review tasks'}), 403
+        
+        data = request.get_json()
+        action = data.get('action')  # 'approve' or 'revert'
+        
+        if action not in ['approve', 'revert']:
+            return jsonify({'success': False, 'error': 'Invalid action'}), 400
+        
+        # Get current tasks
+        try:
+            existing = json.loads(project.description) if project.description and project.description.startswith('{') else {}
+            desc_text = existing.get('description', project.description or '')
+            tasks = existing.get('tasks', [])
+        except:
+            desc_text = project.description or ''
+            tasks = []
+        
+        # Find the task
+        task_found = False
+        for task in tasks:
+            if task.get('id') == task_id:
+                task_found = True
+                assignee_email = task.get('assignee')
+                task_title = task.get('title', 'Untitled')
+                
+                if action == 'approve':
+                    # Task approved - keep it as done
+                    # Optionally send approval notification
+                    if assignee_email:
+                        assignee_user = User.query.filter_by(email=assignee_email).first()
+                        if assignee_user:
+                            notification = CollaborationRequest(
+                                from_user_id=user.id,
+                                to_email=assignee_email,
+                                to_user_id=assignee_user.id,
+                                project_id=project_id,
+                                message=f'{user.email} approved your task "{task_title}" in project "{project.name}"',
+                                request_type='task_approved',
+                                status='pending'
+                            )
+                            db.session.add(notification)
+                
+                elif action == 'revert':
+                    # Revert task back to in-progress
+                    task['status'] = 'in-progress'
+                    
+                    # Send revert notification to assignee
+                    if assignee_email:
+                        assignee_user = User.query.filter_by(email=assignee_email).first()
+                        if assignee_user:
+                            notification = CollaborationRequest(
+                                from_user_id=user.id,
+                                to_email=assignee_email,
+                                to_user_id=assignee_user.id,
+                                project_id=project_id,
+                                message=f'{user.email} reverted task "{task_title}" in project "{project.name}". Please review and complete again.',
+                                request_type='task_reverted',
+                                status='pending'
+                            )
+                            db.session.add(notification)
+                
+                break
+        
+        if not task_found:
+            return jsonify({'success': False, 'error': 'Task not found'}), 404
+        
+        # Save updated tasks
+        project.description = json.dumps({'description': desc_text, 'tasks': tasks})
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Task {action}d successfully',
+            'tasks': tasks
+        }), 200
+        
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
