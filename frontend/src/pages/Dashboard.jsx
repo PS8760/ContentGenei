@@ -214,7 +214,7 @@ const Dashboard = () => {
       title: 'Content Library',
       description: 'Browse and manage your content',
       icon: '📚',
-      action: () => navigate('/library'),
+      action: () => navigate('/content-library'),
       color: 'from-gray-800 to-gray-600 dark:from-indigo-600 dark:to-purple-700'
     },
     {

@@ -7,6 +7,7 @@ import FloatingEmojis from '../components/FloatingEmojis'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import apiService from '../services/api'
+import ToastManager from '../utils/ToastManager'
 
 const Creator = () => {
   const { currentUser } = useAuth()
@@ -65,6 +66,38 @@ const Creator = () => {
       fetchImprovements()
     }
   }, [activeTab])
+
+  // Load content from sessionStorage if continuing from library
+  useEffect(() => {
+    const continueData = sessionStorage.getItem('continue_generating')
+    if (continueData) {
+      try {
+        const data = JSON.parse(continueData)
+        console.log('Loading content to continue generating:', data)
+        
+        // Set the form fields
+        setContentType(data.contentType || 'article')
+        setTone(data.tone || 'professional')
+        setPrompt(data.prompt || '')
+        setGeneratedContent(data.content || '')
+        
+        // Clear sessionStorage
+        sessionStorage.removeItem('continue_generating')
+        
+        // Show a message to the user
+        setTimeout(() => {
+          ToastManager.info(
+            'Content Loaded!',
+            'You can now continue refining this content or generate new variations.',
+            [],
+            6000
+          )
+        }, 500)
+      } catch (error) {
+        console.error('Error loading continue data:', error)
+      }
+    }
+  }, [])
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -159,7 +192,12 @@ Generate high-quality content that meets these specifications.`
       }, 2000)
     } catch (error) {
       console.error('Error copying content:', error)
-      alert('Failed to copy content')
+      ToastManager.error(
+        'Copy Failed',
+        'Failed to copy content to clipboard. Please try again.',
+        [],
+        4000
+      )
     }
   }
 
@@ -168,13 +206,76 @@ Generate high-quality content that meets these specifications.`
     
     try {
       setLoading(true)
-      alert('✅ Content saved successfully!')
+      
+      // Create post object with all required fields
+      const postObject = {
+        id: `post_${Date.now()}`, // Unique timestamp-based ID
+        content: generatedContent.replace(/\n---\n💡.*$/s, ''), // Remove AI disclaimer
+        image: `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.substring(0, 100))}?width=800&height=600&nologo=true`, // Pollinations.ai image
+        category: contentType, // The niche/type (article, social-post, etc.)
+        timestamp: new Date().toISOString(), // Current date/time
+        title: prompt.substring(0, 50) + (prompt.length > 50 ? '...' : ''), // First 50 chars of prompt as title
+        tone: tone,
+        word_count: generatedContent.split(/\s+/).length
+      }
+      
+      // Fetch existing library data
+      const library = JSON.parse(localStorage.getItem('content_genie_library') || '[]')
+      
+      // Push new post to library
+      library.unshift(postObject) // Add to beginning of array
+      
+      // Save back to localStorage
+      localStorage.setItem('content_genie_library', JSON.stringify(library))
+      
+      // Dispatch custom event to notify Dashboard
+      window.dispatchEvent(new Event('content_library_updated'))
+      
+      // Show professional toast notification
+      showToast('✅ Saved to Library!', 'Your content has been saved successfully.')
+      
     } catch (error) {
       console.error('Error saving content:', error)
-      alert('❌ Failed to save content')
+      showToast('❌ Save Failed', 'Failed to save content. Please try again.')
     } finally {
       setLoading(false)
     }
+  }
+
+  const showToast = (title, message) => {
+    // Create toast element
+    const toast = document.createElement('div')
+    toast.className = 'fixed top-6 right-6 z-[9999] animate-slide-in'
+    toast.innerHTML = `
+      <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border-2 border-green-500 dark:border-green-400 p-6 max-w-sm">
+        <div class="flex items-start space-x-4">
+          <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+            <span class="text-2xl">✅</span>
+          </div>
+          <div class="flex-1">
+            <h4 class="font-bold text-gray-900 dark:text-gray-100 text-lg mb-1">${title}</h4>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">${message}</p>
+            <div class="flex space-x-2">
+              <button onclick="window.location.href='/content-library'" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl text-sm font-medium transition-all">
+                View Library
+              </button>
+              <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-2xl text-sm font-medium transition-all">
+                Continue Generating
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+    
+    document.body.appendChild(toast)
+    
+    // Auto-remove after 8 seconds
+    setTimeout(() => {
+      toast.style.opacity = '0'
+      toast.style.transform = 'translateX(100%)'
+      setTimeout(() => toast.remove(), 300)
+    }, 8000)
   }
 
   const handleEdit = () => {
@@ -228,7 +329,12 @@ Provide an improved version that is significantly better while keeping the core 
       }
     } catch (error) {
       console.error('Error improving content:', error)
-      alert('❌ Failed to improve content. Please try again.')
+      ToastManager.error(
+        'Improvement Failed',
+        'Failed to improve content. Please try again.',
+        [],
+        5000
+      )
     } finally {
       setIsGenerating(false)
     }
@@ -347,7 +453,12 @@ Key style:
           setIsGenerating(false)
         }
         reader.onerror = () => {
-          alert('❌ Failed to read text file')
+          ToastManager.error(
+            'File Read Error',
+            'Failed to read text file. Please try again.',
+            [],
+            4000
+          )
           setIsGenerating(false)
         }
         reader.readAsText(file)
@@ -363,22 +474,42 @@ Key style:
             
             if (response.success && response.text) {
               setSummarizeText(response.text)
-              alert(`✅ Text extracted successfully! Found ${response.word_count} words with ${response.confidence}% confidence.`)
+              ToastManager.success(
+                'Text Extracted!',
+                `Found ${response.word_count} words with ${response.confidence}% confidence.`,
+                [],
+                5000
+              )
             } else {
               const errorMsg = response.error || 'Failed to extract text from image'
-              alert(`⚠️ ${errorMsg}`)
+              ToastManager.warning(
+                'Extraction Failed',
+                errorMsg + '. Try a clearer image with better lighting or paste text manually.',
+                [],
+                6000
+              )
               setSummarizeText(`[Image: ${file.name}]\n\nNo text could be extracted. Please try:\n• A clearer image with better lighting\n• Higher resolution image\n• Or paste text manually`)
             }
           } catch (error) {
             console.error('OCR error:', error)
-            alert('❌ Failed to extract text from image. Please try again or paste text manually.')
+            ToastManager.error(
+              'OCR Failed',
+              'Failed to extract text from image. Please try again or paste text manually.',
+              [],
+              5000
+            )
             setSummarizeText(`[Image: ${file.name}]\n\nOCR failed. Please paste text manually.`)
           } finally {
             setIsGenerating(false)
           }
         }
         reader.onerror = () => {
-          alert('❌ Failed to read image file')
+          ToastManager.error(
+            'File Read Error',
+            'Failed to read image file. Please try again.',
+            [],
+            4000
+          )
           setIsGenerating(false)
         }
         reader.readAsDataURL(file)
@@ -390,50 +521,85 @@ Key style:
             const base64Data = e.target.result
             
             const fileType = file.type.startsWith('video/') ? 'video' : 'audio'
-            alert(`🎬 Transcribing ${fileType}... This may take a moment.`)
+            const loadingToastId = ToastManager.loading(
+              `Transcribing ${fileType}...`,
+              'This may take a moment. Please wait.'
+            )
             
             // Call video transcription API (works for both video and audio)
             const response = await apiService.transcribeVideo(base64Data, file.name)
             
+            ToastManager.removeToast(loadingToastId)
+            
             if (response.success && response.transcription) {
               setSummarizeText(response.transcription)
               const duration = response.duration ? ` (${Math.round(response.duration)}s)` : ''
-              alert(`✅ ${fileType.charAt(0).toUpperCase() + fileType.slice(1)} transcribed successfully! Found ${response.word_count} words${duration}.`)
+              ToastManager.success(
+                'Transcription Complete!',
+                `${fileType.charAt(0).toUpperCase() + fileType.slice(1)} transcribed successfully! Found ${response.word_count} words${duration}.`,
+                [],
+                5000
+              )
             } else {
               const errorMsg = response.error || `Failed to transcribe ${fileType}`
-              alert(`⚠️ ${errorMsg}`)
+              ToastManager.warning(
+                'Transcription Failed',
+                errorMsg + `. Try a ${fileType} with clear audio or smaller file (max 25MB).`,
+                [],
+                6000
+              )
               setSummarizeText(`[${fileType.charAt(0).toUpperCase() + fileType.slice(1)}: ${file.name}]\n\nTranscription failed. Please try:\n• A ${fileType} with clear audio\n• Smaller file (max 25MB)\n• Supported formats: MP3, MP4, WAV, M4A, WebM\n• Or paste text manually`)
             }
           } catch (error) {
             console.error('Transcription error:', error)
             const fileType = file.type.startsWith('video/') ? 'video' : 'audio'
-            alert(`❌ Failed to transcribe ${fileType}. Please try again or paste text manually.`)
+            ToastManager.error(
+              'Transcription Error',
+              `Failed to transcribe ${fileType}. Please try again or paste text manually.`,
+              [],
+              5000
+            )
             setSummarizeText(`[${fileType.charAt(0).toUpperCase() + fileType.slice(1)}: ${file.name}]\n\nTranscription failed. Please paste text manually.`)
           } finally {
             setIsGenerating(false)
           }
         }
         reader.onerror = () => {
-          alert('❌ Failed to read file')
+          ToastManager.error(
+            'File Read Error',
+            'Failed to read file. Please try again.',
+            [],
+            4000
+          )
           setIsGenerating(false)
         }
         reader.readAsDataURL(file)
       } else {
         // Unsupported file type
-        alert('⚠️ Unsupported file type. Please upload a text file, image, or video.')
+        ToastManager.warning(
+          'Unsupported File Type',
+          'Please upload a text file, image, audio, or video file.',
+          [],
+          5000
+        )
         setSummarizeText(`[File: ${file.name}]\n\nUnsupported file type. Please upload .txt, image, or video files.`)
         setIsGenerating(false)
       }
     } catch (error) {
       console.error('File upload error:', error)
-      alert('❌ Failed to process file')
+      ToastManager.error(
+        'File Processing Error',
+        'Failed to process file. Please try again.',
+        [],
+        4000
+      )
       setIsGenerating(false)
     }
   }
 
   const handleUrlExtraction = async () => {
     if (!urlInput.trim()) {
-      alert('⚠️ Please enter a URL')
+      ToastManager.validationError('URL', 'Please enter a valid URL.')
       return
     }
     
@@ -441,22 +607,42 @@ Key style:
     setSummarizeText('')
     
     try {
-      alert('🌐 Extracting content from URL... This may take a moment.')
+      const loadingToastId = ToastManager.loading(
+        'Extracting Content...',
+        'Fetching content from URL. This may take a moment.'
+      )
       
       const response = await apiService.extractUrlContent(urlInput.trim())
       
+      ToastManager.removeToast(loadingToastId)
+      
       if (response.success && response.content) {
         setSummarizeText(response.content)
-        const title = response.title ? `\n\nTitle: ${response.title}` : ''
-        alert(`✅ Content extracted successfully! Found ${response.word_count} words.${title}`)
+        const title = response.title ? ` Title: ${response.title}` : ''
+        ToastManager.success(
+          'Content Extracted!',
+          `Found ${response.word_count} words.${title}`,
+          [],
+          5000
+        )
       } else {
         const errorMsg = response.error || 'Failed to extract content from URL'
-        alert(`⚠️ ${errorMsg}`)
+        ToastManager.warning(
+          'Extraction Failed',
+          errorMsg + '. Try a different URL or check if it\'s accessible.',
+          [],
+          6000
+        )
         setSummarizeText(`[URL: ${urlInput}]\n\nExtraction failed. Please try:\n• A different URL\n• Checking if the URL is accessible\n• Or paste text manually`)
       }
     } catch (error) {
       console.error('URL extraction error:', error)
-      alert('❌ Failed to extract content from URL. Please try again or paste text manually.')
+      ToastManager.error(
+        'Extraction Error',
+        'Failed to extract content from URL. Please try again or paste text manually.',
+        [],
+        5000
+      )
       setSummarizeText(`[URL: ${urlInput}]\n\nExtraction failed. Please paste text manually.`)
     } finally {
       setIsGenerating(false)
@@ -465,13 +651,13 @@ Key style:
 
   const handleSummarize = async () => {
     if (!summarizeText.trim()) {
-      alert('⚠️ Please upload a file or paste text to summarize.')
+      ToastManager.validationError('Text', 'Please upload a file or paste text to summarize.')
       return
     }
     
     // Validation: Text length
     if (summarizeText.trim().length < 50) {
-      alert('⚠️ Text too short to summarize. Please provide at least 50 characters.')
+      ToastManager.validationError('Text Length', 'Text too short to summarize. Please provide at least 50 characters.')
       return
     }
     
@@ -512,7 +698,12 @@ Provide an ultra-brief summary following the requirements above.`
       }
     } catch (error) {
       console.error('Error summarizing:', error)
-      alert('❌ Failed to summarize content. Please try again.')
+      ToastManager.error(
+        'Summarization Failed',
+        'Failed to summarize content. Please try again.',
+        [],
+        5000
+      )
     } finally {
       setIsGenerating(false)
     }

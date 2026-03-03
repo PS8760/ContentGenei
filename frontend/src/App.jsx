@@ -100,7 +100,7 @@ function AppContent() {
             <Analytics />
           </ProtectedRoute>
         } />
-        <Route path="/library" element={
+        <Route path="/content-library" element={
           <ProtectedRoute>
             <ContentLibrary />
           </ProtectedRoute>
