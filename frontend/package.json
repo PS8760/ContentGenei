@@ -15,7 +15,8 @@
     "gsap": "^3.14.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.13.0"
+    "react-router-dom": "^7.13.0",
+    "recharts": "^2.10.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

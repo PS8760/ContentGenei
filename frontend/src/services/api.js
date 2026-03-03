@@ -40,6 +40,9 @@ class ApiService {
     const url = `${this.baseURL}${endpoint}`
     const headers = await this.getAuthHeaders()
     
+    // Log the request for debugging
+    console.log(`[API] ${options.method || 'GET'} ${url}`)
+    
     const config = {
       headers,
       ...options
@@ -51,18 +54,20 @@ class ApiService {
       // Handle non-JSON responses
       const contentType = response.headers.get('content-type')
       if (!contentType || !contentType.includes('application/json')) {
+        console.error(`[API] Non-JSON response from ${url}:`, response.status, response.statusText)
         throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`)
       }
       
       const data = await response.json()
 
       if (!response.ok) {
+        console.error(`[API] Error response from ${url}:`, data)
         throw new Error(data.error || `HTTP error! status: ${response.status}`)
       }
 
       return data
     } catch (error) {
-      console.error('API request failed:', error)
+      console.error(`[API] Request failed for ${url}:`, error)
       throw error
     }
   }
@@ -312,6 +317,137 @@ class ApiService {
     return this.request('/linkogenei/generate-token', {
       method: 'POST'
     })
+  }
+
+  // ==================== INSTAGRAM ANALYTICS ====================
+  
+  async getInstagramAuthUrl() {
+    return this.request('/instagram/auth')
+  }
+
+  async getInstagramDebugConfig() {
+    return this.request('/instagram/debug')
+  }
+
+  async debugInstagramMedia(connectionId) {
+    return this.request(`/instagram/debug-media/${connectionId}`)
+  }
+
+  async exchangeInstagramToken(code, state) {
+    return this.request('/instagram/exchange-token', {
+      method: 'POST',
+      body: JSON.stringify({ code, state })
+    })
+  }
+
+  // Deprecated - use getInstagramAuthUrl instead
+  async getInstagramOAuthUrl(redirectUri) {
+    return this.request(`/instagram/oauth/url?redirect_uri=${encodeURIComponent(redirectUri)}`)
+  }
+
+  async handleInstagramCallback(code, redirectUri) {
+    return this.request('/instagram/oauth/callback', {
+      method: 'POST',
+      body: JSON.stringify({ code, redirect_uri: redirectUri })
+    })
+  }
+
+  async getInstagramConnections() {
+    return this.request('/instagram/connections')
+  }
+
+  async getInstagramProfile(connectionId) {
+    return this.request(`/instagram/profile/${connectionId}`)
+  }
+
+  async disconnectInstagram(connectionId) {
+    return this.request(`/instagram/connections/${connectionId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  async syncInstagramData(connectionId) {
+    return this.request(`/instagram/sync/${connectionId}`, {
+      method: 'POST'
+    })
+  }
+
+  async getInstagramDashboard(connectionId) {
+    return this.request(`/instagram/dashboard/${connectionId}`)
+  }
+
+  async generateInstagramSuggestions(postId) {
+    return this.request(`/instagram/posts/${postId}/suggestions`, {
+      method: 'POST'
+    })
+  }
+
+  async getInstagramCompetitors() {
+    return this.request('/instagram/competitors')
+  }
+
+  async addInstagramCompetitor(username) {
+    return this.request('/instagram/competitors', {
+      method: 'POST',
+      body: JSON.stringify({ username })
+    })
+  }
+
+  async removeInstagramCompetitor(competitorId) {
+    return this.request(`/instagram/competitors/${competitorId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  async compareInstagramAccounts(connectionId) {
+    return this.request(`/instagram/compare/${connectionId}`)
+  }
+
+  // ==================== INSTAGRAM ADVANCED ANALYTICS ====================
+  
+  async getEnhancedMetrics(connectionId) {
+    return this.request(`/instagram/analytics/enhanced-metrics/${connectionId}`)
+  }
+
+  async getCaptionAnalysis(connectionId) {
+    return this.request(`/instagram/analytics/caption-analysis/${connectionId}`)
+  }
+
+  async getPostingTimeAnalysis(connectionId) {
+    return this.request(`/instagram/analytics/posting-time-analysis/${connectionId}`)
+  }
+
+  async getFormatAnalysis(connectionId) {
+    return this.request(`/instagram/analytics/format-analysis/${connectionId}`)
+  }
+
+  async analyzeSentiment(connectionId, comments, useGroq = false) {
+    return this.request(`/instagram/analytics/sentiment-analysis/${connectionId}`, {
+      method: 'POST',
+      body: JSON.stringify({ comments, use_groq: useGroq })
+    })
+  }
+
+  async identifyEmotionalTriggers(connectionId, commentsByPost) {
+    return this.request(`/instagram/analytics/emotional-triggers/${connectionId}`, {
+      method: 'POST',
+      body: JSON.stringify({ comments_by_post: commentsByPost })
+    })
+  }
+
+  async predictEngagement(connectionId, caption, mediaType, publishedAt) {
+    return this.request(`/instagram/analytics/predict-engagement/${connectionId}`, {
+      method: 'POST',
+      body: JSON.stringify({ caption, media_type: mediaType, published_at: publishedAt })
+    })
+  }
+
+  async getOptimalPostingTimes(connectionId) {
+    return this.request(`/instagram/analytics/optimal-posting-times/${connectionId}`)
+  }
+
+  async getEnhancedCompetitorCompare(connectionId, competitorId) {
+    return this.request(`/instagram/analytics/enhanced-competitor-compare/${connectionId}/${competitorId}`)
   }
 }
 

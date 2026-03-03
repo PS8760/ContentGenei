@@ -18,6 +18,8 @@ import TeamCollaboration from './pages/TeamCollaboration'
 import AboutUs from './pages/AboutUs'
 import ContactUs from './pages/ContactUs'
 import LinkoGenei from './pages/LinkoGenei'
+import InstagramAnalytics from './pages/InstagramAnalytics'
+import InstagramCallback from './pages/InstagramCallback'
 // import GeneiLink from './pages/GeneiLink' // TODO: Enable in future
 
 import './index.css'
@@ -75,6 +77,16 @@ function App() {
               <Route path="/linkogenei" element={
                 <ProtectedRoute>
                   <LinkoGenei />
+                </ProtectedRoute>
+              } />
+              <Route path="/instagram-analytics" element={
+                <ProtectedRoute>
+                  <InstagramAnalytics />
+                </ProtectedRoute>
+              } />
+              <Route path="/instagram/callback" element={
+                <ProtectedRoute>
+                  <InstagramCallback />
                 </ProtectedRoute>
               } />
               {/* TODO: Enable GeneiLink in future */}

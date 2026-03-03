@@ -89,6 +89,9 @@ def create_app(config_name=None):
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
         response.headers['Access-Control-Expose-Headers'] = 'Content-Type, Authorization'
         
+        # Add ngrok header to skip browser warning
+        response.headers['ngrok-skip-browser-warning'] = 'true'
+        
         return response
     
     # Register blueprints
@@ -97,6 +100,8 @@ def create_app(config_name=None):
     from routes.analytics import analytics_bp
     from routes.team import team_bp
     from routes.linkogenei import linkogenei_bp
+    from routes.instagram import instagram_bp
+    from routes.instagram_analytics import instagram_analytics_bp
     # from routes.geneilink import geneilink_bp  # TODO: Enable in future
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -104,6 +109,8 @@ def create_app(config_name=None):
     app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
     app.register_blueprint(team_bp, url_prefix='/api/team')
     app.register_blueprint(linkogenei_bp)  # Already has url_prefix in blueprint
+    app.register_blueprint(instagram_bp, url_prefix='/api/instagram')
+    app.register_blueprint(instagram_analytics_bp, url_prefix='/api/instagram/analytics')
     # app.register_blueprint(geneilink_bp, url_prefix='/api/geneilink')  # TODO: Enable in future
     
     # Health check endpoint

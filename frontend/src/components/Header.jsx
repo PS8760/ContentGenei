@@ -84,6 +84,9 @@ const Header = () => {
                 <Link to="/linkogenei" className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium">
                   LinkoGenei
                 </Link>
+                <Link to="/instagram-analytics" className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium">
+                  Instagram
+                </Link>
                 <Link to="/about" className="text-black dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 transition-all duration-300 font-medium">
                   About Us
                 </Link>
@@ -180,6 +183,17 @@ const Header = () => {
                       <span className="flex items-center space-x-2">
                         <span>📈</span>
                         <span>Analytics</span>
+                      </span>
+                    </Link>
+                    
+                    <Link
+                      to="/instagram-analytics"
+                      onClick={() => setShowDropdown(false)}
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors theme-transition"
+                    >
+                      <span className="flex items-center space-x-2">
+                        <span>📸</span>
+                        <span>Instagram</span>
                       </span>
                     </Link>
                     
