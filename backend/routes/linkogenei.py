@@ -3,7 +3,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 from services.mongodb_service import mongodb_service
-from datetime import datetime
+from datetime import datetime, timedelta
 import secrets
 import logging
 
@@ -11,8 +11,17 @@ logger = logging.getLogger(__name__)
 
 linkogenei_bp = Blueprint('linkogenei', __name__, url_prefix='/api/linkogenei')
 
-# In-memory token storage (in production, use Redis or database)
-extension_tokens = {}
+# Helper function to verify token from MongoDB
+def verify_extension_token(token):
+    """Verify token exists in MongoDB and return user_id"""
+    try:
+        result = mongodb_service.verify_extension_token(token)
+        if result and result.get('success'):
+            return result.get('user_id')
+        return None
+    except Exception as e:
+        logger.error(f"Token verification error: {str(e)}")
+        return None
 
 @linkogenei_bp.route('/test', methods=['GET'])
 def test():
@@ -36,13 +45,9 @@ def generate_token():
         # Generate a secure random token
         token = secrets.token_urlsafe(32)
         
-        # Store token with user_id (expires in 30 days)
-        # Note: Posts are stored in MongoDB with user_id, so they persist
-        # even when tokens are revoked or regenerated
-        extension_tokens[token] = {
-            'user_id': user_id,
-            'created_at': datetime.utcnow().isoformat()
-        }
+        # Store token in MongoDB (expires in 30 days)
+        expires_at = datetime.utcnow() + timedelta(days=30)
+        mongodb_service.store_extension_token(user_id, token, expires_at)
         
         logger.info(f"Generated extension token for user: {user_id}")
         
@@ -84,18 +89,17 @@ def verify_token():
         
         token = auth_header.split(' ')[1]
         
-        # Check if token exists
-        if token not in extension_tokens:
+        # Verify token from MongoDB
+        user_id = verify_extension_token(token)
+        if not user_id:
             return jsonify({
                 'success': False,
                 'error': 'Invalid or expired token'
             }), 401
         
-        user_data = extension_tokens[token]
-        
         return jsonify({
             'success': True,
-            'user_id': user_data['user_id'],
+            'user_id': user_id,
             'message': 'Token verified successfully'
         }), 200
         
@@ -120,14 +124,13 @@ def save_post():
         
         token = auth_header.split(' ')[1]
         
-        # Verify token
-        if token not in extension_tokens:
+        # Verify token from MongoDB
+        user_id = verify_extension_token(token)
+        if not user_id:
             return jsonify({
                 'success': False,
                 'error': 'Invalid or expired token'
             }), 401
-        
-        user_id = extension_tokens[token]['user_id']
         
         # Get post data
         data = request.get_json()
@@ -167,14 +170,13 @@ def get_posts():
         
         token = auth_header.split(' ')[1]
         
-        # Verify token
-        if token not in extension_tokens:
+        # Verify token from MongoDB
+        user_id = verify_extension_token(token)
+        if not user_id:
             return jsonify({
                 'success': False,
                 'error': 'Invalid or expired token'
             }), 401
-        
-        user_id = extension_tokens[token]['user_id']
         
         # Get query parameters
         category = request.args.get('category')
@@ -214,14 +216,13 @@ def get_post(post_id):
         
         token = auth_header.split(' ')[1]
         
-        # Verify token
-        if token not in extension_tokens:
+        # Verify token from MongoDB
+        user_id = verify_extension_token(token)
+        if not user_id:
             return jsonify({
                 'success': False,
                 'error': 'Invalid or expired token'
             }), 401
-        
-        user_id = extension_tokens[token]['user_id']
         
         # Get post from MongoDB
         post = mongodb_service.get_post_by_id(user_id, post_id)
@@ -258,14 +259,13 @@ def update_post(post_id):
         
         token = auth_header.split(' ')[1]
         
-        # Verify token
-        if token not in extension_tokens:
+        # Verify token from MongoDB
+        user_id = verify_extension_token(token)
+        if not user_id:
             return jsonify({
                 'success': False,
                 'error': 'Invalid or expired token'
             }), 401
-        
-        user_id = extension_tokens[token]['user_id']
         
         # Get update data
         data = request.get_json()
@@ -296,14 +296,13 @@ def delete_post(post_id):
         
         token = auth_header.split(' ')[1]
         
-        # Verify token
-        if token not in extension_tokens:
+        # Verify token from MongoDB
+        user_id = verify_extension_token(token)
+        if not user_id:
             return jsonify({
                 'success': False,
                 'error': 'Invalid or expired token'
             }), 401
-        
-        user_id = extension_tokens[token]['user_id']
         
         # Delete post from MongoDB
         result = mongodb_service.delete_post(user_id, post_id)
@@ -331,14 +330,13 @@ def get_categories():
         
         token = auth_header.split(' ')[1]
         
-        # Verify token
-        if token not in extension_tokens:
+        # Verify token from MongoDB
+        user_id = verify_extension_token(token)
+        if not user_id:
             return jsonify({
                 'success': False,
                 'error': 'Invalid or expired token'
             }), 401
-        
-        user_id = extension_tokens[token]['user_id']
         
         # Get categories from MongoDB
         categories = mongodb_service.get_categories(user_id)
@@ -369,14 +367,13 @@ def create_category():
         
         token = auth_header.split(' ')[1]
         
-        # Verify token
-        if token not in extension_tokens:
+        # Verify token from MongoDB
+        user_id = verify_extension_token(token)
+        if not user_id:
             return jsonify({
                 'success': False,
                 'error': 'Invalid or expired token'
             }), 401
-        
-        user_id = extension_tokens[token]['user_id']
         
         # Get category data
         data = request.get_json()
@@ -417,14 +414,13 @@ def get_stats():
         
         token = auth_header.split(' ')[1]
         
-        # Verify token
-        if token not in extension_tokens:
+        # Verify token from MongoDB
+        user_id = verify_extension_token(token)
+        if not user_id:
             return jsonify({
                 'success': False,
                 'error': 'Invalid or expired token'
             }), 401
-        
-        user_id = extension_tokens[token]['user_id']
         
         # Get stats from MongoDB
         result = mongodb_service.get_stats(user_id)

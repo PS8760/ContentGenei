@@ -42,6 +42,7 @@ backend/env/
 .env.*.local
 .env.production
 RENDER_ENV_VARIABLES.txt
+COPY_PASTE_TO_RENDER.txt
 
 # Database
 *.db
