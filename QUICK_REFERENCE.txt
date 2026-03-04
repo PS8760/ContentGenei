@@ -1,0 +1,62 @@
+╔══════════════════════════════════════════════════════════════╗
+║           CONTENTGENIE DEPLOYMENT QUICK REFERENCE            ║
+╚══════════════════════════════════════════════════════════════╝
+
+📍 YOUR URLS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Frontend: https://content-genei-dhphy2e82-ps8760s-projects.vercel.app
+Backend:  https://contentgenei.onrender.com
+Health:   https://contentgenei.onrender.com/api/health
+
+🔑 GENERATED KEYS (USE THESE IN RENDER!)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECRET_KEY=0ce4d3069bc7b0c9745a2fec7133647b2026c30287ddd828ae736746860757cb
+JWT_SECRET_KEY=200b844835b1cbce5f458e55d8c78aa433bdba1b5b7008cc9ea841836bce01f3
+
+📋 NEXT STEPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Open: GET_CREDENTIALS_GUIDE.md
+2. Get: DATABASE_URL, MONGODB_URI, Firebase config
+3. Open: RENDER_ENV_VARIABLES.txt
+4. Replace placeholders with your values
+5. Add all to Render Dashboard → Environment
+6. Wait 3-5 min for redeploy
+7. Test: curl https://contentgenei.onrender.com/api/health
+
+📁 FILES TO CHECK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ RENDER_ENV_VARIABLES.txt    - All env vars with values
+✓ GET_CREDENTIALS_GUIDE.md    - How to get missing values
+✓ DEPLOYMENT_SUMMARY.md        - Complete deployment guide
+✓ VERCEL_RENDER_SETUP.md       - Vercel + Render setup
+✓ update-cors.md                - CORS configuration
+
+🎯 MUST HAVE (Get These First!)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+□ DATABASE_URL          → Render PostgreSQL
+□ MONGODB_URI           → MongoDB Atlas (free)
+□ FIREBASE_PROJECT_ID   → Firebase Console
+□ FIREBASE_PRIVATE_KEY  → Firebase Console
+□ FIREBASE_CLIENT_EMAIL → Firebase Console
+
+💰 COST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Current: $0/month (all free tiers!)
+Optional: $7/month (Render paid for always-on)
+Runtime: 28+ months with $200 credits
+
+🧪 TEST COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+curl https://contentgenei.onrender.com/api/health
+./test-connection.sh
+
+🆘 HELP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Render Logs:  https://dashboard.render.com → Your Service → Logs
+Vercel Logs:  https://vercel.com → Your Project → Deployments
+MongoDB:      https://cloud.mongodb.com
+Firebase:     https://console.firebase.google.com
+
+╔══════════════════════════════════════════════════════════════╗
+║  START HERE: Open GET_CREDENTIALS_GUIDE.md and follow steps ║
+╚══════════════════════════════════════════════════════════════╝

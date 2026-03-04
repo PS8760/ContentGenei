@@ -3,12 +3,13 @@ import { auth } from '../config/firebase'
 // Backend API URL - Update this after deploying your backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.MODE === 'production' 
-    ? 'https://contentgenei.onrender.com/api'  // Production backend URL
-    : 'http://localhost:5001/api')
+    ? 'https://contentgenei.onrender.com'  // Production backend URL (no /api)
+    : 'http://localhost:5001')  // Local backend URL (no /api)
 
 class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL
+    console.log('API Base URL:', this.baseURL)  // Debug log
   }
 
   async getAuthHeaders() {
@@ -37,8 +38,12 @@ class ApiService {
   }
 
   async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`
+    // Ensure endpoint starts with /api if not already
+    const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`
+    const url = `${this.baseURL}${apiEndpoint}`
     const headers = await this.getAuthHeaders()
+    
+    console.log('API Request:', url)  // Debug log
     
     const config = {
       headers,
@@ -51,7 +56,7 @@ class ApiService {
       // Handle non-JSON responses
       const contentType = response.headers.get('content-type')
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`)
+        throw new Error(`Endpoint not found`)
       }
       
       const data = await response.json()
