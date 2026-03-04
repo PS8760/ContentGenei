@@ -51,7 +51,26 @@ class ProductionConfig(Config):
     if database_url and database_url.startswith('postgres://'):
         # Render uses postgres:// but SQLAlchemy needs postgresql://
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    
+    # Add SSL parameters for Render PostgreSQL
+    if database_url and 'postgresql://' in database_url:
+        # Add sslmode=require if not already present
+        if '?' not in database_url:
+            database_url += '?sslmode=require'
+        elif 'sslmode' not in database_url:
+            database_url += '&sslmode=require'
+    
     SQLALCHEMY_DATABASE_URI = database_url or 'sqlite:///contentgenie_prod.db'
+    
+    # Additional SQLAlchemy engine options for production
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,  # Verify connections before using them
+        'pool_recycle': 300,    # Recycle connections after 5 minutes
+        'connect_args': {
+            'sslmode': 'require',
+            'connect_timeout': 10
+        } if database_url and 'postgresql://' in database_url else {}
+    }
 
 class TestingConfig(Config):
     TESTING = True
