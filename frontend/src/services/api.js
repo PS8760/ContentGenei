@@ -12,7 +12,19 @@ class ApiService {
     console.log('API Base URL:', this.baseURL)  // Debug log
   }
 
-  async getAuthHeaders() {
+  async getAuthHeaders(useExtensionToken = false) {
+    // For LinkoGenei endpoints, use extension token
+    if (useExtensionToken) {
+      const extensionToken = localStorage.getItem('linkogenei_extension_token')
+      if (extensionToken) {
+        return {
+          'Authorization': `Bearer ${extensionToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+      // If no extension token, fall through to JWT (for token generation)
+    }
+    
     // Try to get stored access token first
     const accessToken = localStorage.getItem('access_token')
     if (accessToken) {
@@ -41,7 +53,10 @@ class ApiService {
     // Ensure endpoint starts with /api if not already
     const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`
     const url = `${this.baseURL}${apiEndpoint}`
-    const headers = await this.getAuthHeaders()
+    
+    // Check if this is a LinkoGenei endpoint (except token generation)
+    const isLinkoGeneiEndpoint = apiEndpoint.includes('/linkogenei/') && !apiEndpoint.includes('/generate-token')
+    const headers = await this.getAuthHeaders(isLinkoGeneiEndpoint)
     
     console.log('API Request:', url)  // Debug log
     
@@ -332,9 +347,17 @@ class ApiService {
   // ==================== LINKOGENEI ====================
   
   async generateLinkoGeneiToken() {
-    return this.request('/linkogenei/generate-token', {
+    const response = await this.request('/linkogenei/generate-token', {
       method: 'POST'
     })
+    
+    // Store the token in localStorage for future LinkoGenei API calls
+    if (response.success && response.token) {
+      localStorage.setItem('linkogenei_extension_token', response.token)
+      console.log('LinkoGenei extension token stored in localStorage')
+    }
+    
+    return response
   }
 
   async getAggregatedPosts(params = {}) {

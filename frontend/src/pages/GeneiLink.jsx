@@ -25,6 +25,31 @@ const GeneiLink = () => {
   
   const titleRef = useRef(null)
   const contentRef = useRef(null)
+  const [hasExtensionToken, setHasExtensionToken] = useState(false)
+
+  // Check for extension token on mount
+  useEffect(() => {
+    const checkExtensionToken = async () => {
+      const token = localStorage.getItem('linkogenei_extension_token')
+      if (!token && currentUser) {
+        // Generate token automatically if user is logged in
+        try {
+          console.log('No extension token found, generating one...')
+          const response = await apiService.generateLinkoGeneiToken()
+          if (response.success) {
+            console.log('Extension token generated successfully')
+            setHasExtensionToken(true)
+          }
+        } catch (error) {
+          console.error('Failed to generate extension token:', error)
+        }
+      } else if (token) {
+        setHasExtensionToken(true)
+      }
+    }
+    
+    checkExtensionToken()
+  }, [currentUser])
 
   useEffect(() => {
     const tl = gsap.timeline({ delay: 0.3 })
