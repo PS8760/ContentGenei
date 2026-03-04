@@ -718,83 +718,82 @@ class MongoDBService:
             'read': notification.get('read', False),
             'created_at': notification['created_at'].isoformat()
         }
+    
+    # ==================== EXTENSION TOKEN METHODS ====================
+    
+    def store_extension_token(self, user_id: str, token: str, expires_at: datetime) -> Dict[str, Any]:
+        """Store extension token in MongoDB"""
+        try:
+            # Create extension_tokens collection if not exists
+            if not hasattr(self, 'extension_tokens_collection'):
+                self.extension_tokens_collection = self.db['extension_tokens']
+                # Create indexes
+                self.extension_tokens_collection.create_index('token', unique=True)
+                self.extension_tokens_collection.create_index([('user_id', ASCENDING)])
+                self.extension_tokens_collection.create_index([('expires_at', ASCENDING)])
+            
+            document = {
+                'user_id': user_id,
+                'token': token,
+                'expires_at': expires_at,
+                'created_at': datetime.utcnow()
+            }
+            
+            # Insert or update token
+            self.extension_tokens_collection.update_one(
+                {'token': token},
+                {'$set': document},
+                upsert=True
+            )
+            
+            logger.info(f"Extension token stored for user: {user_id}")
+            return {'success': True, 'message': 'Token stored successfully'}
+            
+        except Exception as e:
+            logger.error(f"Failed to store extension token: {str(e)}")
+            return {'success': False, 'error': str(e)}
+    
+    def verify_extension_token(self, token: str) -> Dict[str, Any]:
+        """Verify extension token and return user_id if valid"""
+        try:
+            # Create collection if not exists
+            if not hasattr(self, 'extension_tokens_collection'):
+                self.extension_tokens_collection = self.db['extension_tokens']
+            
+            # Find token
+            token_doc = self.extension_tokens_collection.find_one({'token': token})
+            
+            if not token_doc:
+                return {'success': False, 'error': 'Token not found'}
+            
+            # Check if expired
+            if token_doc['expires_at'] < datetime.utcnow():
+                return {'success': False, 'error': 'Token expired'}
+            
+            return {
+                'success': True,
+                'user_id': token_doc['user_id']
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to verify extension token: {str(e)}")
+            return {'success': False, 'error': str(e)}
+    
+    def delete_extension_token(self, token: str) -> Dict[str, Any]:
+        """Delete extension token"""
+        try:
+            if not hasattr(self, 'extension_tokens_collection'):
+                self.extension_tokens_collection = self.db['extension_tokens']
+            
+            result = self.extension_tokens_collection.delete_one({'token': token})
+            
+            if result.deleted_count > 0:
+                return {'success': True, 'message': 'Token deleted'}
+            return {'success': False, 'error': 'Token not found'}
+            
+        except Exception as e:
+            logger.error(f"Failed to delete extension token: {str(e)}")
+            return {'success': False, 'error': str(e)}
 
 # Global instance
 mongodb_service = MongoDBService()
-
-# ==================== EXTENSION TOKEN METHODS ====================
-
-def store_extension_token(self, user_id: str, token: str, expires_at: datetime) -> Dict[str, Any]:
-    """Store extension token in MongoDB"""
-    try:
-        # Create extension_tokens collection if not exists
-        if not hasattr(self, 'extension_tokens_collection'):
-            self.extension_tokens_collection = self.db['extension_tokens']
-            # Create indexes
-            self.extension_tokens_collection.create_index('token', unique=True)
-            self.extension_tokens_collection.create_index([('user_id', ASCENDING)])
-            self.extension_tokens_collection.create_index([('expires_at', ASCENDING)])
-
-        document = {
-            'user_id': user_id,
-            'token': token,
-            'expires_at': expires_at,
-            'created_at': datetime.utcnow()
-        }
-
-        # Insert or update token
-        self.extension_tokens_collection.update_one(
-            {'token': token},
-            {'$set': document},
-            upsert=True
-        )
-
-        logger.info(f"Extension token stored for user: {user_id}")
-        return {'success': True, 'message': 'Token stored successfully'}
-
-    except Exception as e:
-        logger.error(f"Failed to store extension token: {str(e)}")
-        return {'success': False, 'error': str(e)}
-
-def verify_extension_token(self, token: str) -> Dict[str, Any]:
-    """Verify extension token and return user_id if valid"""
-    try:
-        # Create collection if not exists
-        if not hasattr(self, 'extension_tokens_collection'):
-            self.extension_tokens_collection = self.db['extension_tokens']
-
-        # Find token
-        token_doc = self.extension_tokens_collection.find_one({'token': token})
-
-        if not token_doc:
-            return {'success': False, 'error': 'Token not found'}
-
-        # Check if expired
-        if token_doc['expires_at'] < datetime.utcnow():
-            return {'success': False, 'error': 'Token expired'}
-
-        return {
-            'success': True,
-            'user_id': token_doc['user_id']
-        }
-
-    except Exception as e:
-        logger.error(f"Failed to verify extension token: {str(e)}")
-        return {'success': False, 'error': str(e)}
-
-def delete_extension_token(self, token: str) -> Dict[str, Any]:
-    """Delete extension token"""
-    try:
-        if not hasattr(self, 'extension_tokens_collection'):
-            self.extension_tokens_collection = self.db['extension_tokens']
-
-        result = self.extension_tokens_collection.delete_one({'token': token})
-
-        if result.deleted_count > 0:
-            return {'success': True, 'message': 'Token deleted'}
-        return {'success': False, 'error': 'Token not found'}
-
-    except Exception as e:
-        logger.error(f"Failed to delete extension token: {str(e)}")
-        return {'success': False, 'error': str(e)}
-
