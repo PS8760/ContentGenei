@@ -453,6 +453,12 @@ def update_content_item(content_id):
             content_item.word_count = len(data['content'].split())
             content_item.character_count = len(data['content'])
         
+        if 'content_type' in data:
+            content_item.content_type = data['content_type']
+        
+        if 'tone' in data:
+            content_item.tone = data['tone']
+        
         if 'status' in data:
             content_item.status = data['status']
             if data['status'] == 'published' and not content_item.published_at:
