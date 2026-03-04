@@ -16,10 +16,20 @@ const Creator = () => {
   const [prompt, setPrompt] = useState('')
   const [tone, setTone] = useState('professional')
   const [generatedContent, setGeneratedContent] = useState('')
+  const [generatedContentId, setGeneratedContentId] = useState(null)  // Track generated content ID
   const [isGenerating, setIsGenerating] = useState(false)
   const [activeTab, setActiveTab] = useState('generate')
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
+  
+  // Persistent chat state
+  const [conversations, setConversations] = useState([])
+  const [currentConversation, setCurrentConversation] = useState(null)
+  const [showConversations, setShowConversations] = useState(false)
+  const [loadingConversations, setLoadingConversations] = useState(false)
+  const [renamingConversation, setRenamingConversation] = useState(null)
+  const [newConversationTitle, setNewConversationTitle] = useState('')
+  
   const [summarizeText, setSummarizeText] = useState('')
   const [summarizedContent, setSummarizedContent] = useState('')
   const [uploadedFile, setUploadedFile] = useState(null)
@@ -65,6 +75,96 @@ const Creator = () => {
       fetchImprovements()
     }
   }, [activeTab])
+
+  // Load conversations when chat tab is active
+  useEffect(() => {
+    if (activeTab === 'chat') {
+      loadConversations()
+    }
+  }, [activeTab])
+
+  const loadConversations = async () => {
+    try {
+      setLoadingConversations(true)
+      const response = await apiService.getAlexChatConversations()
+      if (response.success) {
+        setConversations(response.conversations || [])
+        // Load most recent conversation if exists
+        if (response.conversations && response.conversations.length > 0 && !currentConversation) {
+          await loadConversation(response.conversations[0].id)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load conversations:', error)
+    } finally {
+      setLoadingConversations(false)
+    }
+  }
+
+  const loadConversation = async (conversationId) => {
+    try {
+      setIsGenerating(true)
+      const response = await apiService.getAlexChatMessages(conversationId)
+      if (response.success) {
+        setChatMessages(response.messages || [])
+        setCurrentConversation(conversationId)
+      }
+    } catch (error) {
+      console.error('Failed to load conversation:', error)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleNewChat = async () => {
+    try {
+      const title = `Chat with Alex - ${new Date().toLocaleDateString()}`
+      const response = await apiService.createAlexChatConversation(title)
+      if (response.success) {
+        await loadConversations()
+        setCurrentConversation(response.conversation.id)
+        setChatMessages([])
+      }
+    } catch (error) {
+      console.error('Failed to create conversation:', error)
+      alert('Failed to create new chat. Please try again.')
+    }
+  }
+
+  const handleDeleteConversation = async (conversationId, event) => {
+    event.stopPropagation()
+    if (!confirm('Delete this conversation? This cannot be undone.')) return
+    
+    try {
+      const response = await apiService.deleteAlexChatConversation(conversationId)
+      if (response.success) {
+        if (currentConversation === conversationId) {
+          setCurrentConversation(null)
+          setChatMessages([])
+        }
+        await loadConversations()
+      }
+    } catch (error) {
+      console.error('Failed to delete conversation:', error)
+      alert('Failed to delete conversation. Please try again.')
+    }
+  }
+
+  const handleRenameConversation = async () => {
+    if (!newConversationTitle.trim()) return
+    
+    try {
+      const response = await apiService.updateAlexChatConversation(renamingConversation, newConversationTitle)
+      if (response.success) {
+        await loadConversations()
+        setRenamingConversation(null)
+        setNewConversationTitle('')
+      }
+    } catch (error) {
+      console.error('Failed to rename conversation:', error)
+      alert('Failed to rename conversation. Please try again.')
+    }
+  }
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -116,6 +216,11 @@ Generate high-quality content that meets these specifications.`
       })
       
       if (data.success) {
+        // Store generated content ID for tracking
+        if (data.content.generated_content_id) {
+          setGeneratedContentId(data.content.generated_content_id)
+        }
+        
         // Add helpful disclaimer
         const contentWithNote = `${data.content.content}\n\n---\n💡 AI-Generated Content: Please review and edit as needed before publishing.`
         setGeneratedContent(contentWithNote)
@@ -166,12 +271,47 @@ Generate high-quality content that meets these specifications.`
   const handleSave = async () => {
     if (!generatedContent) return
     
+    // Remove the AI disclaimer footer for saving
+    const contentToSave = generatedContent.replace(/\n---\n💡 AI-Generated Content:.*$/s, '').trim()
+    
+    // Calculate word count
+    const wordCount = contentToSave.split(/\s+/).filter(word => word.length > 0).length
+    
+    // Generate a title from the prompt or first line of content
+    const title = prompt.length > 50 
+      ? prompt.substring(0, 50) + '...' 
+      : prompt || contentToSave.split('\n')[0].substring(0, 50) + '...'
+    
     try {
       setLoading(true)
-      alert('✅ Content saved successfully!')
+      
+      const contentData = {
+        title: title,
+        content: contentToSave,
+        content_type: contentType,
+        tone: tone,
+        word_count: wordCount,
+        status: 'draft',
+        generated_content_id: generatedContentId,  // Link to generated content for analytics
+        metadata: {
+          prompt: prompt,
+          generated_at: new Date().toISOString(),
+          ai_model: 'groq'
+        }
+      }
+      
+      const response = await apiService.createContent(contentData)
+      
+      if (response.success) {
+        alert('✅ Content saved successfully to your library!')
+        // Optionally navigate to content library
+        // navigate('/content-library')
+      } else {
+        throw new Error(response.error || 'Failed to save content')
+      }
     } catch (error) {
       console.error('Error saving content:', error)
-      alert('❌ Failed to save content')
+      alert('❌ Failed to save content: ' + (error.message || 'Unknown error'))
     } finally {
       setLoading(false)
     }
@@ -237,25 +377,41 @@ Provide an improved version that is significantly better while keeping the core 
   const handleChatSend = async () => {
     if (!chatInput.trim()) return
     
-    const userMessage = { role: 'user', content: chatInput }
+    // Create new conversation if none exists
+    if (!currentConversation) {
+      await handleNewChat()
+      // Wait a bit for conversation to be created
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+    
+    if (!currentConversation) {
+      alert('Please create a new chat first')
+      return
+    }
+    
+    const userMessageContent = chatInput
+    const userMessage = { role: 'user', content: userMessageContent }
     setChatMessages(prev => [...prev, userMessage])
     setChatInput('')
     setIsGenerating(true)
     
     try {
+      // Save user message to backend
+      await apiService.sendAlexChatMessage(currentConversation, 'user', userMessageContent)
+      
       // Build conversation context with history
       let contextualPrompt = ''
       
       // Check if this is a greeting
       const greetings = ['hello', 'hi', 'hey', 'greetings', 'good morning', 'good afternoon', 'good evening', 'sup', 'yo', 'howdy', "what's up", 'whats up', 'wassup', 'heya']
       const isGreeting = greetings.some(greeting => 
-        chatInput.toLowerCase().trim().startsWith(greeting) || 
-        chatInput.toLowerCase().trim() === greeting
+        userMessageContent.toLowerCase().trim().startsWith(greeting) || 
+        userMessageContent.toLowerCase().trim() === greeting
       )
       
       if (isGreeting && chatMessages.length === 0) {
         // First message greeting - respond like Alex in the image
-        contextualPrompt = `You are Alex, a friendly AI content buddy. Your friend just said: "${chatInput}"
+        contextualPrompt = `You are Alex, a friendly AI content buddy. Your friend just said: "${userMessageContent}"
 
 Respond EXACTLY like this style:
 "Hey hey! 👋 I'm your AI content buddy, here to help you brainstorm, write, and make stuff awesome. What are you working on today? 😊"
@@ -276,7 +432,7 @@ Keep it:
 
 ${recentHistory}
 
-Friend: ${chatInput}
+Friend: ${userMessageContent}
 
 Respond like Alex in these examples:
 - "Hey, I'm doing great, thanks for asking! 😊 How's your day going? Anything fun you're working on?"
@@ -295,7 +451,7 @@ Key style rules:
 - Be encouraging and positive`
       } else {
         // First message but not a greeting - jump right into helping
-        contextualPrompt = `You are Alex, a friendly AI content buddy. Your friend just asked: "${chatInput}"
+        contextualPrompt = `You are Alex, a friendly AI content buddy. Your friend just asked: "${userMessageContent}"
 
 Respond with SPECIFIC, ACTIONABLE advice like these examples:
 - "Sure thing! 🎯 Here's a quick 30-day flow: Week 1 – bite-size tips & hacks; Week 2 – behind-the-scenes or process vids; Week 3 – user stories or case studies; Week 4 – deep-dive guides or interviews, then repeat with fresh angles. What niche or platform are you targeting so I can tweak it for you? 😊"
@@ -320,6 +476,12 @@ Key style:
       if (response.success) {
         const aiMessage = { role: 'assistant', content: response.content.content }
         setChatMessages(prev => [...prev, aiMessage])
+        
+        // Save AI message to backend
+        await apiService.sendAlexChatMessage(currentConversation, 'assistant', response.content.content)
+        
+        // Reload conversations to update message count
+        await loadConversations()
       }
     } catch (error) {
       console.error('Error in chat:', error)
@@ -640,7 +802,7 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
       <main className="pt-24 pb-12 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div ref={titleRef} className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4 theme-transition">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-700 dark:text-white mb-4 theme-transition">
               AI <span className="bg-gradient-to-r from-black to-gray-700 dark:from-blue-400 dark:to-purple-500 bg-clip-text text-transparent">Content Creator</span>
             </h1>
             <p className="text-gray-700 dark:text-gray-400 text-lg max-w-2xl mx-auto theme-transition">
@@ -861,110 +1023,236 @@ Format each suggestion as a clear, actionable statement (not numbered). Make the
 
           {/* CHAT ASSISTANT TAB */}
           {activeTab === 'chat' && (
-            <div className="max-w-5xl mx-auto">
-              <div className="glass-card rounded-2xl p-6 shadow-lg theme-transition">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-gray-800 to-black dark:bg-green-600 rounded-lg flex items-center justify-center">
-                      <span className="text-white text-lg">💬</span>
+            <div className="max-w-7xl mx-auto">
+              <div className="grid lg:grid-cols-4 gap-6">
+                {/* Conversation Sidebar */}
+                <div className="lg:col-span-1">
+                  <div className="glass-card rounded-2xl p-4 shadow-lg theme-transition">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">Chats</h3>
+                      <button
+                        onClick={handleNewChat}
+                        className="p-2 bg-gray-800 hover:bg-black dark:bg-green-600 dark:hover:bg-green-700 text-white rounded-lg transition-all"
+                        title="New Chat"
+                      >
+                        <span className="text-lg">+</span>
+                      </button>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white theme-transition">Alex - Chat Assistant</h3>
+
+                    {loadingConversations ? (
+                      <div className="flex justify-center py-8">
+                        <div className="w-6 h-6 border-2 border-gray-300 dark:border-gray-600 border-t-green-600 rounded-full animate-spin"></div>
+                      </div>
+                    ) : conversations.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">No chats yet</p>
+                        <button
+                          onClick={handleNewChat}
+                          className="text-sm bg-gray-800 hover:bg-black dark:bg-green-600 dark:hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all"
+                        >
+                          Start New Chat
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                        {conversations.map((conv) => (
+                          <div
+                            key={conv.id}
+                            onClick={() => loadConversation(conv.id)}
+                            className={`p-3 rounded-lg cursor-pointer transition-all group ${
+                              currentConversation === conv.id
+                                ? 'bg-gray-800 dark:bg-green-600 text-white'
+                                : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-200'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{conv.title}</p>
+                                <p className="text-xs opacity-70 mt-1">
+                                  {conv.message_count} messages
+                                </p>
+                              </div>
+                              <div className="flex items-center space-x-1 ml-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setRenamingConversation(conv.id)
+                                    setNewConversationTitle(conv.title)
+                                  }}
+                                  className="p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-700 dark:hover:bg-gray-600 rounded transition-all"
+                                  title="Rename"
+                                >
+                                  <span className="text-xs">✏️</span>
+                                </button>
+                                <button
+                                  onClick={(e) => handleDeleteConversation(conv.id, e)}
+                                  className="p-1 opacity-0 group-hover:opacity-100 hover:bg-red-600 rounded transition-all"
+                                  title="Delete"
+                                >
+                                  <span className="text-xs">🗑️</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400 theme-transition">{chatMessages.length}/100 messages</span>
                 </div>
 
-                {/* Usage Guidelines */}
-                <div className="bg-gray-100 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 rounded-xl p-4 mb-6 theme-transition">
-                  <div className="flex items-start space-x-2">
-                    <span className="text-gray-600 dark:text-gray-400">📘</span>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900 dark:text-gray-200 font-semibold mb-2 theme-transition">Usage Guidelines:</p>
-                      <ul className="text-xs text-gray-700 dark:text-gray-400 space-y-1 theme-transition">
-                        <li>• Focus on content creation, writing, and creative tasks</li>
-                        <li>• Messages: 3-4000 characters | Session limit: 50 exchanges</li>
-                        <li>• No personal info, illegal content, or harmful requests</li>
-                        <li>• AI responses are suggestions - always review before use</li>
-                        <li>• 💬 Chat conversations are not saved to Analytics</li>
-                      </ul>
+                {/* Chat Panel */}
+                <div className="lg:col-span-3">
+                  <div className="glass-card rounded-2xl p-6 shadow-lg theme-transition">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-gray-800 to-black dark:bg-green-600 rounded-lg flex items-center justify-center">
+                          <span className="text-white text-lg">💬</span>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white theme-transition">Alex - Chat Assistant</h3>
+                          {currentConversation && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                              {conversations.find(c => c.id === currentConversation)?.title || 'Chat'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400 theme-transition">{chatMessages.length}/100 messages</span>
+                    </div>
+
+                    {/* Usage Guidelines */}
+                    <div className="bg-gray-100 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 rounded-xl p-4 mb-6 theme-transition">
+                      <div className="flex items-start space-x-2">
+                        <span className="text-gray-600 dark:text-gray-400">📘</span>
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-900 dark:text-gray-200 font-semibold mb-2 theme-transition">Usage Guidelines:</p>
+                          <ul className="text-xs text-gray-700 dark:text-gray-400 space-y-1 theme-transition">
+                            <li>• Focus on content creation, writing, and creative tasks</li>
+                            <li>• Messages: 3-4000 characters | Session limit: 50 exchanges</li>
+                            <li>• No personal info, illegal content, or harmful requests</li>
+                            <li>• AI responses are suggestions - always review before use</li>
+                            <li>• 💾 Chat conversations are saved and accessible anytime</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Chat Messages */}
+                    <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6 h-96 overflow-y-auto mb-4 space-y-4 theme-transition border border-gray-100 dark:border-gray-800">
+                      {chatMessages.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center space-y-6 h-full">
+                          <div className="w-20 h-20 bg-gradient-to-br from-gray-800 to-black dark:bg-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <span className="text-4xl">💬</span>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-gray-900 dark:text-gray-200 text-lg font-medium mb-2 theme-transition">
+                              Hey! I'm <span className="text-gray-900 dark:text-green-400 font-bold">Alex</span>, your content buddy 👋
+                            </p>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm theme-transition">
+                              {currentConversation ? "Let's chat about your writing!" : "Create a new chat to get started!"}
+                            </p>
+                          </div>
+                          {currentConversation && (
+                            <div className="flex flex-wrap justify-center gap-3">
+                              <button 
+                                onClick={() => setChatInput('Help with blog post')}
+                                className="bg-gray-700 hover:bg-gray-800 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
+                              >
+                                Help with blog post
+                              </button>
+                              <button 
+                                onClick={() => setChatInput('Need ideas')}
+                                className="bg-gray-800 hover:bg-black dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
+                              >
+                                Need ideas
+                              </button>
+                              <button 
+                                onClick={() => setChatInput('Improve my writing')}
+                                className="bg-black hover:bg-gray-900 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
+                              >
+                                Improve my writing
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          {chatMessages.map((msg, idx) => (
+                            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                              <div className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
+                                msg.role === 'user' 
+                                  ? 'bg-gray-700 dark:bg-blue-600 text-white' 
+                                  : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-700 theme-transition'
+                              }`}>
+                                {msg.content}
+                              </div>
+                            </div>
+                          ))}
+                          <div ref={chatEndRef} />
+                        </>
+                      )}
+                    </div>
+                    
+                    {/* Chat Input */}
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="text-xs text-gray-500 dark:text-gray-500 theme-transition">Message length: {chatInput.length}/4000</div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && !isGenerating && handleChatSend()}
+                        placeholder={currentConversation ? "Type your message..." : "Create a new chat first..."}
+                        maxLength={4000}
+                        disabled={!currentConversation}
+                        className="flex-1 bg-white dark:bg-gray-900/30 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors theme-transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      />
+                      <button
+                        onClick={handleChatSend}
+                        disabled={!chatInput.trim() || isGenerating || !currentConversation}
+                        className="bg-gray-800 hover:bg-black dark:bg-green-600 dark:hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+                      >
+                        {isGenerating ? 'Sending...' : 'Send'}
+                      </button>
                     </div>
                   </div>
                 </div>
-                
-                {/* Chat Messages */}
-                <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6 h-96 overflow-y-auto mb-4 space-y-4 theme-transition border border-gray-100 dark:border-gray-800">
-                  {chatMessages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center space-y-6 h-full">
-                      <div className="w-20 h-20 bg-gradient-to-br from-gray-800 to-black dark:bg-green-600 rounded-2xl flex items-center justify-center shadow-lg">
-                        <span className="text-4xl">💬</span>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-gray-900 dark:text-gray-200 text-lg font-medium mb-2 theme-transition">
-                          Hey! I'm <span className="text-gray-900 dark:text-green-400 font-bold">Alex</span>, your content buddy 👋
-                        </p>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm theme-transition">Let's chat about your writing!</p>
-                      </div>
-                      <div className="flex flex-wrap justify-center gap-3">
-                        <button 
-                          onClick={() => setChatInput('Help with blog post')}
-                          className="bg-gray-700 hover:bg-gray-800 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
-                        >
-                          Help with blog post
-                        </button>
-                        <button 
-                          onClick={() => setChatInput('Need ideas')}
-                          className="bg-gray-800 hover:bg-black dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
-                        >
-                          Need ideas
-                        </button>
-                        <button 
-                          onClick={() => setChatInput('Improve my writing')}
-                          className="bg-black hover:bg-gray-900 dark:bg-green-600 dark:hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
-                        >
-                          Improve my writing
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {chatMessages.map((msg, idx) => (
-                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
-                            msg.role === 'user' 
-                              ? 'bg-gray-700 dark:bg-blue-600 text-white' 
-                              : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 border border-gray-200 dark:border-gray-700 theme-transition'
-                          }`}>
-                            {msg.content}
-                          </div>
-                        </div>
-                      ))}
-                      <div ref={chatEndRef} />
-                    </>
-                  )}
-                </div>
-                
-                {/* Chat Input */}
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="text-xs text-gray-500 dark:text-gray-500 theme-transition">Message length: {chatInput.length}/4000</div>
-                </div>
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleChatSend()}
-                    placeholder="Type your message..."
-                    maxLength={4000}
-                    className="flex-1 bg-white dark:bg-gray-900/30 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors theme-transition"
-                  />
-                  <button
-                    onClick={handleChatSend}
-                    disabled={!chatInput.trim() || isGenerating}
-                    className="bg-gray-800 hover:bg-black dark:bg-green-600 dark:hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
-                  >
-                    Send
-                  </button>
-                </div>
               </div>
+
+              {/* Rename Conversation Modal */}
+              {renamingConversation && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full shadow-2xl">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Rename Conversation</h3>
+                    <input
+                      type="text"
+                      value={newConversationTitle}
+                      onChange={(e) => setNewConversationTitle(e.target.value)}
+                      placeholder="Enter new title..."
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-4"
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleRenameConversation}
+                        className="flex-1 bg-gray-800 hover:bg-black dark:bg-green-600 dark:hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-all"
+                      >
+                        Rename
+                      </button>
+                      <button
+                        onClick={() => {
+                          setRenamingConversation(null)
+                          setNewConversationTitle('')
+                        }}
+                        className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 dark:hover:bg-gray-500 transition-all"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

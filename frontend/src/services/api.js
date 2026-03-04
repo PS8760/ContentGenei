@@ -89,13 +89,31 @@ class ApiService {
   }
 
   async getProfile() {
-    return this.request('/auth/profile')
+    return this.request('/profile')
   }
 
   async updateProfile(profileData) {
-    return this.request('/auth/profile', {
+    return this.request('/profile', {
       method: 'PUT',
       body: JSON.stringify(profileData)
+    })
+  }
+
+  async completeOnboarding(onboardingData) {
+    return this.request('/profile/onboarding', {
+      method: 'POST',
+      body: JSON.stringify(onboardingData)
+    })
+  }
+
+  async getOnboardingStatus() {
+    return this.request('/profile/onboarding/status')
+  }
+
+  async updatePlatformConnection(platform, connectionData) {
+    return this.request(`/profile/platform/${platform}`, {
+      method: 'PUT',
+      body: JSON.stringify(connectionData)
     })
   }
 
@@ -281,28 +299,28 @@ class ApiService {
 
   // ==================== TEAM CHAT ====================
   
-  async getChatConversations() {
+  async getTeamChatConversations() {
     return this.request('/team/chat/conversations')
   }
 
-  async getChatMessages(otherUserId) {
+  async getTeamChatMessages(otherUserId) {
     return this.request(`/team/chat/${otherUserId}`)
   }
 
-  async sendChatMessage(otherUserId, message) {
+  async sendTeamChatMessage(otherUserId, message) {
     return this.request(`/team/chat/${otherUserId}`, {
       method: 'POST',
       body: JSON.stringify({ message })
     })
   }
 
-  async clearChat(otherUserId) {
+  async clearTeamChat(otherUserId) {
     return this.request(`/team/chat/${otherUserId}/clear`, {
       method: 'DELETE'
     })
   }
 
-  async exportChat(otherUserId) {
+  async exportTeamChat(otherUserId) {
     return this.request(`/team/chat/${otherUserId}/export`)
   }
 
@@ -312,6 +330,311 @@ class ApiService {
     return this.request('/linkogenei/generate-token', {
       method: 'POST'
     })
+  }
+
+  // ==================== ALEX CHAT ====================
+  
+  async getAlexChatConversations() {
+    return this.request('/chat/conversations')
+  }
+
+  async getAlexChatMessages(conversationId) {
+    return this.request(`/chat/conversations/${conversationId}/messages`)
+  }
+
+  async createAlexChatConversation(title) {
+    return this.request('/chat/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ title })
+    })
+  }
+
+  async sendAlexChatMessage(conversationId, role, content) {
+    return this.request(`/chat/conversations/${conversationId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ role, content })
+    })
+  }
+
+  async deleteAlexChatConversation(conversationId) {
+    return this.request(`/chat/conversations/${conversationId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  async updateAlexChatConversation(conversationId, title) {
+    return this.request(`/chat/conversations/${conversationId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ title })
+    })
+  }
+
+  // ==================== NOTIFICATIONS ====================
+  
+  async getNotifications(unreadOnly = false) {
+    return this.request(`/notifications?unread_only=${unreadOnly}`)
+  }
+
+  async markNotificationRead(notificationId) {
+    return this.request(`/notifications/${notificationId}/read`, {
+      method: 'PUT'
+    })
+  }
+
+  async markAllNotificationsRead() {
+    return this.request('/notifications/read-all', {
+      method: 'PUT'
+    })
+  }
+
+  async deleteNotification(notificationId) {
+    return this.request(`/notifications/${notificationId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  async clearAllNotifications() {
+    return this.request('/notifications/clear-all', {
+      method: 'DELETE'
+    })
+  }
+
+  // ==================== TEAM COLLABORATION - ADDITIONAL ENDPOINTS ====================
+  
+  // Review task (approve or request changes)
+  async reviewTask(projectId, taskId, reviewData) {
+    return this.request(`/team/projects/${projectId}/tasks/${taskId}/review`, {
+      method: 'POST',
+      body: JSON.stringify(reviewData)
+    })
+  }
+
+  // Add project member
+  async addProjectMember(projectId, memberEmail) {
+    return this.request(`/team/projects/${projectId}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ member_email: memberEmail })
+    })
+  }
+
+  // Remove project member
+  async removeProjectMember(projectId, memberEmail) {
+    return this.request(`/team/projects/${projectId}/members`, {
+      method: 'DELETE',
+      body: JSON.stringify({ member_email: memberEmail })
+    })
+  }
+
+  // Update project tasks
+  async updateProjectTasks(projectId, tasks) {
+    return this.request(`/team/projects/${projectId}/tasks`, {
+      method: 'PUT',
+      body: JSON.stringify({ tasks })
+    })
+  }
+
+  // Send task notification
+  async sendTaskNotification(assigneeEmail, taskTitle, projectName, projectId, notificationType) {
+    return this.request('/team/notifications/task', {
+      method: 'POST',
+      body: JSON.stringify({
+        assignee_email: assigneeEmail,
+        task_title: taskTitle,
+        project_name: projectName,
+        project_id: projectId,
+        notification_type: notificationType
+      })
+    })
+  }
+
+  // Chat aliases for team chat (for compatibility)
+  async getChatConversations() {
+    return this.getTeamChatConversations()
+  }
+
+  async getChatMessages(otherUserId) {
+    return this.getTeamChatMessages(otherUserId)
+  }
+
+  async sendChatMessage(otherUserId, message) {
+    return this.sendTeamChatMessage(otherUserId, message)
+  }
+
+  async clearChat(otherUserId) {
+    return this.clearTeamChat(otherUserId)
+  }
+
+  async exportChat(otherUserId) {
+    return this.exportTeamChat(otherUserId)
+  }
+
+  // ==================== ROLE MANAGEMENT ====================
+  
+  // Update member role in project
+  async updateMemberRole(projectId, memberEmail, role) {
+    return this.request(`/team/projects/${projectId}/members/${memberEmail}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role })
+    })
+  }
+
+  // Transfer project leadership
+  async transferLeadership(projectId, newLeaderEmail) {
+    return this.request(`/team/projects/${projectId}/transfer-leadership`, {
+      method: 'POST',
+      body: JSON.stringify({ new_leader_email: newLeaderEmail })
+    })
+  }
+
+  // Accept leadership transfer
+  async acceptLeadershipTransfer(requestId) {
+    return this.request(`/team/requests/${requestId}/accept-leadership`, {
+      method: 'POST'
+    })
+  }
+
+  // ==================== TASK SUBMISSIONS ====================
+  
+  // Submit task with work details
+  async submitTask(projectId, taskId, submissionData) {
+    return this.request(`/team/projects/${projectId}/tasks/${taskId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify(submissionData)
+    })
+  }
+
+  // ==================== DAILY UPDATES ====================
+  
+  // Post daily update to project
+  async postDailyUpdate(projectId, updateText) {
+    return this.request(`/team/projects/${projectId}/daily-update`, {
+      method: 'POST',
+      body: JSON.stringify({ update_text: updateText })
+    })
+  }
+
+  // Get daily updates for project
+  async getDailyUpdates(projectId) {
+    return this.request(`/team/projects/${projectId}/daily-updates`)
+  }
+
+  // ==================== PROJECT INVITATION LINKS ====================
+  
+  // Generate invitation link
+  async generateInvitationLink(projectId) {
+    return this.request(`/team/projects/${projectId}/invitation-link`, {
+      method: 'POST'
+    })
+  }
+
+  // Join project via invitation link
+  async joinProjectViaLink(projectId, invitationToken) {
+    return this.request(`/team/projects/join/${projectId}/${invitationToken}`, {
+      method: 'POST'
+    })
+  }
+
+  // ==================== PROJECT REPORTS ====================
+  
+  // Get project report (for leaders)
+  async getProjectReport(projectId) {
+    return this.request(`/team/projects/${projectId}/report`)
+  }
+
+  // ==================== PROJECT GROUP CHAT ====================
+  
+  // Get project chat messages
+  async getProjectChatMessages(projectId) {
+    return this.request(`/team/projects/${projectId}/chat/messages`)
+  }
+
+  // Send project chat message
+  async sendProjectChatMessage(projectId, message) {
+    return this.request(`/team/projects/${projectId}/chat/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ message })
+    })
+  }
+
+  // ==================== PUBLIC USER DIRECTORY ====================
+  
+  // Get all registered users (public directory)
+  async getUserDirectory() {
+    return this.request('/team/users/directory')
+  }
+
+  // ==================== TEAM ACTIVITY ====================
+  
+  // Get team activity feed
+  async getTeamActivity(limit = 50) {
+    return this.request(`/team/activity?limit=${limit}`)
+  }
+
+  // ==================== ADMIN ENDPOINTS ====================
+  
+  // Get admin dashboard stats
+  async getAdminDashboardStats() {
+    return this.request('/api/admin/dashboard/stats')
+  }
+
+  // Get all users (admin only)
+  async getAdminUsers(page = 1, perPage = 20, search = '') {
+    return this.request(`/api/admin/users?page=${page}&per_page=${perPage}&search=${encodeURIComponent(search)}`)
+  }
+
+  // Get user details (admin only)
+  async getAdminUserDetails(userId) {
+    return this.request(`/api/admin/users/${userId}`)
+  }
+
+  // Toggle admin status
+  async toggleAdminStatus(userId) {
+    return this.request(`/api/admin/users/${userId}/toggle-admin`, {
+      method: 'PUT'
+    })
+  }
+
+  // Toggle premium status
+  async togglePremiumStatus(userId) {
+    return this.request(`/api/admin/users/${userId}/toggle-premium`, {
+      method: 'PUT'
+    })
+  }
+
+  // Toggle active status (ban/unban)
+  async toggleActiveStatus(userId) {
+    return this.request(`/api/admin/users/${userId}/toggle-active`, {
+      method: 'PUT'
+    })
+  }
+
+  // Delete user (admin only)
+  async deleteUser(userId) {
+    return this.request(`/api/admin/users/${userId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  // Get recent content (admin only)
+  async getAdminRecentContent(limit = 50) {
+    return this.request(`/api/admin/content/recent?limit=${limit}`)
+  }
+
+  // Get all projects (admin only)
+  async getAdminProjects() {
+    return this.request('/api/admin/projects')
+  }
+
+  // Delete project (admin only)
+  async deleteAdminProject(projectId) {
+    return this.request(`/api/admin/projects/${projectId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  // Get activity logs (admin only)
+  async getAdminActivityLogs(limit = 100) {
+    return this.request(`/api/admin/logs/activity?limit=${limit}`)
   }
 }
 

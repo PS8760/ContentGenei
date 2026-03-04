@@ -97,6 +97,10 @@ def create_app(config_name=None):
     from routes.analytics import analytics_bp
     from routes.team import team_bp
     from routes.linkogenei import linkogenei_bp
+    from routes.profile import profile_bp
+    from routes.chat import chat_bp
+    from routes.notifications import notifications_bp
+    from routes.admin import admin_bp
     # from routes.geneilink import geneilink_bp  # TODO: Enable in future
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -104,6 +108,10 @@ def create_app(config_name=None):
     app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
     app.register_blueprint(team_bp, url_prefix='/api/team')
     app.register_blueprint(linkogenei_bp)  # Already has url_prefix in blueprint
+    app.register_blueprint(profile_bp, url_prefix='/api')
+    app.register_blueprint(chat_bp)  # Already has url_prefix in blueprint
+    app.register_blueprint(notifications_bp)  # Already has url_prefix in blueprint
+    app.register_blueprint(admin_bp, url_prefix='/api/admin')
     # app.register_blueprint(geneilink_bp, url_prefix='/api/geneilink')  # TODO: Enable in future
     
     # Health check endpoint

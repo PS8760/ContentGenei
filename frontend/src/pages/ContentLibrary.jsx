@@ -16,6 +16,12 @@ const ContentLibrary = () => {
   const [filter, setFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('created_at')
+  const [pagination, setPagination] = useState({
+    page: 1,
+    per_page: 100,
+    total: 0,
+    pages: 1
+  })
   const [analytics, setAnalytics] = useState({})
   const [stats, setStats] = useState({
     total_content: 0,
@@ -37,9 +43,24 @@ const ContentLibrary = () => {
   }, [])
 
   useEffect(() => {
+    console.log('ContentLibrary mounted or filter/sortBy changed')
     fetchContent()
     fetchAnalytics()
   }, [filter, sortBy])
+
+  // Add initial load effect
+  useEffect(() => {
+    console.log('ContentLibrary initial mount')
+    fetchContent()
+  }, [])
+
+  useEffect(() => {
+    console.log('Content state changed:', {
+      length: content.length,
+      items: content,
+      pagination: pagination
+    })
+  }, [content])
 
   const fetchAnalytics = async () => {
     try {
@@ -79,21 +100,49 @@ const ContentLibrary = () => {
   const fetchContent = async () => {
     try {
       setLoading(true)
+      console.log('Fetching content with params:', {
+        type: filter !== 'all' ? filter : undefined,
+        sort_by: sortBy,
+        sort_order: 'desc',
+        search: searchQuery || undefined,
+        per_page: 100
+      })
+      
       const response = await apiService.getContent({
         type: filter !== 'all' ? filter : undefined,
         sort_by: sortBy,
         sort_order: 'desc',
-        search: searchQuery || undefined
+        search: searchQuery || undefined,
+        per_page: 100  // Request up to 100 items to show all content
       })
       
+      console.log('Content Library - Full API Response:', JSON.stringify(response, null, 2))
+      console.log('Content Library - Response success:', response.success)
+      console.log('Content Library - Response content:', response.content)
+      console.log('Content Library - Items count:', response.content?.length || 0)
+      console.log('Content Library - Is array?:', Array.isArray(response.content))
+      
       if (response.success) {
-        setContent(response.content || [])
+        const contentArray = response.content || []
+        console.log('Setting content array:', contentArray)
+        setContent(contentArray)
+        
+        if (response.pagination) {
+          setPagination(response.pagination)
+          console.log('Content Library - Pagination:', response.pagination)
+        }
+        
+        // Force a small delay to ensure state updates
+        setTimeout(() => {
+          console.log('Content Library - After setState, content length:', contentArray.length)
+        }, 100)
       } else {
         console.error('Failed to fetch content:', response.error)
         setContent([])
       }
     } catch (error) {
       console.error('Error fetching content:', error)
+      console.error('Error stack:', error.stack)
       // Show empty state instead of fake data
       setContent([])
     } finally {
@@ -209,6 +258,25 @@ const ContentLibrary = () => {
 
           {/* Filters and Search */}
           <div className="glass-card rounded-2xl p-6 mb-8 theme-transition">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Filters & Search
+              </h3>
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Showing {content.length} of {pagination.total} items
+                </div>
+                <button
+                  onClick={() => {
+                    console.log('Manual refresh clicked')
+                    fetchContent()
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-all"
+                >
+                  🔄 Refresh
+                </button>
+              </div>
+            </div>
             <div className="grid md:grid-cols-4 gap-4">
               {/* Search */}
               <div className="md:col-span-2">
@@ -274,6 +342,24 @@ const ContentLibrary = () => {
               <p className="text-gray-600 dark:text-gray-400 mb-6 theme-transition">
                 Start creating amazing content with AI
               </p>
+              <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Debug Info:
+                <br />• content.length = {content.length}
+                <br />• pagination.total = {pagination.total}
+                <br />• loading = {loading.toString()}
+                <br />• filter = {filter}
+                <br />• Array.isArray(content) = {Array.isArray(content).toString()}
+              </div>
+              <button
+                onClick={() => {
+                  console.log('Debug - Current state:', { content, pagination, filter, sortBy, loading })
+                  console.log('Debug - Content items:', content)
+                  fetchContent()
+                }}
+                className="btn-primary px-8 py-3 rounded-xl mb-4"
+              >
+                🔄 Refresh & Debug
+              </button>
               <button
                 onClick={() => navigate('/creator')}
                 className="btn-primary px-8 py-3 rounded-xl"

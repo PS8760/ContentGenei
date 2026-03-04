@@ -17,6 +17,9 @@ class MongoDBService:
         self.db = None
         self.posts_collection = None
         self.categories_collection = None
+        self.chat_conversations_collection = None
+        self.chat_messages_collection = None
+        self.notifications_collection = None
         self._connect()
     
     def _connect(self):
@@ -40,6 +43,9 @@ class MongoDBService:
             self.db = self.client[db_name]
             self.posts_collection = self.db['saved_posts']
             self.categories_collection = self.db['categories']
+            self.chat_conversations_collection = self.db['chat_conversations']
+            self.chat_messages_collection = self.db['chat_messages']
+            self.notifications_collection = self.db['notifications']
             
             # Create indexes
             self._create_indexes()
@@ -85,6 +91,31 @@ class MongoDBService:
                 ('user_id', ASCENDING),
                 ('name', ASCENDING)
             ], unique=True)
+            
+            # Chat conversations indexes
+            self.chat_conversations_collection.create_index([
+                ('user_id', ASCENDING),
+                ('updated_at', DESCENDING)
+            ])
+            
+            # Chat messages indexes
+            self.chat_messages_collection.create_index([
+                ('conversation_id', ASCENDING),
+                ('created_at', ASCENDING)
+            ])
+            self.chat_messages_collection.create_index([
+                ('user_id', ASCENDING)
+            ])
+            
+            # Notifications indexes
+            self.notifications_collection.create_index([
+                ('user_id', ASCENDING),
+                ('created_at', DESCENDING)
+            ])
+            self.notifications_collection.create_index([
+                ('user_id', ASCENDING),
+                ('read', ASCENDING)
+            ])
             
             logger.info("MongoDB indexes created successfully")
             
@@ -401,6 +432,291 @@ class MongoDBService:
             'color': category.get('color', '#667eea'),
             'post_count': category.get('post_count', 0),
             'created_at': category['created_at'].isoformat()
+        }
+    
+    # ==================== CHAT METHODS ====================
+    
+    def get_chat_conversations(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get all chat conversations for a user"""
+        try:
+            conversations = list(
+                self.chat_conversations_collection.find({'user_id': user_id})
+                .sort('updated_at', DESCENDING)
+            )
+            return [self._serialize_conversation(conv) for conv in conversations]
+        except Exception as e:
+            logger.error(f"Failed to get chat conversations: {str(e)}")
+            return []
+    
+    def get_chat_messages(self, user_id: str, conversation_id: str) -> List[Dict[str, Any]]:
+        """Get messages for a specific conversation"""
+        try:
+            from bson.objectid import ObjectId
+            
+            messages = list(
+                self.chat_messages_collection.find({
+                    'user_id': user_id,
+                    'conversation_id': ObjectId(conversation_id)
+                }).sort('created_at', ASCENDING)
+            )
+            return [self._serialize_message(msg) for msg in messages]
+        except Exception as e:
+            logger.error(f"Failed to get chat messages: {str(e)}")
+            return []
+    
+    def create_chat_conversation(self, user_id: str, title: str) -> Dict[str, Any]:
+        """Create a new chat conversation"""
+        try:
+            document = {
+                'user_id': user_id,
+                'title': title,
+                'message_count': 0,
+                'created_at': datetime.utcnow(),
+                'updated_at': datetime.utcnow()
+            }
+            
+            result = self.chat_conversations_collection.insert_one(document)
+            document['_id'] = result.inserted_id
+            
+            return {
+                'success': True,
+                'conversation': self._serialize_conversation(document)
+            }
+        except Exception as e:
+            logger.error(f"Failed to create conversation: {str(e)}")
+            return {'success': False, 'error': str(e)}
+    
+    def save_chat_message(self, user_id: str, conversation_id: str, role: str, content: str) -> Dict[str, Any]:
+        """Save a chat message"""
+        try:
+            from bson.objectid import ObjectId
+            
+            document = {
+                'user_id': user_id,
+                'conversation_id': ObjectId(conversation_id),
+                'role': role,
+                'content': content,
+                'created_at': datetime.utcnow()
+            }
+            
+            result = self.chat_messages_collection.insert_one(document)
+            document['_id'] = result.inserted_id
+            
+            # Update conversation
+            self.chat_conversations_collection.update_one(
+                {'_id': ObjectId(conversation_id)},
+                {
+                    '$inc': {'message_count': 1},
+                    '$set': {'updated_at': datetime.utcnow()}
+                }
+            )
+            
+            return {
+                'success': True,
+                'message': self._serialize_message(document)
+            }
+        except Exception as e:
+            logger.error(f"Failed to save message: {str(e)}")
+            return {'success': False, 'error': str(e)}
+    
+    def delete_chat_conversation(self, user_id: str, conversation_id: str) -> Dict[str, Any]:
+        """Delete a conversation and its messages"""
+        try:
+            from bson.objectid import ObjectId
+            
+            # Delete messages
+            self.chat_messages_collection.delete_many({
+                'user_id': user_id,
+                'conversation_id': ObjectId(conversation_id)
+            })
+            
+            # Delete conversation
+            result = self.chat_conversations_collection.delete_one({
+                '_id': ObjectId(conversation_id),
+                'user_id': user_id
+            })
+            
+            if result.deleted_count > 0:
+                return {'success': True, 'message': 'Conversation deleted'}
+            return {'success': False, 'error': 'Conversation not found'}
+        except Exception as e:
+            logger.error(f"Failed to delete conversation: {str(e)}")
+            return {'success': False, 'error': str(e)}
+    
+    def update_chat_conversation(self, user_id: str, conversation_id: str, title: str) -> Dict[str, Any]:
+        """Update conversation title"""
+        try:
+            from bson.objectid import ObjectId
+            
+            result = self.chat_conversations_collection.update_one(
+                {'_id': ObjectId(conversation_id), 'user_id': user_id},
+                {'$set': {'title': title, 'updated_at': datetime.utcnow()}}
+            )
+            
+            if result.modified_count > 0:
+                return {'success': True, 'message': 'Conversation updated'}
+            return {'success': False, 'error': 'Conversation not found'}
+        except Exception as e:
+            logger.error(f"Failed to update conversation: {str(e)}")
+            return {'success': False, 'error': str(e)}
+    
+    def _serialize_conversation(self, conversation: Dict) -> Dict[str, Any]:
+        """Convert conversation document to JSON-serializable dict"""
+        return {
+            'id': str(conversation['_id']),
+            'title': conversation['title'],
+            'message_count': conversation.get('message_count', 0),
+            'created_at': conversation['created_at'].isoformat(),
+            'updated_at': conversation.get('updated_at', conversation['created_at']).isoformat()
+        }
+    
+    def _serialize_message(self, message: Dict) -> Dict[str, Any]:
+        """Convert message document to JSON-serializable dict"""
+        return {
+            'id': str(message['_id']),
+            'conversation_id': str(message['conversation_id']),
+            'role': message['role'],
+            'content': message['content'],
+            'created_at': message['created_at'].isoformat()
+        }
+    
+    # ==================== NOTIFICATION METHODS ====================
+    
+    def get_notifications(self, user_id: str, unread_only: bool = False, limit: int = 50) -> List[Dict[str, Any]]:
+        """Get notifications for a user"""
+        try:
+            query = {'user_id': user_id}
+            if unread_only:
+                query['read'] = False
+            
+            notifications = list(
+                self.notifications_collection.find(query)
+                .sort('created_at', DESCENDING)
+                .limit(limit)
+            )
+            return [self._serialize_notification(notif) for notif in notifications]
+        except Exception as e:
+            logger.error(f"Failed to get notifications: {str(e)}")
+            return []
+    
+    def get_unread_notification_count(self, user_id: str) -> int:
+        """Get count of unread notifications"""
+        try:
+            return self.notifications_collection.count_documents({
+                'user_id': user_id,
+                'read': False
+            })
+        except Exception as e:
+            logger.error(f"Failed to get unread count: {str(e)}")
+            return 0
+    
+    def mark_notification_read(self, user_id: str, notification_id: str) -> Dict[str, Any]:
+        """Mark a notification as read"""
+        try:
+            from bson.objectid import ObjectId
+            
+            result = self.notifications_collection.update_one(
+                {'_id': ObjectId(notification_id), 'user_id': user_id},
+                {'$set': {'read': True}}
+            )
+            
+            if result.modified_count > 0:
+                return {'success': True, 'message': 'Notification marked as read'}
+            return {'success': False, 'error': 'Notification not found'}
+        except Exception as e:
+            logger.error(f"Failed to mark notification read: {str(e)}")
+            return {'success': False, 'error': str(e)}
+    
+    def mark_all_notifications_read(self, user_id: str) -> Dict[str, Any]:
+        """Mark all notifications as read"""
+        try:
+            result = self.notifications_collection.update_many(
+                {'user_id': user_id, 'read': False},
+                {'$set': {'read': True}}
+            )
+            
+            return {
+                'success': True,
+                'message': f'{result.modified_count} notifications marked as read'
+            }
+        except Exception as e:
+            logger.error(f"Failed to mark all notifications read: {str(e)}")
+            return {'success': False, 'error': str(e)}
+    
+    def delete_notification(self, user_id: str, notification_id: str) -> Dict[str, Any]:
+        """Delete a notification"""
+        try:
+            from bson.objectid import ObjectId
+            
+            result = self.notifications_collection.delete_one({
+                '_id': ObjectId(notification_id),
+                'user_id': user_id
+            })
+            
+            if result.deleted_count > 0:
+                return {'success': True, 'message': 'Notification deleted'}
+            return {'success': False, 'error': 'Notification not found'}
+        except Exception as e:
+            logger.error(f"Failed to delete notification: {str(e)}")
+            return {'success': False, 'error': str(e)}
+    
+    def clear_all_notifications(self, user_id: str) -> Dict[str, Any]:
+        """Clear all notifications"""
+        try:
+            result = self.notifications_collection.delete_many({'user_id': user_id})
+            
+            return {
+                'success': True,
+                'message': f'{result.deleted_count} notifications cleared'
+            }
+        except Exception as e:
+            logger.error(f"Failed to clear notifications: {str(e)}")
+            return {'success': False, 'error': str(e)}
+    
+    def create_notification(
+        self,
+        user_id: str,
+        notification_type: str,
+        title: str,
+        message: str,
+        link: Optional[str] = None,
+        metadata: Optional[Dict] = None
+    ) -> Dict[str, Any]:
+        """Create a notification"""
+        try:
+            document = {
+                'user_id': user_id,
+                'type': notification_type,
+                'title': title,
+                'message': message,
+                'link': link,
+                'metadata': metadata or {},
+                'read': False,
+                'created_at': datetime.utcnow()
+            }
+            
+            result = self.notifications_collection.insert_one(document)
+            document['_id'] = result.inserted_id
+            
+            return {
+                'success': True,
+                'notification': self._serialize_notification(document)
+            }
+        except Exception as e:
+            logger.error(f"Failed to create notification: {str(e)}")
+            return {'success': False, 'error': str(e)}
+    
+    def _serialize_notification(self, notification: Dict) -> Dict[str, Any]:
+        """Convert notification document to JSON-serializable dict"""
+        return {
+            'id': str(notification['_id']),
+            'type': notification['type'],
+            'title': notification['title'],
+            'message': notification['message'],
+            'link': notification.get('link'),
+            'metadata': notification.get('metadata', {}),
+            'read': notification.get('read', False),
+            'created_at': notification['created_at'].isoformat()
         }
 
 # Global instance

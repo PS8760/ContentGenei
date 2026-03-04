@@ -129,8 +129,14 @@ export default function LinkoGenei() {
         localStorage.setItem('linkogenei_token', response.token);
         setShowToken(true);
         
-        // Show success message
-        alert('Token generated successfully! Copy it and paste it in the Chrome extension popup.');
+        // Show success message with post count
+        const message = response.existing_posts > 0 
+          ? `Token generated successfully! Your ${response.existing_posts} saved post(s) are still available. Copy the token and paste it in the Chrome extension popup.`
+          : 'Token generated successfully! Copy it and paste it in the Chrome extension popup.';
+        alert(message);
+        
+        // Reload data to show existing posts
+        await loadData();
       } else {
         console.error('Token generation failed:', response);
         const errorMsg = response.error || 'Failed to generate token. Please make sure you are logged in.';
@@ -151,7 +157,7 @@ export default function LinkoGenei() {
   };
 
   const regenerateToken = async () => {
-    if (!confirm('Are you sure you want to generate a new token? Your old token will stop working and you\'ll need to update the extension.')) {
+    if (!confirm('Are you sure you want to generate a new token? Your old token will stop working and you\'ll need to update the extension.\n\nNote: Your saved posts will NOT be deleted. They will remain accessible with the new token.')) {
       return;
     }
     
@@ -165,14 +171,14 @@ export default function LinkoGenei() {
   };
 
   const revokeToken = () => {
-    if (!confirm('Are you sure you want to revoke your token? You\'ll need to generate a new one to use the extension.')) {
+    if (!confirm('Are you sure you want to revoke your token? You\'ll need to generate a new one to use the extension.\n\nNote: Your saved posts will NOT be deleted. They will remain in your history and will be accessible when you generate a new token.')) {
       return;
     }
     
     setExtensionToken('');
     localStorage.removeItem('linkogenei_token');
     setShowToken(false);
-    alert('Token revoked successfully. Generate a new token when you\'re ready to use the extension again.');
+    alert('Token revoked successfully. Your saved posts are preserved and will be available when you generate a new token.');
   };
 
   const createCategory = async () => {
@@ -395,6 +401,17 @@ export default function LinkoGenei() {
                   <li>Badge will turn green when active</li>
                   <li>Visit Instagram, LinkedIn, or Twitter to start saving posts!</li>
                 </ol>
+                
+                <div className="mt-3 pt-3 border-t border-gray-300 dark:border-blue-700">
+                  <p className="text-xs text-gray-600 dark:text-blue-400 flex items-start gap-2">
+                    <span>💡</span>
+                    <span>
+                      <strong>Important:</strong> Your saved posts are stored permanently in your account. 
+                      Revoking or regenerating tokens will NOT delete your post history. 
+                      All your posts will remain accessible when you generate a new token.
+                    </span>
+                  </p>
+                </div>
               </div>
             </div>
           )}

@@ -25,7 +25,11 @@ def test():
 @linkogenei_bp.route('/generate-token', methods=['POST'])
 @jwt_required()
 def generate_token():
-    """Generate an access token for the Chrome extension"""
+    """Generate an access token for the Chrome extension
+    
+    Note: Generating a new token does NOT delete your saved posts.
+    All your previously saved posts will remain accessible with the new token.
+    """
     try:
         user_id = get_jwt_identity()
         
@@ -33,6 +37,8 @@ def generate_token():
         token = secrets.token_urlsafe(32)
         
         # Store token with user_id (expires in 30 days)
+        # Note: Posts are stored in MongoDB with user_id, so they persist
+        # even when tokens are revoked or regenerated
         extension_tokens[token] = {
             'user_id': user_id,
             'created_at': datetime.utcnow().isoformat()
@@ -40,10 +46,19 @@ def generate_token():
         
         logger.info(f"Generated extension token for user: {user_id}")
         
+        # Get existing post count to inform user
+        stats = mongodb_service.get_stats(user_id)
+        post_count = stats.get('stats', {}).get('total_posts', 0)
+        
+        message = 'Token generated successfully. Copy this token to your Chrome extension.'
+        if post_count > 0:
+            message += f' Your {post_count} saved post(s) are still available.'
+        
         return jsonify({
             'success': True,
             'token': token,
-            'message': 'Token generated successfully. Copy this token to your Chrome extension.'
+            'message': message,
+            'existing_posts': post_count
         }), 200
         
     except Exception as e:

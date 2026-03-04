@@ -302,7 +302,7 @@ const Dashboard = () => {
             <>
               {/* Welcome Section */}
               <div ref={titleRef} className="text-center mb-12">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 leading-tight tracking-tight ">
+                <h1 className="text-4xl md:text-5xl font-extrabold text-gray-700 mb-4 leading-tight tracking-tight ">
                   Welcome back, <span className="gradient-text">{currentUser?.displayName?.split(' ')[0] || 'Creator'}</span>
                 </h1>
                 <p className="text-gray-700 dark:text-blue-200 text-lg font-normal max-w-2xl mx-auto theme-transition">
@@ -488,7 +488,7 @@ const Dashboard = () => {
 
               {/* Quick Actions */}
               <div className="mb-8">
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 text-center">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-700 mb-6 text-center">
                   Quick Actions
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

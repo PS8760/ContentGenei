@@ -377,8 +377,8 @@ const Analytics = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Title Section */}
           <div ref={titleRef} className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight tracking-tight">
-               <span className="gradient-text">Content Analytics</span>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-700 mb-4 leading-tight tracking-tight">
+               Content<span className="gradient-text"> Analytics</span>
             </h1>
             <p className="text-gray-700 dark:text-blue-200 text-lg font-normal max-w-2xl mx-auto theme-transition">
               Track your content performance and gain insights to optimize your strategy.

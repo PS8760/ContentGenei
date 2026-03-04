@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { useAuth } from '../contexts/AuthContext'
 import ThemeToggle from './ThemeToggle'
+import NotificationBell from './NotificationBell'
 
 const Header = () => {
-  const { currentUser, logout } = useAuth()
+  const { currentUser, logout, backendUser } = useAuth()
   const navigate = useNavigate()
   const [showDropdown, setShowDropdown] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -113,6 +114,7 @@ const Header = () => {
           </nav>
           
           <div className="flex items-center space-x-4">
+            {currentUser && <NotificationBell />}
             <ThemeToggle />
             {currentUser ? (
               <div className="relative" ref={dropdownRef}>
@@ -162,6 +164,17 @@ const Header = () => {
                     </Link>
                     
                     <Link
+                      to="/profile"
+                      onClick={() => setShowDropdown(false)}
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors theme-transition"
+                    >
+                      <span className="flex items-center space-x-2">
+                        <span>👤</span>
+                        <span>Profile</span>
+                      </span>
+                    </Link>
+                    
+                    <Link
                       to="/creator"
                       onClick={() => setShowDropdown(false)}
                       className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors theme-transition"
@@ -182,6 +195,19 @@ const Header = () => {
                         <span>Analytics</span>
                       </span>
                     </Link>
+                    
+                    {backendUser?.is_admin && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setShowDropdown(false)}
+                        className="block px-4 py-2 text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors theme-transition font-semibold"
+                      >
+                        <span className="flex items-center space-x-2">
+                          <span>🛡️</span>
+                          <span>Admin Panel</span>
+                        </span>
+                      </Link>
+                    )}
                     
                     <div className="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2">
                       <button

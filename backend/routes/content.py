@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, ContentItem, User
+from models import db, ContentItem, User, GeneratedContent
 from services.ai_service import AIContentGenerator
 from services.ocr_service import ocr_service
 from services.video_service import video_service
@@ -26,7 +26,11 @@ def generate_content():
     """Generate new content using AI"""
     try:
         current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
+        
+        # Find user by firebase_uid
+        user = User.query.filter_by(firebase_uid=current_user_id).first()
+        if not user:
+            user = User.query.get(current_user_id)
         
         if not user:
             return jsonify({'error': 'User not found'}), 404
@@ -35,13 +39,12 @@ def generate_content():
         prompt = data.get('prompt', '').strip()
         content_type = data.get('type', 'article')
         tone = data.get('tone', 'professional')
-        skip_save = data.get('skip_save', False)  # Flag to skip saving (for Summarize, Improve tabs)
+        skip_save = data.get('skip_save', False)
         
         if not prompt:
             return jsonify({'error': 'Prompt is required'}), 400
         
-        # Check usage limits ONLY for Generate tab content (not chat, summarize, or improve)
-        # skip_save=True means it's from Summarize or Improve tab
+        # Check usage limits
         if content_type != 'chat' and not skip_save and not user.is_premium and user.content_generated_count >= user.monthly_content_limit:
             return jsonify({
                 'error': 'Monthly content limit reached',
@@ -58,14 +61,14 @@ def generate_content():
             target_audience=data.get('target_audience'),
             platform=data.get('platform'),
             word_count=data.get('word_count'),
-            max_tokens=data.get('max_tokens', 16000),  # Increased default from 8000 to 16000
+            max_tokens=data.get('max_tokens', 16000),
             temperature=data.get('temperature', 0.7)
         )
         
         if not result['success']:
             return jsonify({'error': result.get('error', 'Content generation failed')}), 500
         
-        # For chat, return immediately without saving to database
+        # For chat, return immediately without tracking
         if content_type == 'chat':
             return jsonify({
                 'success': True,
@@ -78,7 +81,7 @@ def generate_content():
                 }
             })
         
-        # For Summarize/Improve tabs (skip_save=True), return without saving
+        # For Summarize/Improve tabs, return without tracking
         if skip_save:
             return jsonify({
                 'success': True,
@@ -91,25 +94,19 @@ def generate_content():
                 }
             })
         
-        # Create title from prompt (for non-chat content)
-        title_words = prompt.split()[:8]  # First 8 words for title
-        title = ' '.join(title_words).title() if title_words else 'Generated Content'
-        
-        # Save content to database (only for Generate tab content)
-        content_item = ContentItem(
-            user_id=current_user_id,
-            title=title,
-            content=result['content'],
+        # Track ALL generated content for analytics (NOT saved to content_items yet)
+        generated_content = GeneratedContent(
+            user_id=user.id,
             content_type=content_type,
             tone=tone,
             prompt=prompt,
             word_count=result['word_count'],
-            character_count=result['character_count'],
             ai_model_used=result['model_used'],
-            generation_time=result['generation_time']
+            generation_time=result['generation_time'],
+            was_saved=False  # Will be updated when user clicks "Save"
         )
         
-        db.session.add(content_item)
+        db.session.add(generated_content)
         
         # Update user's content count
         user.content_generated_count += 1
@@ -118,7 +115,14 @@ def generate_content():
         
         return jsonify({
             'success': True,
-            'content': content_item.to_dict(),
+            'content': {
+                'content': result['content'],
+                'word_count': result['word_count'],
+                'character_count': result['character_count'],
+                'ai_model_used': result['model_used'],
+                'generation_time': result['generation_time'],
+                'generated_content_id': generated_content.id  # Return ID for tracking
+            },
             'usage': {
                 'current_count': user.content_generated_count,
                 'monthly_limit': user.monthly_content_limit,
@@ -138,6 +142,51 @@ def get_user_content():
     """Get user's content with pagination and filtering"""
     try:
         current_user_id = get_jwt_identity()
+        current_app.logger.info(f"JWT identity: {current_user_id}")
+        
+        # Try multiple ways to find the user
+        user = None
+        
+        # Method 1: By firebase_uid
+        user = User.query.filter_by(firebase_uid=current_user_id).first()
+        if user:
+            current_app.logger.info(f"Found user by firebase_uid: {user.email}")
+        
+        # Method 2: By id (UUID)
+        if not user:
+            user = User.query.get(current_user_id)
+            if user:
+                current_app.logger.info(f"Found user by id: {user.email}")
+        
+        # Method 3: By email (if JWT contains email)
+        if not user and '@' in str(current_user_id):
+            user = User.query.filter_by(email=current_user_id).first()
+            if user:
+                current_app.logger.info(f"Found user by email: {user.email}")
+        
+        if not user:
+            current_app.logger.error(f"User not found for: {current_user_id}")
+            # Log all users for debugging
+            all_users = User.query.all()
+            current_app.logger.error(f"Total users in DB: {len(all_users)}")
+            for u in all_users:
+                current_app.logger.error(f"  User: id={u.id}, firebase_uid={u.firebase_uid}, email={u.email}")
+            
+            return jsonify({
+                'success': False,
+                'error': 'User not found. Please logout and login again.',
+                'content': [],
+                'pagination': {
+                    'page': 1,
+                    'per_page': 100,
+                    'total': 0,
+                    'pages': 0,
+                    'has_next': False,
+                    'has_prev': False
+                }
+            }), 200  # Return 200 to avoid breaking frontend
+        
+        current_app.logger.info(f"Using user: {user.email}, id: {user.id}, firebase_uid: {user.firebase_uid}")
         
         # Query parameters
         page = request.args.get('page', 1, type=int)
@@ -148,8 +197,12 @@ def get_user_content():
         sort_by = request.args.get('sort_by', 'created_at')
         sort_order = request.args.get('sort_order', 'desc')
         
-        # Build query
-        query = ContentItem.query.filter_by(user_id=current_user_id)
+        # Build query using user.id
+        query = ContentItem.query.filter_by(user_id=user.id)
+        
+        # Count before filtering
+        total_for_user = query.count()
+        current_app.logger.info(f"Total content items for user {user.id}: {total_for_user}")
         
         if content_type:
             query = query.filter_by(content_type=content_type)
@@ -183,6 +236,10 @@ def get_user_content():
             else:
                 query = query.order_by(ContentItem.word_count.asc())
         
+        # Count before pagination
+        count_before_pagination = query.count()
+        current_app.logger.info(f"Query count before pagination: {count_before_pagination}")
+        
         # Paginate
         pagination = query.paginate(
             page=page,
@@ -190,9 +247,21 @@ def get_user_content():
             error_out=False
         )
         
+        current_app.logger.info(f"Pagination results: items={len(pagination.items)}, total={pagination.total}, page={page}, pages={pagination.pages}")
+        
+        # Serialize items with error handling
+        content_items = []
+        for item in pagination.items:
+            try:
+                content_items.append(item.to_dict())
+            except Exception as e:
+                current_app.logger.error(f"Error serializing content item {item.id}: {str(e)}")
+        
+        current_app.logger.info(f"Successfully serialized {len(content_items)} items")
+        
         return jsonify({
             'success': True,
-            'content': [item.to_dict() for item in pagination.items],
+            'content': content_items,
             'pagination': {
                 'page': page,
                 'per_page': per_page,
@@ -205,7 +274,126 @@ def get_user_content():
         
     except Exception as e:
         current_app.logger.error(f"Get content error: {str(e)}")
+        import traceback
+        current_app.logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': 'Failed to get content'}), 500
+
+
+@content_bp.route('/debug', methods=['GET'])
+@jwt_required()
+def debug_content():
+    """Debug endpoint to check content and user"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # Find user
+        user = User.query.filter_by(firebase_uid=current_user_id).first()
+        if not user:
+            user = User.query.get(current_user_id)
+        
+        if not user:
+            return jsonify({
+                'error': 'User not found',
+                'jwt_identity': current_user_id,
+                'all_users': [
+                    {'id': u.id, 'firebase_uid': u.firebase_uid, 'email': u.email}
+                    for u in User.query.all()
+                ]
+            })
+        
+        # Get all content for this user
+        all_content = ContentItem.query.filter_by(user_id=user.id).all()
+        
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': user.id,
+                'firebase_uid': user.firebase_uid,
+                'email': user.email
+            },
+            'content_count': len(all_content),
+            'content_items': [
+                {
+                    'id': item.id,
+                    'title': item.title,
+                    'content_type': item.content_type,
+                    'user_id': item.user_id,
+                    'created_at': item.created_at.isoformat() if item.created_at else None
+                }
+                for item in all_content[:10]  # First 10 items
+            ]
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
+
+@content_bp.route('/', methods=['POST'])
+@jwt_required()
+def create_content_item():
+    """Create a new content item (for manually saving generated content)"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # Get user by firebase_uid
+        user = User.query.filter_by(firebase_uid=current_user_id).first()
+        if not user:
+            user = User.query.get(current_user_id)
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data.get('title') or not data.get('content'):
+            return jsonify({'error': 'Title and content are required'}), 400
+        
+        # Create content item using user.id
+        content_item = ContentItem(
+            user_id=user.id,
+            title=data['title'],
+            content=data['content'],
+            content_type=data.get('content_type', 'article'),
+            tone=data.get('tone', 'professional'),
+            prompt=data.get('metadata', {}).get('prompt', ''),
+            word_count=data.get('word_count', len(data['content'].split())),
+            character_count=len(data['content']),
+            status=data.get('status', 'draft'),
+            is_favorite=data.get('is_favorite', False),
+            tags=json.dumps(data.get('tags', [])) if data.get('tags') else None,
+            ai_model_used=data.get('metadata', {}).get('ai_model', 'groq'),
+            generation_time=data.get('metadata', {}).get('generation_time', 0)
+        )
+        
+        db.session.add(content_item)
+        
+        # If this was from a generated content, link them and mark as saved
+        generated_content_id = data.get('generated_content_id')
+        if generated_content_id:
+            generated_content = GeneratedContent.query.filter_by(
+                id=generated_content_id,
+                user_id=user.id
+            ).first()
+            
+            if generated_content:
+                generated_content.was_saved = True
+                generated_content.saved_content_id = content_item.id
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'content': content_item.to_dict(),
+            'message': 'Content saved successfully'
+        }), 201
+        
+    except Exception as e:
+        current_app.logger.error(f"Create content error: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': f'Failed to create content: {str(e)}'}), 500
 
 @content_bp.route('/<content_id>', methods=['GET'])
 @jwt_required()
@@ -213,10 +401,14 @@ def get_content_item(content_id):
     """Get specific content item"""
     try:
         current_user_id = get_jwt_identity()
+        user = User.query.filter_by(firebase_uid=current_user_id).first()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
         
         content_item = ContentItem.query.filter_by(
             id=content_id,
-            user_id=current_user_id
+            user_id=user.id
         ).first()
         
         if not content_item:
@@ -237,10 +429,14 @@ def update_content_item(content_id):
     """Update content item"""
     try:
         current_user_id = get_jwt_identity()
+        user = User.query.filter_by(firebase_uid=current_user_id).first()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
         
         content_item = ContentItem.query.filter_by(
             id=content_id,
-            user_id=current_user_id
+            user_id=user.id
         ).first()
         
         if not content_item:
@@ -287,10 +483,14 @@ def delete_content_item(content_id):
     """Delete content item"""
     try:
         current_user_id = get_jwt_identity()
+        user = User.query.filter_by(firebase_uid=current_user_id).first()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
         
         content_item = ContentItem.query.filter_by(
             id=content_id,
-            user_id=current_user_id
+            user_id=user.id
         ).first()
         
         if not content_item:
@@ -314,10 +514,14 @@ def improve_content(content_id):
     """Improve existing content"""
     try:
         current_user_id = get_jwt_identity()
+        user = User.query.filter_by(firebase_uid=current_user_id).first()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
         
         content_item = ContentItem.query.filter_by(
             id=content_id,
-            user_id=current_user_id
+            user_id=user.id
         ).first()
         
         if not content_item:
@@ -350,33 +554,38 @@ def get_content_stats():
     """Get user's content statistics"""
     try:
         current_user_id = get_jwt_identity()
+        user = User.query.filter_by(firebase_uid=current_user_id).first()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
         
         # Total content count
-        total_content = ContentItem.query.filter_by(user_id=current_user_id).count()
+        total_content = ContentItem.query.filter_by(user_id=user.id).count()
         
         # Content by type
         content_by_type = db.session.query(
             ContentItem.content_type,
             db.func.count(ContentItem.id).label('count')
-        ).filter_by(user_id=current_user_id).group_by(ContentItem.content_type).all()
+        ).filter_by(user_id=user.id).group_by(ContentItem.content_type).all()
         
         # Content by status
         content_by_status = db.session.query(
             ContentItem.status,
             db.func.count(ContentItem.id).label('count')
-        ).filter_by(user_id=current_user_id).group_by(ContentItem.status).all()
+        ).filter_by(user_id=user.id).group_by(ContentItem.status).all()
         
         # Recent content (last 30 days)
+        from datetime import timedelta
         thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
         recent_content = ContentItem.query.filter(
-            ContentItem.user_id == current_user_id,
+            ContentItem.user_id == user.id,
             ContentItem.created_at >= thirty_days_ago
         ).count()
         
         # Average word count
         avg_word_count = db.session.query(
             db.func.avg(ContentItem.word_count)
-        ).filter_by(user_id=current_user_id).scalar() or 0
+        ).filter_by(user_id=user.id).scalar() or 0
         
         return jsonify({
             'success': True,
