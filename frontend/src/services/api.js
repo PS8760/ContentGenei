@@ -337,6 +337,56 @@ class ApiService {
     })
   }
 
+  async getAggregatedPosts(params = {}) {
+    const queryString = new URLSearchParams(params).toString()
+    const endpoint = queryString ? `/linkogenei/posts?${queryString}` : '/linkogenei/posts'
+    return this.request(endpoint)
+  }
+
+  async getSavedPosts(params = {}) {
+    const queryString = new URLSearchParams(params).toString()
+    const endpoint = queryString ? `/linkogenei/posts?${queryString}` : '/linkogenei/posts'
+    return this.request(endpoint)
+  }
+
+  async getCategories() {
+    return this.request('/linkogenei/categories')
+  }
+
+  async createCategory(categoryData) {
+    return this.request('/linkogenei/categories', {
+      method: 'POST',
+      body: JSON.stringify(categoryData)
+    })
+  }
+
+  async deleteCategory(categoryId) {
+    return this.request(`/linkogenei/categories/${categoryId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  async savePost(postData) {
+    return this.request('/linkogenei/save-post', {
+      method: 'POST',
+      body: JSON.stringify(postData)
+    })
+  }
+
+  async initiateOAuth(platform) {
+    return this.request(`/geneilink/oauth/${platform}`)
+  }
+
+  async getConnections() {
+    return this.request('/geneilink/connections')
+  }
+
+  async disconnectPlatform(connectionId) {
+    return this.request(`/geneilink/connections/${connectionId}`, {
+      method: 'DELETE'
+    })
+  }
+
   // ==================== ALEX CHAT ====================
   
   async getAlexChatConversations() {
