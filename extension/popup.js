@@ -1,6 +1,7 @@
 // Popup script for LinkoGenei extension
 
-const API_URL = 'http://localhost:5001/api';
+// Use production backend URL (change to localhost for development)
+const API_URL = 'https://contentgenei.onrender.com/api';
 
 // DOM Elements
 const loginSection = document.getElementById('loginSection');
@@ -102,14 +103,14 @@ deactivateBtn.addEventListener('click', () => {
 // Open dashboard
 openDashboardBtn.addEventListener('click', () => {
   chrome.tabs.create({ 
-    url: 'http://localhost:5173/linkogenei' 
+    url: 'https://content-genei-dhphy2e82-ps8760s-projects.vercel.app/linkogenei' 
   });
 });
 
 // Get token link
 getTokenLink.addEventListener('click', () => {
   chrome.tabs.create({ 
-    url: 'http://localhost:5173/linkogenei' 
+    url: 'https://content-genei-dhphy2e82-ps8760s-projects.vercel.app/linkogenei' 
   });
 });
 

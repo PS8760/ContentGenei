@@ -31,7 +31,7 @@ async function handleSavePost(postData) {
     throw new Error('No authentication token found');
   }
 
-  const response = await fetch('http://localhost:5001/api/linkogenei/save-post', {
+  const response = await fetch('https://contentgenei.onrender.com/api/linkogenei/save-post', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
