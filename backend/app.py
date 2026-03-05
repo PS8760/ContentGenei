@@ -72,6 +72,7 @@ def create_app(config_name=None):
     from routes.team import team_bp
     from routes.linkogenei import linkogenei_bp
     from routes.profile import profile_bp
+    from platforms.instagram.instagram_controller import instagram_bp
     # from routes.geneilink import geneilink_bp  # TODO: Enable in future
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -80,6 +81,7 @@ def create_app(config_name=None):
     app.register_blueprint(team_bp, url_prefix='/api/team')
     app.register_blueprint(linkogenei_bp)  # Already has url_prefix in blueprint
     app.register_blueprint(profile_bp, url_prefix='/api')
+    app.register_blueprint(instagram_bp, url_prefix='/api/platforms/instagram')
     # app.register_blueprint(geneilink_bp, url_prefix='/api/geneilink')  # TODO: Enable in future
     
     # Health check endpoint

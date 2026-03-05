@@ -23,6 +23,8 @@ import ContactUs from './pages/ContactUs'
 import LinkoGenei from './pages/LinkoGenei'
 import Profile from './pages/Profile'
 import Onboarding from './pages/Onboarding'
+import InstagramCallback from './pages/platforms/InstagramCallback'
+import InstagramAnalytics from './pages/InstagramAnalytics'
 
 import './index.css'
 
@@ -130,6 +132,14 @@ function AppContent() {
             <Profile />
           </ProtectedRoute>
         } />
+        <Route path="/instagram-analytics" element={
+          <ProtectedRoute>
+            <InstagramAnalytics />
+          </ProtectedRoute>
+        } />
+        
+        {/* Instagram OAuth Callback - NO ProtectedRoute (Instagram redirects here) */}
+        <Route path="/platforms/instagram/callback" element={<InstagramCallback />} />
         
         {/* Redirect any unknown routes to home */}
         <Route path="*" element={<Navigate to="/" replace />} />

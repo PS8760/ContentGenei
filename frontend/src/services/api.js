@@ -464,6 +464,169 @@ class ApiService {
       method: 'POST'
     })
   }
+
+  // ==================== INSTAGRAM OAUTH ====================
+  
+  async getInstagramAuthUrl() {
+    return this.request('/platforms/instagram/auth', {
+      method: 'GET'
+    })
+  }
+
+  async exchangeInstagramToken(code, state) {
+    return this.request('/platforms/instagram/exchange-token', {
+      method: 'POST',
+      body: JSON.stringify({ code, state })
+    })
+  }
+
+  async getInstagramConnections() {
+    return this.request('/platforms/instagram/connections', {
+      method: 'GET'
+    })
+  }
+
+  async getInstagramProfile() {
+    return this.request('/platforms/instagram/profile', {
+      method: 'GET'
+    })
+  }
+
+  async disconnectInstagram(connectionId) {
+    return this.request(`/platforms/instagram/connections/${connectionId}`, {
+      method: 'DELETE'
+    })
+  }
+  
+  // Instagram Analytics Methods
+  async syncInstagramData(connectionId) {
+    return this.request(`/platforms/instagram/sync/${connectionId}`, {
+      method: 'POST'
+    })
+  }
+  
+  async getInstagramDashboard(connectionId) {
+    return this.request(`/platforms/instagram/dashboard/${connectionId}`, {
+      method: 'GET'
+    })
+  }
+  
+  async generateInstagramSuggestions(postId) {
+    return this.request(`/platforms/instagram/posts/${postId}/suggestions`, {
+      method: 'POST'
+    })
+  }
+  
+  async getInstagramCompetitors() {
+    return this.request('/platforms/instagram/competitors', {
+      method: 'GET'
+    })
+  }
+  
+  async addInstagramCompetitor(username) {
+    return this.request('/platforms/instagram/competitors', {
+      method: 'POST',
+      body: JSON.stringify({ username })
+    })
+  }
+  
+  async removeInstagramCompetitor(competitorId) {
+    return this.request(`/platforms/instagram/competitors/${competitorId}`, {
+      method: 'DELETE'
+    })
+  }
+  
+  async compareInstagramAccounts(connectionId) {
+    return this.request(`/platforms/instagram/compare/${connectionId}`, {
+      method: 'GET'
+    })
+  }
+  
+  async debugInstagramConfig() {
+    return this.request('/platforms/instagram/debug', {
+      method: 'GET'
+    })
+  }
+  
+  async debugInstagramMedia(connectionId) {
+    return this.request(`/platforms/instagram/debug-media/${connectionId}`, {
+      method: 'GET'
+    })
+  }
+  
+  // AI-Powered Instagram Features
+  async analyzeContentGaps(connectionId) {
+    return this.request(`/platforms/instagram/ai/content-gaps/${connectionId}`, {
+      method: 'GET'
+    })
+  }
+  
+  async optimizeCaption(caption, connectionId) {
+    return this.request('/platforms/instagram/ai/optimize-caption', {
+      method: 'POST',
+      body: JSON.stringify({ caption, connection_id: connectionId })
+    })
+  }
+  
+  async predictPerformance(postData, connectionId) {
+    return this.request('/platforms/instagram/ai/predict-performance', {
+      method: 'POST',
+      body: JSON.stringify({ post: postData, connection_id: connectionId })
+    })
+  }
+  
+  async generateContentIdeas(connectionId, niche = 'general') {
+    return this.request(`/platforms/instagram/ai/content-ideas/${connectionId}?niche=${encodeURIComponent(niche)}`, {
+      method: 'GET'
+    })
+  }
+
+  // ==================== ADVANCED ML FEATURES ====================
+
+  // Pattern Recognition: Analyze best caption length, posting time, and format
+  async analyzePatterns(connectionId) {
+    return this.request(`/platforms/instagram/ml/analyze-patterns/${connectionId}`, {
+      method: 'GET'
+    })
+  }
+
+  // Sentiment Analysis: Analyze comments to identify emotional triggers
+  async analyzeSentiment(connectionId, comments = []) {
+    return this.request(`/platforms/instagram/ml/sentiment-analysis/${connectionId}`, {
+      method: 'POST',
+      body: JSON.stringify({ comments })
+    })
+  }
+
+  // Train ML model for engagement prediction
+  async trainEngagementModel(connectionId) {
+    return this.request(`/platforms/instagram/ml/train-model/${connectionId}`, {
+      method: 'POST'
+    })
+  }
+
+  // ML-based engagement prediction (more accurate than rule-based)
+  async predictEngagementML(connectionId, postData) {
+    return this.request(`/platforms/instagram/ml/predict-engagement/${connectionId}`, {
+      method: 'POST',
+      body: JSON.stringify({ post: postData })
+    })
+  }
+
+  // Get optimal posting time recommendation
+  async getOptimalPostingTime(connectionId, targetDate = null) {
+    const dateParam = targetDate ? `?date=${targetDate}` : ''
+    return this.request(`/platforms/instagram/ml/optimal-posting-time/${connectionId}${dateParam}`, {
+      method: 'GET'
+    })
+  }
+
+  // Multi-platform analysis (foundation for future expansion)
+  async analyzeCrossPlatform(connectionId) {
+    return this.request(`/platforms/instagram/ml/cross-platform-analysis/${connectionId}`, {
+      method: 'GET'
+    })
+  }
 }
 
 export default new ApiService()

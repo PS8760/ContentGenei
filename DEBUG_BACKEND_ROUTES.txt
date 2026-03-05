@@ -1,0 +1,79 @@
+================================================================================
+DEBUG: Check if Backend Has the Route
+================================================================================
+
+The route is still not found. Let's verify the backend is actually running
+with the new code.
+
+STEP 1: CHECK BACKEND TERMINAL
+-------------------------------
+Look at the terminal where you ran "python run.py"
+
+Do you see ANY errors when it started?
+Look for:
+- ImportError
+- SyntaxError  
+- ModuleNotFoundError
+- Any red error text
+
+STEP 2: TEST THE ROUTE DIRECTLY
+--------------------------------
+Open a NEW terminal and run:
+
+curl -X OPTIONS http://localhost:5000/api/team/projects/test-id/members
+
+Expected: {"status": "ok"}
+Actual: {"error": "Endpoint not found"}  ❌
+
+This means the route is NOT registered!
+
+STEP 3: CHECK IF BACKEND WAS RESTARTED
+---------------------------------------
+Did you:
+1. Press Ctrl+C to stop the backend?
+2. Run "python run.py" again?
+3. See "Running on http://127.0.0.1:5000"?
+
+If NO, the backend is still running OLD code!
+
+STEP 4: FORCE RESTART
+----------------------
+1. Find the terminal with backend
+2. Press Ctrl+C (might need to press twice)
+3. Wait 2 seconds
+4. Run: cd backend
+5. Run: python run.py
+6. Wait for "Running on http://127.0.0.1:5000"
+
+STEP 5: TEST AGAIN
+-------------------
+curl http://localhost:5000/api/team/projects/test-id/members -X OPTIONS
+
+Should return: {"status": "ok"}
+
+STEP 6: IF STILL NOT WORKING
+-----------------------------
+The backend might have a startup error that's being hidden.
+
+Try this:
+1. Stop backend
+2. Run: cd backend
+3. Run: python -c "from routes.team import team_bp; print('OK')"
+4. If you see an error, share it with me
+
+ALTERNATIVE: CHECK BACKEND LOGS
+--------------------------------
+When you try to add a member, check the backend terminal.
+Do you see:
+- Any log messages?
+- Any errors?
+- Nothing at all? (This means request isn't reaching backend)
+
+MOST LIKELY ISSUE:
+------------------
+The backend is still running the OLD code before my fixes.
+You MUST restart it for changes to take effect.
+
+Python/Flask doesn't auto-reload when you change code!
+
+================================================================================

@@ -2,7 +2,7 @@
 
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from pymongo.errors import ConnectionFailure, DuplicateKeyError
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
 import os
 import logging
@@ -113,8 +113,8 @@ class MongoDBService:
                 'category': post_data.get('category', 'Uncategorized'),
                 'notes': post_data.get('notes', ''),
                 'tags': post_data.get('tags', []),
-                'created_at': datetime.utcnow(),
-                'updated_at': datetime.utcnow()
+                'created_at': datetime.now(timezone.utc),
+                'updated_at': datetime.now(timezone.utc)
             }
             
             # Insert document
@@ -226,7 +226,7 @@ class MongoDBService:
             update = {
                 '$set': {
                     **update_data,
-                    'updated_at': datetime.utcnow()
+                    'updated_at': datetime.now(timezone.utc)
                 }
             }
             
@@ -295,7 +295,7 @@ class MongoDBService:
                 'name': name,
                 'color': color,
                 'post_count': 0,
-                'created_at': datetime.utcnow()
+                'created_at': datetime.now(timezone.utc)
             }
             
             result = self.categories_collection.insert_one(document)
@@ -360,7 +360,7 @@ class MongoDBService:
                         'user_id': user_id,
                         'name': category,
                         'color': '#667eea',
-                        'created_at': datetime.utcnow()
+                        'created_at': datetime.now(timezone.utc)
                     }
                 },
                 upsert=True

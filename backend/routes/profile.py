@@ -20,18 +20,27 @@ def get_profile():
         current_user = User.query.get(current_user_id)
         
         if not current_user:
+            logger.error(f"User not found: {current_user_id}")
             return jsonify({
                 'success': False,
                 'error': 'User not found'
             }), 404
         
-        profile = profile_service.get_or_create_profile(
-            current_user.id,
-            current_user.email,
-            current_user.display_name
-        )
+        try:
+            profile = profile_service.get_or_create_profile(
+                current_user.id,
+                current_user.email,
+                current_user.display_name
+            )
+        except Exception as profile_error:
+            logger.error(f"Profile service error: {str(profile_error)}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': f'Profile service error: {str(profile_error)}'
+            }), 500
         
         if not profile:
+            logger.error(f"Profile service returned None for user {current_user_id}")
             return jsonify({
                 'success': False,
                 'error': 'Failed to retrieve profile'
@@ -43,10 +52,10 @@ def get_profile():
         }), 200
         
     except Exception as e:
-        logger.error(f"Error getting profile: {str(e)}")
+        logger.error(f"Error getting profile: {str(e)}", exc_info=True)
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': f'Server error: {str(e)}'
         }), 500
 
 @profile_bp.route('/profile', methods=['PUT'])

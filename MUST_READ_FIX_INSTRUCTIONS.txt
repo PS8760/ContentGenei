@@ -1,0 +1,96 @@
+================================================================================
+⚠️  CRITICAL: BACKEND IS RUNNING OLD CODE ⚠️
+================================================================================
+
+The route "/projects/<id>/members" is NOT found, which means:
+1. Backend wasn't restarted after my fixes, OR
+2. Backend has a silent error preventing route registration
+
+================================================================================
+SOLUTION: FORCE RESTART BACKEND
+================================================================================
+
+METHOD 1: Use the batch file (EASIEST)
+---------------------------------------
+1. Double-click: restart-backend.bat
+2. Wait for new window to show "Running on http://127.0.0.1:5000"
+3. Test immediately
+
+METHOD 2: Manual restart (IF METHOD 1 FAILS)
+---------------------------------------------
+1. Open Task Manager (Ctrl+Shift+Esc)
+2. Find "Python" processes
+3. Right-click → End Task (kill ALL Python processes)
+4. Open NEW terminal
+5. Run:
+   cd C:\Users\Dell\Desktop\Content_Genie_updated\backend
+   python run.py
+6. Wait for "Running on http://127.0.0.1:5000"
+
+METHOD 3: Command line force kill
+----------------------------------
+1. Open NEW Command Prompt as Administrator
+2. Run: taskkill /F /IM python.exe /T
+3. Wait 2 seconds
+4. Run: cd C:\Users\Dell\Desktop\Content_Genie_updated\backend
+5. Run: python run.py
+
+================================================================================
+VERIFY IT'S WORKING
+================================================================================
+
+After restarting, open NEW Command Prompt and test:
+
+curl -X OPTIONS http://localhost:5000/api/team/projects/test-id/members
+
+EXPECTED: {"status": "ok"}
+IF YOU SEE: {"error": "Endpoint not found"} → Backend still has old code!
+
+================================================================================
+IF STILL NOT WORKING
+================================================================================
+
+The backend might have a startup error. Check the backend terminal for:
+
+❌ ImportError: cannot import name 'jwt_required'
+❌ SyntaxError: invalid syntax
+❌ AttributeError: ...
+❌ Any red error text
+
+If you see errors, COPY THE ENTIRE ERROR and share it.
+
+================================================================================
+ALTERNATIVE: Check if route exists
+================================================================================
+
+After restarting backend, run this in Command Prompt:
+
+curl http://localhost:5000/api/team/projects -H "Authorization: Bearer test"
+
+EXPECTED: {"error": "Invalid token"}  ✅ (Route exists, just bad token)
+IF YOU SEE: {"error": "Endpoint not found"}  ❌ (Routes not loaded)
+
+If /projects works but /projects/<id>/members doesn't, there's a syntax
+error in the add_project_member function.
+
+================================================================================
+WHAT TO SHARE IF STILL BROKEN
+================================================================================
+
+1. Backend terminal output (copy ALL text from when you start it)
+2. Result of: curl -X OPTIONS http://localhost:5000/api/team/projects/test-id/members
+3. Result of: curl http://localhost:5000/api/team/projects -H "Authorization: Bearer test"
+4. Any errors you see in backend terminal
+
+================================================================================
+WHY THIS IS HAPPENING
+================================================================================
+
+Flask/Python doesn't auto-reload when you change code.
+The backend process is STILL running the OLD version of team.py from BEFORE
+my fixes. You MUST kill and restart it.
+
+Even if you pressed Ctrl+C, the process might still be running in background.
+That's why we need to FORCE KILL all Python processes.
+
+================================================================================

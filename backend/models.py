@@ -1,9 +1,34 @@
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import TypeDecorator, DateTime as SQLDateTime
 from datetime import datetime, timezone
 import uuid
 import json
 
 db = SQLAlchemy()
+
+class TZDateTime(TypeDecorator):
+    """Custom DateTime type that ensures timezone awareness for SQLite"""
+    impl = SQLDateTime
+    cache_ok = True
+    
+    def process_bind_param(self, value, dialect):
+        """Convert Python datetime to database format"""
+        if value is not None:
+            # Ensure the datetime is timezone-aware before storing
+            if value.tzinfo is None:
+                value = value.replace(tzinfo=timezone.utc)
+            # Store as UTC
+            return value.astimezone(timezone.utc)
+        return value
+    
+    def process_result_value(self, value, dialect):
+        """Convert database format to Python datetime"""
+        if value is not None:
+            # Ensure the datetime is timezone-aware when retrieved
+            if value.tzinfo is None:
+                value = value.replace(tzinfo=timezone.utc)
+            return value
+        return value
 
 class User(db.Model):
     __tablename__ = 'users'

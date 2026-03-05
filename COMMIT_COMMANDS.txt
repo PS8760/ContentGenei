@@ -1,0 +1,146 @@
+===========================================
+GIT COMMIT COMMANDS - CONTENT GENIE
+===========================================
+
+===========================================
+FEATURE 1: PROFILE SYSTEM
+===========================================
+
+FILES TO COMMIT:
+✅ frontend/src/pages/Profile.jsx
+✅ frontend/src/contexts/ProfileContext.jsx
+✅ backend/routes/profile.py
+✅ backend/services/profile_service.py
+
+COMMANDS:
+-----------
+git checkout -b feature/profile-system
+git add frontend/src/pages/Profile.jsx
+git add frontend/src/contexts/ProfileContext.jsx
+git add backend/routes/profile.py
+git add backend/services/profile_service.py
+git commit -m "feat: Add profile system with favorites and collaborators"
+git push origin feature/profile-system
+
+
+===========================================
+FEATURE 2: ONBOARDING (MCQ STEPPER)
+===========================================
+
+FILES TO COMMIT:
+✅ frontend/src/pages/Onboarding.jsx
+✅ frontend/src/pages/SignIn.jsx
+✅ frontend/src/pages/Login.jsx
+✅ frontend/src/App.jsx
+✅ frontend/src/components/ProtectedRoute.jsx
+
+COMMANDS:
+-----------
+git checkout main
+git checkout -b feature/onboarding-system
+git add frontend/src/pages/Onboarding.jsx
+git add frontend/src/pages/SignIn.jsx
+git add frontend/src/pages/Login.jsx
+git add frontend/src/App.jsx
+git add frontend/src/components/ProtectedRoute.jsx
+git commit -m "feat: Add 4-step onboarding with route guards"
+git push origin feature/onboarding-system
+
+
+===========================================
+FEATURE 3: TEAM COLLABORATION
+===========================================
+
+FILES TO COMMIT:
+✅ frontend/src/pages/TeamCollaboration.jsx
+✅ frontend/src/services/api.js
+✅ backend/routes/team.py
+✅ backend/app.py
+✅ backend/models.py
+
+COMMANDS:
+-----------
+git checkout main
+git checkout -b feature/team-collaboration
+git add frontend/src/pages/TeamCollaboration.jsx
+git add frontend/src/services/api.js
+git add backend/routes/team.py
+git add backend/app.py
+git add backend/models.py
+git commit -m "feat: Add team collaboration with notifications"
+git push origin feature/team-collaboration
+
+
+===========================================
+FILES TO EXCLUDE (NEVER COMMIT)
+===========================================
+
+❌ node_modules/
+❌ frontend/node_modules/
+❌ backend/venv/
+❌ backend/__pycache__/
+❌ backend/**/__pycache__/
+❌ *.pyc
+❌ *.db
+❌ backend/instance/*.db
+❌ backend/instance/contentgenie_dev.db
+❌ .env
+❌ backend/.env
+❌ .DS_Store
+❌ *.log
+
+
+===========================================
+DOCUMENTATION FILES (COMMIT SEPARATELY)
+===========================================
+
+📄 *.md files (except README.md)
+📄 *.txt files
+📄 PROFILE_FEATURES.txt
+📄 HOW_TO_ACCESS_PROFILE.txt
+📄 START_HERE.txt
+📄 All *_COMPLETE.md files
+📄 All *_FIX.md files
+
+
+===========================================
+QUICK COPY-PASTE COMMANDS
+===========================================
+
+# PROFILE SYSTEM
+git checkout -b feature/profile-system && git add frontend/src/pages/Profile.jsx frontend/src/contexts/ProfileContext.jsx backend/routes/profile.py backend/services/profile_service.py && git commit -m "feat: Add profile system with favorites and collaborators" && git push origin feature/profile-system
+
+# ONBOARDING SYSTEM
+git checkout main && git checkout -b feature/onboarding-system && git add frontend/src/pages/Onboarding.jsx frontend/src/pages/SignIn.jsx frontend/src/pages/Login.jsx frontend/src/App.jsx frontend/src/components/ProtectedRoute.jsx && git commit -m "feat: Add 4-step onboarding with route guards" && git push origin feature/onboarding-system
+
+# TEAM COLLABORATION
+git checkout main && git checkout -b feature/team-collaboration && git add frontend/src/pages/TeamCollaboration.jsx frontend/src/services/api.js backend/routes/team.py backend/app.py backend/models.py && git commit -m "feat: Add team collaboration with notifications" && git push origin feature/team-collaboration
+
+
+===========================================
+VERIFICATION BEFORE COMMIT
+===========================================
+
+Run this command to check what you're about to commit:
+git status
+
+Make sure you DON'T see:
+- node_modules/
+- venv/
+- __pycache__/
+- *.db files
+- .env files
+
+
+===========================================
+IF YOU ACCIDENTALLY ADDED WRONG FILES
+===========================================
+
+# Remove specific file from staging
+git reset HEAD <filename>
+
+# Remove all files from staging
+git reset HEAD .
+
+# Start over
+git reset --hard HEAD

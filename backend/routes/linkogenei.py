@@ -3,7 +3,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 from services.mongodb_service import mongodb_service
-from datetime import datetime
+from datetime import datetime, timezone
 import secrets
 import logging
 
@@ -35,7 +35,7 @@ def generate_token():
         # Store token with user_id (expires in 30 days)
         extension_tokens[token] = {
             'user_id': user_id,
-            'created_at': datetime.utcnow().isoformat()
+            'created_at': datetime.now(timezone.utc).isoformat()
         }
         
         logger.info(f"Generated extension token for user: {user_id}")

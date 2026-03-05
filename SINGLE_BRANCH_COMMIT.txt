@@ -1,0 +1,119 @@
+===========================================
+SINGLE BRANCH COMMIT - ALL FEATURES
+===========================================
+
+===========================================
+ALL FILES TO COMMIT (15 files total)
+===========================================
+
+PROFILE SYSTEM (4 files):
+✅ frontend/src/pages/Profile.jsx
+✅ frontend/src/contexts/ProfileContext.jsx
+✅ backend/routes/profile.py
+✅ backend/services/profile_service.py
+
+ONBOARDING SYSTEM (5 files):
+✅ frontend/src/pages/Onboarding.jsx
+✅ frontend/src/pages/SignIn.jsx
+✅ frontend/src/pages/Login.jsx
+✅ frontend/src/App.jsx
+✅ frontend/src/components/ProtectedRoute.jsx
+
+TEAM COLLABORATION (5 files):
+✅ frontend/src/pages/TeamCollaboration.jsx
+✅ frontend/src/services/api.js
+✅ backend/routes/team.py
+✅ backend/app.py
+✅ backend/models.py
+
+AUTHENTICATION (1 file - already included above):
+✅ frontend/src/contexts/AuthContext.jsx
+
+
+===========================================
+STEP-BY-STEP COMMANDS
+===========================================
+
+# Step 1: Create new branch
+git checkout -b feature/kajol-updates
+
+# Step 2: Add all files
+git add frontend/src/pages/Profile.jsx
+git add frontend/src/contexts/ProfileContext.jsx
+git add backend/routes/profile.py
+git add backend/services/profile_service.py
+git add frontend/src/pages/Onboarding.jsx
+git add frontend/src/pages/SignIn.jsx
+git add frontend/src/pages/Login.jsx
+git add frontend/src/App.jsx
+git add frontend/src/components/ProtectedRoute.jsx
+git add frontend/src/pages/TeamCollaboration.jsx
+git add frontend/src/services/api.js
+git add backend/routes/team.py
+git add backend/app.py
+git add backend/models.py
+git add frontend/src/contexts/AuthContext.jsx
+
+# Step 3: Check what you're committing
+git status
+
+# Step 4: Commit with message
+git commit -m "feat: Add profile, onboarding, and team collaboration features
+
+- Profile system with favorites and collaborators
+- 4-step onboarding with route guards (9 questions)
+- Team collaboration with projects, members, tasks, notifications
+- Enhanced authentication with token management
+- Full light/dark theme support"
+
+# Step 5: Push to remote
+git push origin feature/kajol-updates
+
+
+===========================================
+ONE-LINER COMMAND (COPY-PASTE THIS)
+===========================================
+
+git checkout -b feature/kajol-updates && git add frontend/src/pages/Profile.jsx frontend/src/contexts/ProfileContext.jsx backend/routes/profile.py backend/services/profile_service.py frontend/src/pages/Onboarding.jsx frontend/src/pages/SignIn.jsx frontend/src/pages/Login.jsx frontend/src/App.jsx frontend/src/components/ProtectedRoute.jsx frontend/src/pages/TeamCollaboration.jsx frontend/src/services/api.js backend/routes/team.py backend/app.py backend/models.py frontend/src/contexts/AuthContext.jsx && git status && git commit -m "feat: Add profile, onboarding, and team collaboration features" && git push origin feature/kajol-updates
+
+
+===========================================
+FILES TO EXCLUDE (NEVER COMMIT)
+===========================================
+
+❌ node_modules/
+❌ frontend/node_modules/
+❌ backend/venv/
+❌ backend/__pycache__/
+❌ backend/instance/*.db
+❌ .env
+❌ *.log
+❌ All .md files (documentation)
+❌ All .txt files (documentation)
+
+
+===========================================
+VERIFICATION CHECKLIST
+===========================================
+
+Before running git push, verify:
+□ Run "git status" - should show 15 files
+□ NO node_modules/ in the list
+□ NO venv/ in the list
+□ NO .db files in the list
+□ NO .env files in the list
+□ NO __pycache__/ in the list
+
+
+===========================================
+IF SOMETHING GOES WRONG
+===========================================
+
+# Remove all files from staging
+git reset HEAD .
+
+# Delete the branch and start over
+git checkout main
+git branch -D feature/kajol-updates
+
+# Then run the commands again

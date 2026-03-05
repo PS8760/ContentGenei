@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { gsap } from 'gsap'
 import ParticlesBackground from '../components/ParticlesBackground'
 import FloatingEmojis from '../components/FloatingEmojis'
@@ -11,8 +11,13 @@ import apiService from '../services/api'
 const Dashboard = () => { 
   const { currentUser } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const [instagramProfile, setInstagramProfile] = useState(null)
+  const [instagramLoading, setInstagramLoading] = useState(false)
   const [dashboardData, setDashboardData] = useState({
     stats: {
       total_content: 0,
@@ -57,6 +62,78 @@ const Dashboard = () => {
     
     return activity
   }
+
+  // Handle Instagram disconnect
+  const handleDisconnectInstagram = async () => {
+    if (!instagramProfile || !window.confirm('Are you sure you want to disconnect your Instagram account?')) return
+    
+    try {
+      const connections = await apiService.getInstagramConnections()
+      if (connections.success && connections.connections.length > 0) {
+        const connectionId = connections.connections[0].id
+        await apiService.disconnectInstagram(connectionId)
+        setInstagramProfile(null)
+        setToastMessage('Instagram disconnected successfully')
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 3000)
+      }
+    } catch (error) {
+      console.error('Error disconnecting Instagram:', error)
+      setToastMessage('Failed to disconnect Instagram')
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    }
+  }
+
+  // Handle Instagram connect
+  const handleConnectInstagram = async () => {
+    try {
+      const response = await apiService.getInstagramAuthUrl()
+      if (response.success && response.oauth_url) {
+        window.location.href = response.oauth_url
+      }
+    } catch (error) {
+      console.error('Error getting Instagram auth URL:', error)
+      setToastMessage('Failed to start Instagram connection')
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    }
+  }
+
+  useEffect(() => {
+    // Check for Instagram connection success
+    if (searchParams.get('instagram') === 'connected') {
+      setToastMessage('Instagram connected successfully! 🎉')
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 5000)
+      
+      // Clean up URL
+      window.history.replaceState({}, '', '/dashboard')
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    // Fetch Instagram connection data
+    const fetchInstagramProfile = async () => {
+      if (!currentUser) return
+      
+      try {
+        setInstagramLoading(true)
+        const response = await apiService.getInstagramProfile()
+        
+        if (response.success) {
+          setInstagramProfile(response.profile)
+        }
+      } catch (error) {
+        console.log('No Instagram connection found or error fetching:', error.message)
+        // Not an error - user might not have connected Instagram yet
+      } finally {
+        setInstagramLoading(false)
+      }
+    }
+
+    fetchInstagramProfile()
+  }, [currentUser])
 
   useEffect(() => {
     const tl = gsap.timeline({ delay: 0.3 })
@@ -336,6 +413,96 @@ const Dashboard = () => {
                 ))}
               </div>
 
+              {/* Instagram Connection Card */}
+              {!instagramLoading && (
+                <div className="mb-8">
+                  {instagramProfile ? (
+                    <div className="glass-card rounded-2xl p-6 theme-transition">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-xl flex items-center justify-center">
+                            <span className="text-2xl">📷</span>
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Instagram Connected</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">@{instagramProfile.username}</p>
+                          </div>
+                        </div>
+                        <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-semibold rounded-full">
+                          Connected
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div className="text-center p-3 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                          <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{instagramProfile.media_count || 0}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Posts</div>
+                        </div>
+                        <div className="text-center p-3 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                          <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            {instagramProfile.followers_count || (instagramProfile.is_personal_account ? 'N/A' : '0')}
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Followers</div>
+                        </div>
+                        <div className="text-center p-3 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                          <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            {instagramProfile.follows_count || 0}
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Following</div>
+                        </div>
+                        <div className="text-center p-3 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                          <div className="text-sm font-bold text-gray-900 dark:text-gray-100 capitalize">{instagramProfile.account_type || 'Personal'}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Account Type</div>
+                        </div>
+                      </div>
+                      
+                      {instagramProfile.is_personal_account && (
+                        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                          <p className="text-xs text-blue-800 dark:text-blue-200">
+                            ℹ️ {instagramProfile.note || 'Followers count requires a Business or Creator account'}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={() => navigate('/instagram-analytics')}
+                          className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity"
+                        >
+                          View Analytics
+                        </button>
+                        <button
+                          onClick={handleDisconnectInstagram}
+                          className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="glass-card rounded-2xl p-6 theme-transition border-2 border-dashed border-gray-300 dark:border-gray-700">
+                      <div className="flex flex-col md:flex-row items-center justify-between">
+                        <div className="flex items-center space-x-4 mb-4 md:mb-0">
+                          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-xl flex items-center justify-center">
+                            <span className="text-3xl">📷</span>
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Connect Instagram</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Link your Instagram account to track analytics</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={handleConnectInstagram}
+                          className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity"
+                        >
+                          Connect Now
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Usage Progress & Quick Stats Row */}
               <div className="grid lg:grid-cols-3 gap-6 mb-8">
                 {/* Usage Progress */}
@@ -552,6 +719,22 @@ const Dashboard = () => {
       
       {/* Footer */}
       <Footer />
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed bottom-8 right-8 z-50 animate-slide-up">
+          <div className="glass-card rounded-2xl p-4 shadow-2xl border border-green-500/50 bg-green-50 dark:bg-green-900/30">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                <span className="text-xl">✓</span>
+              </div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {toastMessage}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

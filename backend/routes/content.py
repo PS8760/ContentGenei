@@ -5,7 +5,7 @@ from services.ai_service import AIContentGenerator
 from services.ocr_service import ocr_service
 from services.video_service import video_service
 from services.url_service import url_service
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import json
 import base64
 
@@ -367,11 +367,19 @@ def get_content_stats():
         ).filter_by(user_id=current_user_id).group_by(ContentItem.status).all()
         
         # Recent content (last 30 days)
-        thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
-        recent_content = ContentItem.query.filter(
-            ContentItem.user_id == current_user_id,
-            ContentItem.created_at >= thirty_days_ago
-        ).count()
+        try:
+            thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+            # Ensure timezone-aware comparison
+            if thirty_days_ago.tzinfo is None:
+                thirty_days_ago = thirty_days_ago.replace(tzinfo=timezone.utc)
+            
+            recent_content = ContentItem.query.filter(
+                ContentItem.user_id == current_user_id,
+                ContentItem.created_at >= thirty_days_ago
+            ).count()
+        except Exception as date_error:
+            current_app.logger.warning(f"Date comparison error: {str(date_error)}")
+            recent_content = 0
         
         # Average word count
         avg_word_count = db.session.query(
@@ -396,8 +404,11 @@ def get_content_stats():
         })
         
     except Exception as e:
-        current_app.logger.error(f"Get content stats error: {str(e)}")
-        return jsonify({'error': 'Failed to get content stats'}), 500
+        current_app.logger.error(f"Get content stats error: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': f'Failed to get content stats: {str(e)}'
+        }), 500
 
 
 @content_bp.route('/extract-text', methods=['POST'])

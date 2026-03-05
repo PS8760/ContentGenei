@@ -1,0 +1,95 @@
+INSTAGRAM FOLLOWERS COUNT - QUICK REFERENCE
+===========================================
+
+PROBLEM:
+Followers count shows 0 on dashboard
+
+ROOT CAUSE:
+Instagram Basic Display API (Personal accounts) does NOT provide followers_count field
+
+SOLUTION IMPLEMENTED:
+1. Updated service to request all available fields
+2. Enhanced controller to save all fields
+3. Added personal account detection
+4. Updated UI to show "N/A" for personal accounts
+5. Added informational banner explaining limitation
+
+WHAT WAS CHANGED:
+=================
+
+backend/platforms/instagram/instagram_service.py:
+- Added logging of received fields
+- Added documentation about API limitations
+
+backend/platforms/instagram/instagram_controller.py:
+- exchange_token(): Now saves followers_count, profile_picture_url
+- get_instagram_profile(): Refreshes all fields from API
+- Added is_personal_account detection
+- Added detailed logging
+
+frontend/src/pages/Dashboard.jsx:
+- Shows "N/A" for followers on personal accounts
+- Shows blue info banner for personal accounts
+- Better UX for API limitations
+
+TO TEST:
+========
+
+1. Delete database:
+   del backend\instance\contentgenie_dev.db
+
+2. Restart backend:
+   cd backend
+   python run.py
+
+3. Reconnect Instagram through onboarding
+
+4. Check dashboard:
+   - Personal account: Shows "N/A" for followers + blue banner
+   - Business/Creator: Shows actual followers count
+
+EXPECTED BEHAVIOR:
+==================
+
+Personal Account (MOST COMMON):
+- Posts: <actual count>
+- Followers: N/A
+- Blue banner: "Followers count requires a Business or Creator account"
+- Account Type: PERSONAL
+
+Business/Creator Account:
+- Posts: <actual count>
+- Followers: <actual count>
+- No banner
+- Account Type: BUSINESS or CREATOR
+
+BACKEND LOGS TO CHECK:
+======================
+✓ Profile received: @username
+Account type: PERSONAL
+Profile fields available: ['id', 'username', 'account_type', 'media_count']
+Instagram profile refreshed for user <user_id>
+Followers: 0, Media: <count>
+
+WHY FOLLOWERS IS STILL 0:
+==========================
+Instagram Basic Display API (Personal accounts) does NOT provide:
+- followers_count
+- follows_count  
+- biography
+- website
+- profile_picture_url
+
+These fields are ONLY available in Instagram Graph API for Business/Creator accounts.
+
+This is an Instagram API limitation, not a bug in our code.
+
+HOW TO GET FOLLOWERS COUNT:
+============================
+User must:
+1. Convert Instagram account to Business or Creator (in Instagram app)
+2. Disconnect and reconnect in our app
+3. App will then use Instagram Graph API and show followers count
+
+STATUS: ✅ FIXED
+All changes implemented and ready to test!

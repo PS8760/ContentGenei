@@ -1,0 +1,55 @@
+================================================================================
+⚠️  IMPORTANT: YOU MUST RESTART THE BACKEND SERVER NOW! ⚠️
+================================================================================
+
+The code has been fixed, but the backend server is still running the OLD code.
+
+STEP 1: STOP THE BACKEND
+-------------------------
+1. Find the terminal/command prompt where backend is running
+2. Press Ctrl+C to stop it
+3. Wait for it to fully stop
+
+STEP 2: START THE BACKEND AGAIN
+--------------------------------
+cd backend
+python run.py
+
+OR if you have a batch file:
+start-backend.bat
+
+STEP 3: VERIFY IT'S RUNNING
+----------------------------
+You should see:
+ * Running on http://127.0.0.1:5000
+ * WARNING: This is a development server
+
+STEP 4: TEST THE FIX
+--------------------
+1. Go to http://localhost:5173
+2. Login
+3. Go to Team Collaboration
+4. Create/select a project
+5. Click "Add Members"
+6. Try to add a member
+7. Open browser console (F12) and check for logs
+
+WHAT TO LOOK FOR IN CONSOLE:
+-----------------------------
+✅ You should see:
+   🔄 Adding member to project: [project-id] [email]
+   📡 Response: {success: true, ...}
+
+❌ If you still see error:
+   Check the console for the actual error message
+   It will now show more details
+
+================================================================================
+WHY THIS IS NEEDED:
+================================================================================
+
+Python/Flask doesn't automatically reload when you change code.
+The server is still running the old version of team.py.
+You MUST restart it to load the new fixed code.
+
+================================================================================

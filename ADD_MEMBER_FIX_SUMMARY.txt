@@ -1,0 +1,126 @@
+================================================================================
+FIX: "Failed to Fetch" Error When Adding Members to Project
+================================================================================
+
+PROBLEM:
+--------
+When adding members to a project in Team Collaboration, you get "Failed to fetch" error.
+
+ROOT CAUSE:
+-----------
+The @jwt_required(optional=True) decorator was making JWT optional, but the code
+was trying to use get_jwt_identity() which returns None for OPTIONS requests,
+causing the function to fail.
+
+SOLUTION APPLIED:
+-----------------
+1. Removed @jwt_required(optional=True) decorator
+2. Added manual JWT verification inside the function
+3. OPTIONS requests bypass JWT check
+4. POST/DELETE requests require valid JWT token
+5. Added verify_jwt_in_request import
+
+FILES CHANGED:
+--------------
+✅ backend/routes/team.py
+   - Line 1133: Added verify_jwt_in_request import
+   - Line 1309-1320: Fixed add_project_member function
+   - Line 1351-1360: Fixed remove_project_member function
+
+HOW TO TEST:
+------------
+
+1. RESTART BACKEND SERVER:
+   cd backend
+   python run.py
+
+2. OPEN YOUR APP:
+   http://localhost:5173
+
+3. TEST ADD MEMBER:
+   a. Login to your account
+   b. Go to Team Collaboration
+   c. Create a new project (or select existing)
+   d. Click "Add Members" button
+   e. Select a collaborator from the list
+   f. Click "Add" button
+   g. Should see: "✅ [email] added to project!"
+
+4. CHECK BROWSER CONSOLE (F12):
+   - Should NOT see any red errors
+   - Should see successful API response
+
+5. VERIFY IN DATABASE:
+   - The member should be added to project.members JSON field
+   - A notification should be created in collaboration_requests table
+
+WHAT WAS FIXED:
+---------------
+
+BEFORE:
+@team_bp.route('/projects/<project_id>/members', methods=['POST', 'OPTIONS'])
+@jwt_required(optional=True)  ❌ JWT optional but code expects it
+def add_project_member(project_id):
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+    
+    try:
+        current_user_id = get_jwt_identity()  ❌ Returns None for OPTIONS
+        user = User.query.get(current_user_id)  ❌ Fails with None
+
+AFTER:
+@team_bp.route('/projects/<project_id>/members', methods=['POST', 'OPTIONS'])
+def add_project_member(project_id):
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200  ✅ Returns early
+    
+    try:
+        verify_jwt_in_request()  ✅ Manually verify JWT for POST
+        current_user_id = get_jwt_identity()  ✅ Now has valid token
+        user = User.query.get(current_user_id)  ✅ Works correctly
+
+EXPECTED BEHAVIOR:
+------------------
+1. Browser sends OPTIONS request (CORS preflight)
+   → Backend returns 200 OK immediately
+
+2. Browser sends POST request with JWT token
+   → Backend verifies token
+   → Backend adds member to project
+   → Backend creates notification
+   → Backend returns success response
+
+3. Frontend shows success alert
+   → "✅ [email] added to project!"
+
+4. Member sees project in their Projects tab
+
+TROUBLESHOOTING:
+----------------
+
+If still not working:
+
+1. Check backend logs for errors
+2. Check browser console (F12) for errors
+3. Check Network tab in browser DevTools:
+   - Look for /api/team/projects/.../members request
+   - Check Status Code (should be 200)
+   - Check Response (should have success: true)
+
+4. Run test script:
+   python test_add_member_fix.py
+
+5. Manual curl test:
+   curl -X POST http://localhost:5000/api/team/projects/PROJECT_ID/members \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     -d '{"email": "test@example.com"}'
+
+RELATED FILES:
+--------------
+- backend/routes/team.py (line 1309) - add_project_member function
+- frontend/src/pages/TeamCollaboration.jsx (line 568) - handleAddMemberToProject
+- frontend/src/services/api.js (line 334) - addProjectMember method
+- backend/app.py - CORS configuration
+
+================================================================================

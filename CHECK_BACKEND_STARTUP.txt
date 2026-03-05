@@ -1,0 +1,72 @@
+================================================================================
+CHECK BACKEND STARTUP FOR ERRORS
+================================================================================
+
+The route is not being registered. This means there's likely an error when
+the backend starts up that's preventing the team.py routes from loading.
+
+HOW TO CHECK:
+-------------
+
+1. STOP the backend (Ctrl+C)
+
+2. START it again and WATCH THE OUTPUT CAREFULLY:
+   
+   cd backend
+   python run.py
+
+3. LOOK FOR ERRORS in the startup output:
+   - ImportError
+   - SyntaxError  
+   - AttributeError
+   - Any red error messages
+
+4. SHARE THE COMPLETE OUTPUT with me
+
+WHAT TO LOOK FOR:
+-----------------
+
+✅ GOOD - You should see:
+   * Running on http://127.0.0.1:5000
+   * Press CTRL+C to quit
+   (No errors)
+
+❌ BAD - You might see:
+   ImportError: cannot import name 'verify_jwt_in_request'
+   SyntaxError: invalid syntax
+   AttributeError: module 'flask_jwt_extended' has no attribute 'verify_jwt_in_request'
+
+COMMON ISSUE:
+-------------
+
+The most likely issue is that `verify_jwt_in_request` doesn't exist in your
+version of flask-jwt-extended.
+
+TO FIX:
+-------
+
+If you see an import error for verify_jwt_in_request, we need to use a
+different approach. The function might not exist in older versions.
+
+ALTERNATIVE FIX:
+----------------
+
+Instead of:
+   verify_jwt_in_request()
+
+We should use:
+   @jwt_required()
+
+But handle OPTIONS differently.
+
+================================================================================
+NEXT STEPS:
+================================================================================
+
+1. Stop backend
+2. Start backend
+3. Copy ALL the output
+4. Share it with me
+5. I'll fix the actual issue
+
+================================================================================
