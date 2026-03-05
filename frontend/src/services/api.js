@@ -1,4 +1,5 @@
 import { auth } from '../config/firebase'
+import { apiCache } from '../utils/cache'
 
 // Backend API URL - Update this after deploying your backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
@@ -54,6 +55,18 @@ class ApiService {
     const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`
     const url = `${this.baseURL}${apiEndpoint}`
     
+    // Check cache for GET requests (skip LinkoGenei endpoints for now)
+    const isGetRequest = !options.method || options.method === 'GET'
+    const cacheKey = `${url}${JSON.stringify(options.body || {})}`
+    
+    if (isGetRequest && !apiEndpoint.includes('/linkogenei/')) {
+      const cached = apiCache.get(cacheKey)
+      if (cached) {
+        console.log('Cache hit:', apiEndpoint)
+        return cached
+      }
+    }
+    
     // Check if this is a LinkoGenei endpoint (except token generation)
     const isLinkoGeneiEndpoint = apiEndpoint.includes('/linkogenei/') && !apiEndpoint.includes('/generate-token')
     const headers = await this.getAuthHeaders(isLinkoGeneiEndpoint)
@@ -78,6 +91,11 @@ class ApiService {
 
       if (!response.ok) {
         throw new Error(data.error || `HTTP error! status: ${response.status}`)
+      }
+
+      // Cache successful GET responses
+      if (isGetRequest && data && !apiEndpoint.includes('/linkogenei/')) {
+        apiCache.set(cacheKey, data)
       }
 
       return data
