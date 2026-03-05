@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProfileProvider } from './contexts/ProfileContext'
@@ -7,24 +7,25 @@ import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
 import PageLoader from './components/PageLoader'
 
-// Pages
+// Eager load only essential pages
 import LandingPage from './pages/LandingPage'
 import SignIn from './pages/SignIn'
 import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import Creator from './pages/Creator'
-import Analytics from './pages/Analytics'
-import ContentLibrary from './pages/ContentLibrary'
-import SocialScheduler from './pages/SocialScheduler'
-import ContentOptimizer from './pages/ContentOptimizer'
-import TeamCollaboration from './pages/TeamCollaboration'
-import AboutUs from './pages/AboutUs'
-import ContactUs from './pages/ContactUs'
-import LinkoGenei from './pages/LinkoGenei'
-import Profile from './pages/Profile'
-import Onboarding from './pages/Onboarding'
-import AdminDashboard from './pages/AdminDashboard'
-// import GeneiLink from './pages/GeneiLink' // TODO: Enable in future
+
+// Lazy load heavy pages
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Creator = lazy(() => import('./pages/Creator'))
+const Analytics = lazy(() => import('./pages/Analytics'))
+const ContentLibrary = lazy(() => import('./pages/ContentLibrary'))
+const SocialScheduler = lazy(() => import('./pages/SocialScheduler'))
+const ContentOptimizer = lazy(() => import('./pages/ContentOptimizer'))
+const TeamCollaboration = lazy(() => import('./pages/TeamCollaboration'))
+const AboutUs = lazy(() => import('./pages/AboutUs'))
+const ContactUs = lazy(() => import('./pages/ContactUs'))
+const LinkoGenei = lazy(() => import('./pages/LinkoGenei'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Onboarding = lazy(() => import('./pages/Onboarding'))
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
 
 import './index.css'
 
@@ -71,82 +72,78 @@ function AppContent() {
 
   return (
     <>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/about" element={<AboutUs />} />
-        <Route path="/contact" element={<ContactUs />} />
-        
-        {/* Onboarding Route - Protected but doesn't require onboarding completion */}
-        <Route path="/onboarding" element={
-          <ProtectedRoute requireOnboarding={false}>
-            <Onboarding />
-          </ProtectedRoute>
-        } />
-        
-        {/* Protected Routes - Require onboarding completion */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/creator" element={
-          <ProtectedRoute>
-            <Creator />
-          </ProtectedRoute>
-        } />
-        <Route path="/analytics" element={
-          <ProtectedRoute>
-            <Analytics />
-          </ProtectedRoute>
-        } />
-        <Route path="/library" element={
-          <ProtectedRoute>
-            <ContentLibrary />
-          </ProtectedRoute>
-        } />
-        <Route path="/scheduler" element={
-          <ProtectedRoute>
-            <SocialScheduler />
-          </ProtectedRoute>
-        } />
-        <Route path="/optimizer" element={
-          <ProtectedRoute>
-            <ContentOptimizer />
-          </ProtectedRoute>
-        } />
-        <Route path="/team" element={
-          <ProtectedRoute>
-            <TeamCollaboration />
-          </ProtectedRoute>
-        } />
-        <Route path="/linkogenei" element={
-          <ProtectedRoute>
-            <LinkoGenei />
-          </ProtectedRoute>
-        } />
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin" element={
-          <ProtectedRoute>
-            <AdminDashboard />
-          </ProtectedRoute>
-        } />
-        {/* TODO: Enable GeneiLink in future */}
-        {/* <Route path="/geneilink" element={
-          <ProtectedRoute>
-            <GeneiLink />
-          </ProtectedRoute>
-        } /> */}
-        
-        {/* Redirect any unknown routes to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<ContactUs />} />
+          
+          {/* Onboarding Route - Protected but doesn't require onboarding completion */}
+          <Route path="/onboarding" element={
+            <ProtectedRoute requireOnboarding={false}>
+              <Onboarding />
+            </ProtectedRoute>
+          } />
+          
+          {/* Protected Routes - Require onboarding completion */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/creator" element={
+            <ProtectedRoute>
+              <Creator />
+            </ProtectedRoute>
+          } />
+          <Route path="/analytics" element={
+            <ProtectedRoute>
+              <Analytics />
+            </ProtectedRoute>
+          } />
+          <Route path="/library" element={
+            <ProtectedRoute>
+              <ContentLibrary />
+            </ProtectedRoute>
+          } />
+          <Route path="/scheduler" element={
+            <ProtectedRoute>
+              <SocialScheduler />
+            </ProtectedRoute>
+          } />
+          <Route path="/optimizer" element={
+            <ProtectedRoute>
+              <ContentOptimizer />
+            </ProtectedRoute>
+          } />
+          <Route path="/team" element={
+            <ProtectedRoute>
+              <TeamCollaboration />
+            </ProtectedRoute>
+          } />
+          <Route path="/linkogenei" element={
+            <ProtectedRoute>
+              <LinkoGenei />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          
+          {/* Redirect any unknown routes to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </>
   )
 }

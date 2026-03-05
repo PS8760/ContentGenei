@@ -1,9 +1,27 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const ParticlesBackground = () => {
   const containerRef = useRef(null)
   const particlesRef = useRef([])
   const animationFrameRef = useRef(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    // Check if mobile device
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Don't render particles on mobile devices
+  if (isMobile) {
+    return null
+  }
 
   useEffect(() => {
     const container = containerRef.current
