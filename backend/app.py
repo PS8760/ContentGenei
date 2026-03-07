@@ -31,39 +31,65 @@ def create_app(config_name=None):
     migrate = Migrate(app, db)
     jwt = JWTManager(app)
     
-    # Configure CORS - simple and permissive for development
-    CORS(app,
-         origins=["http://localhost:5173", "http://localhost:3000", "https://content-ai-orcin-tau.vercel.app"],
+    # Configure CORS
+    cors_origins = os.environ.get('CORS_ORIGINS', '').split(',') if os.environ.get('CORS_ORIGINS') else [
+        "http://localhost:3000",
+        "http://localhost:3001", 
+        "http://localhost:3002",
+        "http://localhost:3003",
+        "http://localhost:5173",
+        "https://content-ai-orcin-tau.vercel.app",
+        "https://*.vercel.app"
+    ]
+    
+    # Add support for Chrome extensions and social media sites
+    CORS(app, 
+         origins=cors_origins,
          supports_credentials=True,
-         allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-         expose_headers=["Content-Type", "Authorization"])
+         allow_headers=["Content-Type", "Authorization"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         expose_headers=["Content-Type", "Authorization"],
+         resources={
+             r"/api/*": {
+                 "origins": "*",  # Allow all origins for API
+                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                 "allow_headers": ["Content-Type", "Authorization"],
+                 "expose_headers": ["Content-Type", "Authorization"],
+                 "supports_credentials": False  # Must be False when origins is *
+             }
+         }
+    )
+    
+    # Additional CORS handling for all requests (including preflight)
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            response = app.make_default_options_response()
+            origin = request.headers.get('Origin')
+            
+            # Allow any origin for OPTIONS requests
+            response.headers['Access-Control-Allow-Origin'] = origin if origin else '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+            response.headers['Access-Control-Max-Age'] = '3600'
+            
+            return response
     
     @app.after_request
     def after_request(response):
-        origin = request.headers.get('Origin', '')
-        response.headers['Access-Control-Allow-Origin'] = origin if origin else 'http://localhost:5173'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-        response.headers['Access-Control-Allow-Credentials'] = 'true'
-        response.headers['Access-Control-Max-Age'] = '3600'
-        return response
-    
-    @app.before_request
-    def handle_options():
-        if request.method == 'OPTIONS':
-            response = jsonify({'status': 'ok'})
-            origin = request.headers.get('Origin', '')
-            response.headers['Access-Control-Allow-Origin'] = origin if origin else 'http://localhost:5173'
-            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
-            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-            response.headers['Access-Control-Allow-Credentials'] = 'true'
-            response.headers['Access-Control-Max-Age'] = '3600'
-            return response, 200
+        origin = request.headers.get('Origin')
         
-        # Log requests (only for non-OPTIONS)
-        if app.config['DEBUG']:
-            app.logger.info(f'{request.method} {request.url} - {request.remote_addr}')
+        # Set CORS headers for all responses
+        if origin:
+            response.headers['Access-Control-Allow-Origin'] = origin
+        else:
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Expose-Headers'] = 'Content-Type, Authorization'
+        
+        return response
     
     # Register blueprints
     from routes.auth import auth_bp
@@ -71,8 +97,8 @@ def create_app(config_name=None):
     from routes.analytics import analytics_bp
     from routes.team import team_bp
     from routes.linkogenei import linkogenei_bp
-    from routes.profile import profile_bp
     from platforms.instagram.instagram_controller import instagram_bp
+    from platforms.linkedin.linkedin_controller import linkedin_bp
     # from routes.geneilink import geneilink_bp  # TODO: Enable in future
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -80,8 +106,8 @@ def create_app(config_name=None):
     app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
     app.register_blueprint(team_bp, url_prefix='/api/team')
     app.register_blueprint(linkogenei_bp)  # Already has url_prefix in blueprint
-    app.register_blueprint(profile_bp, url_prefix='/api')
     app.register_blueprint(instagram_bp, url_prefix='/api/platforms/instagram')
+    app.register_blueprint(linkedin_bp, url_prefix='/api/platforms/linkedin')
     # app.register_blueprint(geneilink_bp, url_prefix='/api/geneilink')  # TODO: Enable in future
     
     # Health check endpoint
@@ -105,7 +131,9 @@ def create_app(config_name=None):
                 'auth': '/api/auth',
                 'content': '/api/content',
                 'analytics': '/api/analytics',
-                'team': '/api/team'
+                'team': '/api/team',
+                'instagram': '/api/platforms/instagram',
+                'linkedin': '/api/platforms/linkedin'
             }
         })
     
@@ -151,10 +179,9 @@ def create_app(config_name=None):
     # Request logging middleware
     @app.before_request
     def log_request_info():
-        if request.method == "OPTIONS":
-            return None
         if app.config['DEBUG']:
             app.logger.info(f'{request.method} {request.url} - {request.remote_addr}')
+    
     # Initialize database tables on startup
     with app.app_context():
         try:

@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, current_app, redirect
+﻿from flask import Blueprint, request, jsonify, current_app, redirect
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, User
 from platforms.instagram.instagram_model import InstagramConnection, OAuthState, InstagramPost, InstagramCompetitor
@@ -145,7 +145,7 @@ def exchange_token():
             current_app.logger.error(f"State user mismatch: {oauth_state.user_id} != {current_user_id}")
             return jsonify({'success': False, 'error': 'State does not belong to current user'}), 403
         
-        current_app.logger.info(f"✓ State validated successfully")
+        current_app.logger.info(f"Ô£ô State validated successfully")
         
         # Exchange code for short-lived token
         current_app.logger.info(f"Step 1: Exchanging code for short-lived token...")
@@ -153,10 +153,10 @@ def exchange_token():
         
         try:
             token_data = instagram_service.exchange_code_for_token(code)
-            current_app.logger.info(f"✓ Short-lived token received")
+            current_app.logger.info(f"Ô£ô Short-lived token received")
             current_app.logger.info(f"Token data keys: {list(token_data.keys())}")
         except requests.exceptions.HTTPError as e:
-            current_app.logger.error(f"❌ Instagram API error during token exchange:")
+            current_app.logger.error(f"ÔØî Instagram API error during token exchange:")
             current_app.logger.error(f"Status code: {e.response.status_code}")
             current_app.logger.error(f"Response: {e.response.text}")
             return jsonify({
@@ -164,14 +164,14 @@ def exchange_token():
                 'error': f'Instagram API error: {e.response.text}'
             }), 400
         except Exception as e:
-            current_app.logger.error(f"❌ Unexpected error during token exchange: {str(e)}")
+            current_app.logger.error(f"ÔØî Unexpected error during token exchange: {str(e)}")
             raise
         
         short_lived_token = token_data.get('access_token')
         instagram_user_id = token_data.get('user_id')
         
         if not short_lived_token:
-            current_app.logger.error(f"❌ No access_token in response: {token_data}")
+            current_app.logger.error(f"ÔØî No access_token in response: {token_data}")
             return jsonify({'success': False, 'error': 'No access token received from Instagram'}), 500
         
         current_app.logger.info(f"Instagram User ID: {instagram_user_id}")
@@ -181,10 +181,10 @@ def exchange_token():
         
         try:
             long_lived_data = instagram_service.get_long_lived_token(short_lived_token)
-            current_app.logger.info(f"✓ Long-lived token received")
+            current_app.logger.info(f"Ô£ô Long-lived token received")
             current_app.logger.info(f"Expires in: {long_lived_data.get('expires_in')} seconds")
         except requests.exceptions.HTTPError as e:
-            current_app.logger.error(f"❌ Instagram API error during long-lived token exchange:")
+            current_app.logger.error(f"ÔØî Instagram API error during long-lived token exchange:")
             current_app.logger.error(f"Status code: {e.response.status_code}")
             current_app.logger.error(f"Response: {e.response.text}")
             return jsonify({
@@ -192,7 +192,7 @@ def exchange_token():
                 'error': f'Failed to get long-lived token: {e.response.text}'
             }), 400
         except Exception as e:
-            current_app.logger.error(f"❌ Unexpected error during long-lived token exchange: {str(e)}")
+            current_app.logger.error(f"ÔØî Unexpected error during long-lived token exchange: {str(e)}")
             raise
         
         access_token = long_lived_data.get('access_token')
@@ -203,11 +203,11 @@ def exchange_token():
         
         try:
             profile = instagram_service.get_user_profile(access_token)
-            current_app.logger.info(f"✓ Profile received: @{profile.get('username')}")
+            current_app.logger.info(f"Ô£ô Profile received: @{profile.get('username')}")
             current_app.logger.info(f"Account type: {profile.get('account_type')}")
             current_app.logger.info(f"Profile fields available: {list(profile.keys())}")
         except requests.exceptions.HTTPError as e:
-            current_app.logger.error(f"❌ Instagram API error during profile fetch:")
+            current_app.logger.error(f"ÔØî Instagram API error during profile fetch:")
             current_app.logger.error(f"Status code: {e.response.status_code}")
             current_app.logger.error(f"Response: {e.response.text}")
             return jsonify({
@@ -215,7 +215,7 @@ def exchange_token():
                 'error': f'Failed to fetch profile: {e.response.text}'
             }), 400
         except Exception as e:
-            current_app.logger.error(f"❌ Unexpected error during profile fetch: {str(e)}")
+            current_app.logger.error(f"ÔØî Unexpected error during profile fetch: {str(e)}")
             raise
         
         # Calculate token expiration
@@ -270,7 +270,7 @@ def exchange_token():
         # Commit everything in one transaction
         db.session.commit()
         
-        current_app.logger.info(f"✓ Instagram connection saved successfully")
+        current_app.logger.info(f"Ô£ô Instagram connection saved successfully")
         current_app.logger.info(f"=== TOKEN EXCHANGE COMPLETE ===")
         
         return jsonify({
@@ -280,7 +280,7 @@ def exchange_token():
         
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"❌ FATAL ERROR in token exchange: {str(e)}")
+        current_app.logger.error(f"ÔØî FATAL ERROR in token exchange: {str(e)}")
         current_app.logger.exception(e)  # This will log the full stack trace
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -659,8 +659,10 @@ def get_dashboard_data(connection_id):
         
         avg_engagement_rate = sum(p.engagement_rate for p in posts) / total_posts if total_posts > 0 else 0
         
-        # Detect underperforming posts
+        # Convert posts to dict for analysis
         posts_data = [p.to_dict() for p in posts]
+        
+        # Detect underperforming posts
         underperforming = instagram_service.detect_underperforming_posts(posts_data)
         
         # Mark posts as underperforming in database
@@ -672,6 +674,12 @@ def get_dashboard_data(connection_id):
                 post.performance_score = perf_post.get('performance_score', 0)
         
         db.session.commit()
+        
+        # Regenerate posts_data after database update to include updated fields
+        posts_data = [p.to_dict() for p in posts]
+        
+        # Filter underperforming posts with all updated data
+        underperforming_posts = [p for p in posts_data if p.get('is_underperforming', False)]
         
         return jsonify({
             'success': True,
@@ -686,7 +694,7 @@ def get_dashboard_data(connection_id):
                 'avg_engagement_rate': round(avg_engagement_rate, 2),
                 'followers_count': connection.followers_count
             },
-            'underperforming_posts': underperforming
+            'underperforming_posts': underperforming_posts
         })
         
     except Exception as e:
@@ -746,9 +754,9 @@ Focus on: caption optimization, posting time, hashtags, call-to-action, content 
             lines = suggestions_text.strip().split('\n')
             for line in lines:
                 line = line.strip()
-                if line and (line[0].isdigit() or line.startswith('-') or line.startswith('•')):
+                if line and (line[0].isdigit() or line.startswith('-') or line.startswith('ÔÇó')):
                     # Remove numbering and clean up
-                    clean_line = line.lstrip('0123456789.-• ').strip()
+                    clean_line = line.lstrip('0123456789.-ÔÇó ').strip()
                     if clean_line:
                         suggestions.append(clean_line)
             
@@ -963,7 +971,7 @@ def compare_with_competitors(connection_id):
 
 
 # ============================================================================
-# AI-POWERED FEATURES - The WOW Factor 🚀
+# AI-POWERED FEATURES - The WOW Factor ­ƒÜÇ
 # ============================================================================
 
 @instagram_bp.route('/ai/content-gaps/<connection_id>', methods=['GET'])
@@ -1174,8 +1182,12 @@ def analyze_patterns(connection_id):
     Pattern Recognition: Analyze best caption length, posting time, and format
     Uses statistical correlation for data-driven insights
     """
+    current_app.logger.info(f"=== ML ANALYZE PATTERNS START ===")
+    current_app.logger.info(f"Connection ID: {connection_id}")
+    
     try:
         current_user_id = get_jwt_identity()
+        current_app.logger.info(f"User ID: {current_user_id}")
         
         # Get user's connection
         connection = InstagramConnection.query.filter_by(
@@ -1185,7 +1197,10 @@ def analyze_patterns(connection_id):
         ).first()
         
         if not connection:
+            current_app.logger.error(f"Connection not found: {connection_id}")
             return jsonify({'error': 'Connection not found'}), 404
+        
+        current_app.logger.info(f"✓ Connection found: {connection.instagram_username}")
         
         # Get user's posts
         posts = InstagramPost.query.filter_by(
@@ -1193,35 +1208,81 @@ def analyze_patterns(connection_id):
             user_id=current_user_id
         ).order_by(InstagramPost.published_at.desc()).all()
         
+        current_app.logger.info(f"✓ Found {len(posts)} posts")
+        
         if len(posts) < 5:
+            current_app.logger.warning(f"Not enough posts: {len(posts)}")
             return jsonify({
                 'error': 'Need at least 5 posts for pattern analysis',
                 'current_posts': len(posts)
             }), 400
         
         # Import ML service
-        from services.instagram_ml_service import InstagramMLService
+        current_app.logger.info("Importing ML service...")
+        try:
+            from services.instagram_ml_service import InstagramMLService
+            current_app.logger.info("✓ ML service imported successfully")
+        except ImportError as import_err:
+            current_app.logger.error(f"Failed to import ML service: {str(import_err)}")
+            return jsonify({
+                'error': 'ML service not available',
+                'details': str(import_err)
+            }), 500
+        
         ml_service = InstagramMLService()
+        current_app.logger.info("✓ ML service instantiated")
         
         # Analyze patterns - convert posts to dict format
+        current_app.logger.info("Converting posts to dict format...")
         posts_data = []
         for p in posts:
-            posts_data.append({
-                'media_type': p.media_type,
-                'caption': p.caption or '',
-                'engagement_rate': p.engagement_rate or 0,
-                'published_at': p.published_at,  # Keep as datetime object
-                'like_count': p.like_count or 0,
-                'comments_count': p.comments_count or 0
-            })
+            try:
+                posts_data.append({
+                    'media_type': p.media_type,
+                    'caption': p.caption or '',
+                    'engagement_rate': float(p.engagement_rate or 0),
+                    'published_at': p.published_at,
+                    'like_count': int(p.like_count or 0),
+                    'comments_count': int(p.comments_count or 0)
+                })
+            except Exception as conv_err:
+                current_app.logger.warning(f"Error converting post {p.id}: {str(conv_err)}")
+                continue
         
+        current_app.logger.info(f"✓ Converted {len(posts_data)} posts")
+        
+        if len(posts_data) < 5:
+            return jsonify({
+                'error': 'Not enough valid posts for analysis',
+                'current_posts': len(posts_data)
+            }), 400
+        
+        current_app.logger.info("Calling ML analyze_patterns()...")
         result = ml_service.analyze_patterns(posts_data)
+        current_app.logger.info(f"✓ ML analysis complete: success={result.get('success')}")
         
+        if not result.get('success'):
+            current_app.logger.error(f"ML analysis returned error: {result.get('error')}")
+            return jsonify(result), 400
+        
+        current_app.logger.info(f"=== ML ANALYZE PATTERNS SUCCESS ===")
         return jsonify(result)
         
     except Exception as e:
-        current_app.logger.error(f"Pattern analysis error: {str(e)}")
-        return jsonify({'error': 'Failed to analyze patterns', 'details': str(e)}), 500
+        current_app.logger.error(f"=== ML ANALYZE PATTERNS ERROR ===")
+        current_app.logger.error(f"Error type: {type(e).__name__}")
+        current_app.logger.error(f"Error message: {str(e)}")
+        import traceback
+        error_trace = traceback.format_exc()
+        current_app.logger.error(f"Traceback:\n{error_trace}")
+        
+        # Return detailed error for debugging
+        return jsonify({
+            'error': 'Failed to analyze patterns',
+            'details': str(e),
+            'error_type': type(e).__name__,
+            'traceback': error_trace
+        }), 500
 
 
 @instagram_bp.route('/ml/sentiment-analysis/<connection_id>', methods=['POST'])
@@ -1294,7 +1355,9 @@ def train_engagement_model(connection_id):
     Uses historical data to build predictive model
     """
     try:
+        current_app.logger.info(f"=== ML TRAIN MODEL START ===")
         current_user_id = get_jwt_identity()
+        current_app.logger.info(f"User ID: {current_user_id}, Connection ID: {connection_id}")
         
         # Get user's connection
         connection = InstagramConnection.query.filter_by(
@@ -1304,7 +1367,10 @@ def train_engagement_model(connection_id):
         ).first()
         
         if not connection:
+            current_app.logger.error(f"Connection not found")
             return jsonify({'error': 'Connection not found'}), 404
+        
+        current_app.logger.info(f"✓ Connection found: {connection.username}")
         
         # Get user's posts
         posts = InstagramPost.query.filter_by(
@@ -1312,13 +1378,17 @@ def train_engagement_model(connection_id):
             user_id=current_user_id
         ).order_by(InstagramPost.published_at.desc()).all()
         
+        current_app.logger.info(f"✓ Found {len(posts)} posts")
+        
         if len(posts) < 10:
+            current_app.logger.error(f"Not enough posts: {len(posts)}")
             return jsonify({
                 'error': 'Need at least 10 posts to train model',
                 'current_posts': len(posts)
             }), 400
         
         # Import ML service
+        current_app.logger.info("Importing ML service...")
         from services.instagram_ml_service import InstagramMLService
         ml_service = InstagramMLService()
         
@@ -1334,7 +1404,10 @@ def train_engagement_model(connection_id):
                 'comments_count': p.comments_count or 0
             })
         
+        current_app.logger.info(f"Training model with {len(posts_data)} posts...")
         result = ml_service.train_engagement_model(posts_data)
+        
+        current_app.logger.info(f"✓ Model trained successfully: {result}")
         
         # Store model in session or cache (for production, use Redis or database)
         # For now, we'll return the result
@@ -1342,7 +1415,11 @@ def train_engagement_model(connection_id):
         return jsonify(result)
         
     except Exception as e:
-        current_app.logger.error(f"Model training error: {str(e)}")
+        current_app.logger.error(f"=== ML TRAIN MODEL ERROR ===")
+        current_app.logger.error(f"Error type: {type(e).__name__}")
+        current_app.logger.error(f"Error message: {str(e)}")
+        import traceback
+        current_app.logger.error(f"Traceback:\n{traceback.format_exc()}")
         return jsonify({'error': 'Failed to train model', 'details': str(e)}), 500
 
 
@@ -1354,7 +1431,9 @@ def predict_engagement_ml(connection_id):
     More accurate than rule-based prediction
     """
     try:
+        current_app.logger.info(f"=== ML PREDICT ENGAGEMENT START ===")
         current_user_id = get_jwt_identity()
+        current_app.logger.info(f"User ID: {current_user_id}, Connection ID: {connection_id}")
         
         # Get user's connection
         connection = InstagramConnection.query.filter_by(
@@ -1364,16 +1443,23 @@ def predict_engagement_ml(connection_id):
         ).first()
         
         if not connection:
+            current_app.logger.error(f"Connection not found")
             return jsonify({'error': 'Connection not found'}), 404
+        
+        current_app.logger.info(f"✓ Connection found: {connection.username}")
         
         # Get post data from request
         data = request.get_json()
         post_data = data.get('post', {})
         
+        current_app.logger.info(f"Post data received: {post_data}")
+        
         if not post_data:
+            current_app.logger.error("No post data provided")
             return jsonify({'error': 'Post data required'}), 400
         
         # Import ML service
+        current_app.logger.info("Importing ML service...")
         from services.instagram_ml_service import InstagramMLService
         ml_service = InstagramMLService()
         
@@ -1382,6 +1468,8 @@ def predict_engagement_ml(connection_id):
             connection_id=connection_id,
             user_id=current_user_id
         ).order_by(InstagramPost.published_at.desc()).all()
+        
+        current_app.logger.info(f"✓ Found {len(posts)} posts for training")
         
         if len(posts) >= 10:
             posts_data = []
@@ -1394,15 +1482,30 @@ def predict_engagement_ml(connection_id):
                     'like_count': p.like_count or 0,
                     'comments_count': p.comments_count or 0
                 })
-            ml_service.train_engagement_model(posts_data)
+            current_app.logger.info("Training model...")
+            train_result = ml_service.train_engagement_model(posts_data)
+            current_app.logger.info(f"✓ Model trained: {train_result}")
+        else:
+            current_app.logger.error(f"Not enough posts for training: {len(posts)}")
+            return jsonify({
+                'error': 'Need at least 10 posts to train model',
+                'current_posts': len(posts)
+            }), 400
         
         # Predict engagement
+        current_app.logger.info("Predicting engagement...")
         result = ml_service.predict_engagement_ml(post_data)
+        
+        current_app.logger.info(f"✓ Prediction result: {result}")
         
         return jsonify(result)
         
     except Exception as e:
-        current_app.logger.error(f"ML prediction error: {str(e)}")
+        current_app.logger.error(f"=== ML PREDICT ENGAGEMENT ERROR ===")
+        current_app.logger.error(f"Error type: {type(e).__name__}")
+        current_app.logger.error(f"Error message: {str(e)}")
+        import traceback
+        current_app.logger.error(f"Traceback:\n{traceback.format_exc()}")
         return jsonify({'error': 'Failed to predict engagement', 'details': str(e)}), 500
 
 
@@ -1470,6 +1573,8 @@ def get_optimal_posting_time(connection_id):
         
     except Exception as e:
         current_app.logger.error(f"Optimal time recommendation error: {str(e)}")
+        import traceback
+        current_app.logger.error(traceback.format_exc())
         return jsonify({'error': 'Failed to recommend posting time', 'details': str(e)}), 500
 
 

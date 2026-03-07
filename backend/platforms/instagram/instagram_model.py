@@ -1,4 +1,4 @@
-from models import db
+﻿from models import db, OAuthState
 from datetime import datetime, timezone, timedelta
 import uuid
 import json
@@ -63,67 +63,6 @@ class InstagramConnection(db.Model):
             data['access_token'] = self.access_token
         
         return data
-
-
-class OAuthState(db.Model):
-    """Store OAuth state for CSRF protection"""
-    __tablename__ = 'oauth_states'
-    
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    state = db.Column(db.String(255), nullable=False, unique=True, index=True)
-    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)
-    platform = db.Column(db.String(50), nullable=False)
-    
-    # Expiration (states expire after 10 minutes)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    expires_at = db.Column(db.DateTime, nullable=False)
-    
-    # Status
-    is_used = db.Column(db.Boolean, default=False)
-    used_at = db.Column(db.DateTime, nullable=True)
-    
-    def __init__(self, **kwargs):
-        super(OAuthState, self).__init__(**kwargs)
-        # Set expiration to 10 minutes from now
-        if not self.expires_at:
-            self.expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
-        # Ensure expires_at is timezone-aware
-        elif self.expires_at.tzinfo is None:
-            self.expires_at = self.expires_at.replace(tzinfo=timezone.utc)
-    
-    def is_valid(self):
-        """Check if state is still valid"""
-        if self.is_used:
-            return False
-        
-        # Ensure both datetimes are timezone-aware for comparison
-        now = datetime.now(timezone.utc)
-        expires_at = self.expires_at
-        
-        # If expires_at is somehow naive, make it aware (shouldn't happen but defensive)
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
-        
-        if now > expires_at:
-            return False
-        return True
-    
-    def mark_used(self):
-        """Mark state as used"""
-        self.is_used = True
-        self.used_at = datetime.now(timezone.utc)
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'state': self.state,
-            'user_id': self.user_id,
-            'platform': self.platform,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
-            'is_used': self.is_used,
-            'used_at': self.used_at.isoformat() if self.used_at else None
-        }
 
 
 class InstagramPost(db.Model):

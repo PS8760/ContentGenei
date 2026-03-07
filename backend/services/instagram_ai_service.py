@@ -1,4 +1,4 @@
-"""
+﻿"""
 Instagram AI Strategy Service
 Provides AI-powered content intelligence and recommendations
 """
@@ -224,7 +224,7 @@ PREDICTED IMPACT:
                 hooks.append('Question')
             elif any(word in first_line.lower() for word in ['stop', 'wait', 'attention', 'breaking']):
                 hooks.append('Bold statement')
-            elif any(char in first_line for char in ['🔥', '⚡', '💡', '🚀']):
+            elif any(char in first_line for char in ['­ƒöÑ', 'ÔÜí', '­ƒÆí', '­ƒÜÇ']):
                 hooks.append('Emoji hook')
         
         # Extract engagement triggers

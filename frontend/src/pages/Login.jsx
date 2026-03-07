@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { gsap } from 'gsap'
 import ParticlesBackground from '../components/ParticlesBackground'
 import FloatingEmojis from '../components/FloatingEmojis'
-import Header from '../components/Header'
+
 import Footer from '../components/Footer'
 import apiService from '../services/api'
 
@@ -90,7 +90,7 @@ const Login = () => {
       <FloatingEmojis />
       
       {/* Header */}
-      <Header />
+
       
       {/* Main Content */}
       <main className="flex items-center justify-center min-h-screen pt-20 pb-20">

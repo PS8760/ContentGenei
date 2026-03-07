@@ -486,12 +486,6 @@ class ApiService {
     })
   }
 
-  async getInstagramProfile() {
-    return this.request('/platforms/instagram/profile', {
-      method: 'GET'
-    })
-  }
-
   async disconnectInstagram(connectionId) {
     return this.request(`/platforms/instagram/connections/${connectionId}`, {
       method: 'DELETE'
@@ -624,6 +618,46 @@ class ApiService {
   // Multi-platform analysis (foundation for future expansion)
   async analyzeCrossPlatform(connectionId) {
     return this.request(`/platforms/instagram/ml/cross-platform-analysis/${connectionId}`, {
+      method: 'GET'
+    })
+  }
+
+  // ==================== LINKEDIN OAUTH ====================
+  
+  async getLinkedInAuthUrl() {
+    return this.request('/platforms/linkedin/auth', {
+      method: 'GET'
+    })
+  }
+
+  async exchangeLinkedInToken(code, state) {
+    return this.request('/platforms/linkedin/exchange-token', {
+      method: 'POST',
+      body: JSON.stringify({ code, state })
+    })
+  }
+
+  async getLinkedInConnections() {
+    return this.request('/platforms/linkedin/connections', {
+      method: 'GET'
+    })
+  }
+
+  async disconnectLinkedIn(connectionId) {
+    return this.request(`/platforms/linkedin/connections/${connectionId}`, {
+      method: 'DELETE'
+    })
+  }
+  
+  // LinkedIn Analytics Methods
+  async syncLinkedInData(connectionId) {
+    return this.request(`/platforms/linkedin/sync/${connectionId}`, {
+      method: 'POST'
+    })
+  }
+  
+  async getLinkedInDashboard(connectionId) {
+    return this.request(`/platforms/linkedin/dashboard/${connectionId}`, {
       method: 'GET'
     })
   }

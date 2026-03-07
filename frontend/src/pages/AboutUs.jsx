@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
 import ParticlesBackground from '../components/ParticlesBackground'
 import FloatingEmojis from '../components/FloatingEmojis'
-import Header from '../components/Header'
 import Footer from '../components/Footer'
 
 const AboutUs = () => {
@@ -61,8 +60,6 @@ const AboutUs = () => {
     <div className="min-h-screen theme-transition relative bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <ParticlesBackground />
       <FloatingEmojis />
-      
-      <Header />
 
       <main className="pt-24 pb-12 relative z-10 content-layer">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

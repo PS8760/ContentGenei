@@ -4,7 +4,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { gsap } from 'gsap'
 import ParticlesBackground from '../components/ParticlesBackground'
 import FloatingEmojis from '../components/FloatingEmojis'
-import Header from '../components/Header'
 import Footer from '../components/Footer'
 import apiService from '../services/api'
 
@@ -18,6 +17,8 @@ const Dashboard = () => {
   const [toastMessage, setToastMessage] = useState('')
   const [instagramProfile, setInstagramProfile] = useState(null)
   const [instagramLoading, setInstagramLoading] = useState(false)
+  const [linkedinProfile, setLinkedinProfile] = useState(null)
+  const [linkedinLoading, setLinkedinLoading] = useState(false)
   const [dashboardData, setDashboardData] = useState({
     stats: {
       total_content: 0,
@@ -100,10 +101,57 @@ const Dashboard = () => {
     }
   }
 
+  // Handle LinkedIn disconnect
+  const handleDisconnectLinkedIn = async () => {
+    if (!linkedinProfile || !window.confirm('Are you sure you want to disconnect your LinkedIn account?')) return
+    
+    try {
+      const connections = await apiService.getLinkedInConnections()
+      if (connections.success && connections.connections.length > 0) {
+        const connectionId = connections.connections[0].id
+        await apiService.disconnectLinkedIn(connectionId)
+        setLinkedinProfile(null)
+        setToastMessage('LinkedIn disconnected successfully')
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 3000)
+      }
+    } catch (error) {
+      console.error('Error disconnecting LinkedIn:', error)
+      setToastMessage('Failed to disconnect LinkedIn')
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    }
+  }
+
+  // Handle LinkedIn connect
+  const handleConnectLinkedIn = async () => {
+    try {
+      const response = await apiService.getLinkedInAuthUrl()
+      if (response.success && response.oauth_url) {
+        window.location.href = response.oauth_url
+      }
+    } catch (error) {
+      console.error('Error getting LinkedIn auth URL:', error)
+      setToastMessage('Failed to start LinkedIn connection')
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    }
+  }
+
   useEffect(() => {
     // Check for Instagram connection success
     if (searchParams.get('instagram') === 'connected') {
       setToastMessage('Instagram connected successfully! 🎉')
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 5000)
+      
+      // Clean up URL
+      window.history.replaceState({}, '', '/dashboard')
+    }
+    
+    // Check for LinkedIn connection success
+    if (searchParams.get('linkedin') === 'connected') {
+      setToastMessage('LinkedIn connected successfully! 🎉')
       setShowToast(true)
       setTimeout(() => setShowToast(false), 5000)
       
@@ -119,10 +167,19 @@ const Dashboard = () => {
       
       try {
         setInstagramLoading(true)
-        const response = await apiService.getInstagramProfile()
+        const response = await apiService.getInstagramConnections()
         
-        if (response.success) {
-          setInstagramProfile(response.profile)
+        if (response.success && response.connections.length > 0) {
+          // Use the first connection as the profile
+          const connection = response.connections[0]
+          setInstagramProfile({
+            username: connection.instagram_username,
+            media_count: connection.media_count,
+            followers_count: connection.followers_count,
+            follows_count: connection.follows_count,
+            account_type: connection.instagram_account_type,
+            is_personal_account: connection.instagram_account_type === 'PERSONAL'
+          })
         }
       } catch (error) {
         console.log('No Instagram connection found or error fetching:', error.message)
@@ -133,6 +190,29 @@ const Dashboard = () => {
     }
 
     fetchInstagramProfile()
+  }, [currentUser])
+
+  useEffect(() => {
+    // Fetch LinkedIn connection data
+    const fetchLinkedInProfile = async () => {
+      if (!currentUser) return
+      
+      try {
+        setLinkedinLoading(true)
+        const response = await apiService.getLinkedInConnections()
+        
+        if (response.success && response.connections.length > 0) {
+          setLinkedinProfile(response.connections[0])
+        }
+      } catch (error) {
+        console.log('No LinkedIn connection found or error fetching:', error.message)
+        // Not an error - user might not have connected LinkedIn yet
+      } finally {
+        setLinkedinLoading(false)
+      }
+    }
+
+    fetchLinkedInProfile()
   }, [currentUser])
 
   useEffect(() => {
@@ -342,9 +422,6 @@ const Dashboard = () => {
     <div className="min-h-screen theme-transition relative">
       <ParticlesBackground />
       <FloatingEmojis />
-      
-      {/* Header */}
-      <Header />
 
       {/* Main Content */}
       <main className="pt-24 pb-12 relative z-10 content-layer">
@@ -494,6 +571,84 @@ const Dashboard = () => {
                         <button
                           onClick={handleConnectInstagram}
                           className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity"
+                        >
+                          Connect Now
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* LinkedIn Connection Card */}
+              {!linkedinLoading && (
+                <div className="mb-8">
+                  {linkedinProfile ? (
+                    <div className="glass-card rounded-2xl p-6 theme-transition">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
+                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">LinkedIn Connected</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{linkedinProfile.linkedin_name}</p>
+                          </div>
+                        </div>
+                        <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-semibold rounded-full">
+                          Connected
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                        <div className="text-center p-3 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                          <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{linkedinProfile.connections_count || 0}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Connections</div>
+                        </div>
+                        <div className="text-center p-3 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                          <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{linkedinProfile.linkedin_email || 'N/A'}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Email</div>
+                        </div>
+                        <div className="text-center p-3 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                          <div className="text-sm font-bold text-gray-900 dark:text-gray-100">Professional</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Account Type</div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={() => navigate('/linkedin-analytics')}
+                          className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity"
+                        >
+                          View Analytics
+                        </button>
+                        <button
+                          onClick={handleDisconnectLinkedIn}
+                          className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="glass-card rounded-2xl p-6 theme-transition border-2 border-dashed border-gray-300 dark:border-gray-700">
+                      <div className="flex flex-col md:flex-row items-center justify-between">
+                        <div className="flex items-center space-x-4 mb-4 md:mb-0">
+                          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
+                            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Connect LinkedIn</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Link your LinkedIn account to track professional analytics</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={handleConnectLinkedIn}
+                          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity"
                         >
                           Connect Now
                         </button>

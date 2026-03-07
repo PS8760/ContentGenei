@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useSearchParams } from 'react-router-dom'
 import { gsap } from 'gsap'
 import api from '../services/api'
-import Header from '../components/Header'
 import ParticlesBackground from '../components/ParticlesBackground'
 import FloatingEmojis from '../components/FloatingEmojis'
 import ToastManager from '../utils/ToastManager'
@@ -263,15 +262,19 @@ export default function InstagramAnalytics() {
       ToastManager.removeToast(loadingToastId)
       
       if (response.success) {
+        // Update both posts and underperforming_posts arrays
         setDashboardData(prev => ({
           ...prev,
           posts: prev.posts.map(p =>
             p.id === postId ? response.post : p
-          )
+          ),
+          underperforming_posts: prev.underperforming_posts?.map(p =>
+            p.id === postId ? response.post : p
+          ) || []
         }))
         ToastManager.success(
           'Suggestions Generated!',
-          'AI suggestions have been added to your post.',
+          `${response.suggestions.length} AI suggestions added to your post.`,
           [],
           4000
         )
@@ -597,7 +600,7 @@ export default function InstagramAnalytics() {
         setMlModel(response)
         ToastManager.success(
           'Model Trained!',
-          `R² Score: ${response.r2_score} | Samples: ${response.training_samples}`,
+          `R┬▓ Score: ${response.r2_score} | Samples: ${response.training_samples}`,
           [],
           4000
         )
@@ -619,11 +622,28 @@ export default function InstagramAnalytics() {
   const handlePredictML = async () => {
     if (!selectedConnection) return
     
+    // Validate caption
+    if (!mlPostData.caption || mlPostData.caption.trim() === '') {
+      ToastManager.error(
+        'Caption Required',
+        'Please enter a caption to predict engagement',
+        [],
+        3000
+      )
+      return
+    }
+    
     setPredictingML(true)
     const loadingToastId = ToastManager.loading('Predicting', 'Using ML model to predict engagement...')
     
     try {
-      const response = await api.predictEngagementML(selectedConnection.id, mlPostData)
+      // Add published_at to post data (use current time)
+      const postDataWithTime = {
+        ...mlPostData,
+        published_at: new Date().toISOString()
+      }
+      
+      const response = await api.predictEngagementML(selectedConnection.id, postDataWithTime)
       ToastManager.removeToast(loadingToastId)
       
       if (response.success) {
@@ -633,6 +653,13 @@ export default function InstagramAnalytics() {
           `Predicted: ${response.predicted_engagement}% engagement`,
           [],
           4000
+        )
+      } else {
+        ToastManager.error(
+          'Prediction Failed',
+          response.error || 'Failed to predict engagement',
+          [],
+          5000
         )
       }
     } catch (error) {
@@ -764,7 +791,6 @@ export default function InstagramAnalytics() {
       <div className="min-h-screen theme-transition relative">
         <ParticlesBackground />
         <FloatingEmojis />
-        <Header />
         
         <div className="container mx-auto px-4 py-20 relative z-10 content-layer">
           <div className="max-w-2xl mx-auto text-center">
@@ -798,7 +824,6 @@ export default function InstagramAnalytics() {
       <div className="min-h-screen theme-transition relative">
         <ParticlesBackground />
         <FloatingEmojis />
-        <Header />
         
         <div className="container mx-auto px-4 py-20 relative z-10 content-layer">
           <SkeletonLoader />
@@ -811,7 +836,6 @@ export default function InstagramAnalytics() {
     <div className="min-h-screen theme-transition relative overflow-hidden">
       <ParticlesBackground />
       <FloatingEmojis />
-      <Header />
       
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24 relative z-10 content-layer max-w-7xl">
         {/* Professional Header Section with Breadcrumb */}
@@ -1123,7 +1147,7 @@ export default function InstagramAnalytics() {
                         <ul className="space-y-2">
                           {prediction.reasoning.map((reason, idx) => (
                             <li key={idx} className="flex gap-2 text-gray-700 dark:text-gray-300">
-                              <span className="text-blue-500 font-semibold">•</span>
+                              <span className="text-blue-500 font-semibold">ÔÇó</span>
                               <span>{reason}</span>
                             </li>
                           ))}
@@ -1236,32 +1260,56 @@ export default function InstagramAnalytics() {
               
               {patterns && patterns.patterns && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                  {/* Caption Length Card */}
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-700 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
                     <h4 className="font-bold text-gray-900 dark:text-white mb-2">📝 Caption Length</h4>
                     <p className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">{patterns.patterns.caption_length.optimal_length}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">characters</p>
-                    <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-700">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">characters ({patterns.patterns.caption_length.optimal_range})</p>
+                    
+                    <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-700 space-y-2">
+                      <div className="bg-blue-100 dark:bg-blue-900/30 rounded-xl p-3">
+                        <p className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1">💡 Why this length?</p>
+                        <p className="text-xs text-gray-700 dark:text-gray-300">
+                          Based on {patterns.patterns.caption_length.sample_size} posts analyzed, captions in the {patterns.patterns.caption_length.optimal_range} range achieved {patterns.patterns.caption_length.avg_engagement_at_optimal}% average engagement - the highest among all length categories.
+                        </p>
+                      </div>
                       <p className="text-xs text-gray-600 dark:text-gray-400">Correlation: {patterns.patterns.caption_length.correlation.toFixed(3)}</p>
                       <p className="text-xs text-gray-600 dark:text-gray-400">Confidence: {patterns.patterns.caption_length.confidence}</p>
                     </div>
                   </div>
                   
+                  {/* Posting Time Card */}
                   <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 border-2 border-indigo-200 dark:border-indigo-700 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
                     <h4 className="font-bold text-gray-900 dark:text-white mb-2">⏰ Best Posting Time</h4>
                     <p className="text-4xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">{patterns.patterns.posting_time.peak_time}</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">on {patterns.patterns.posting_time.peak_day}</p>
-                    <div className="mt-4 pt-4 border-t border-indigo-200 dark:border-indigo-700">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Best hours: {patterns.patterns.posting_time.best_hours.join(', ')}</p>
+                    
+                    <div className="mt-4 pt-4 border-t border-indigo-200 dark:border-indigo-700 space-y-2">
+                      <div className="bg-indigo-100 dark:bg-indigo-900/30 rounded-xl p-3">
+                        <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-300 mb-1">💡 Why this time?</p>
+                        <p className="text-xs text-gray-700 dark:text-gray-300">
+                          Statistical analysis of {patterns.patterns.posting_time.sample_size} posts shows that {patterns.patterns.posting_time.peak_time} on {patterns.patterns.posting_time.peak_day} consistently generates the highest engagement. Your audience is most active during these hours.
+                        </p>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Top hours: {patterns.patterns.posting_time.best_hours.join(', ')}</p>
                       <p className="text-xs text-gray-600 dark:text-gray-400">Confidence: {patterns.patterns.posting_time.confidence}</p>
                     </div>
                   </div>
                   
+                  {/* Format Card */}
                   <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl p-6 border-2 border-purple-200 dark:border-purple-700 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
                     <h4 className="font-bold text-gray-900 dark:text-white mb-2">🎬 Best Format</h4>
                     <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">{patterns.patterns.format.best_format}</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">{patterns.patterns.format.avg_engagement}% avg engagement</p>
-                    <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-700">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">{patterns.patterns.format.recommendation}</p>
+                    
+                    <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-700 space-y-2">
+                      <div className="bg-purple-100 dark:bg-purple-900/30 rounded-xl p-3">
+                        <p className="text-xs font-semibold text-purple-900 dark:text-purple-300 mb-1">💡 Why this format?</p>
+                        <p className="text-xs text-gray-700 dark:text-gray-300">
+                          {patterns.patterns.format.best_format} posts outperform other formats with {patterns.patterns.format.avg_engagement}% average engagement. {patterns.patterns.format.recommendation}
+                        </p>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Confidence: {patterns.patterns.format.confidence}</p>
                     </div>
                   </div>
                 </div>
@@ -1290,6 +1338,39 @@ export default function InstagramAnalytics() {
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white">ML Engagement Prediction</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Train model and predict post performance using Linear Regression</p>
                 </div>
+                <button
+                  onClick={() => {
+                    ToastManager.info(
+                      'How ML Prediction Works',
+                      'The model analyzes 8 features: media type, caption length, hashtags, emojis, CTAs, questions, hour, and day. It learns from your historical posts to predict engagement for new content.',
+                      [],
+                      8000
+                    )
+                  }}
+                  className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+                  title="How it works"
+                >
+                  <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* How It Works Explanation */}
+              <div className="bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-2xl p-4 mb-6 border-2 border-green-300 dark:border-green-700">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">💡 How ML Prediction Works</p>
+                    <p className="text-xs text-gray-700 dark:text-gray-300">
+                      Our Linear Regression model analyzes 8 key features: media type, caption length, hashtag count, emoji count, call-to-action presence, questions, hour of day, and day of week. It learns patterns from your historical posts (requires 10+ posts) and predicts engagement for new content. The R² score shows model accuracy (closer to 1.0 = better predictions).
+                    </p>
+                  </div>
+                </div>
               </div>
               
               <div className="space-y-4">
@@ -1306,15 +1387,21 @@ export default function InstagramAnalytics() {
                 
                 {mlModel && (
                   <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-4 border-2 border-green-200 dark:border-green-700">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">✅ Model Trained Successfully!</p>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white mb-3">✅ Model Trained Successfully!</p>
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">R² Score</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">R² Score (Accuracy)</p>
                         <p className="text-lg font-bold text-green-600 dark:text-green-400">{mlModel.r2_score.toFixed(3)}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                          {mlModel.r2_score > 0.7 ? 'Excellent' : mlModel.r2_score > 0.5 ? 'Good' : mlModel.r2_score > 0.3 ? 'Fair' : 'Needs more data'}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-600 dark:text-gray-400">Training Samples</p>
                         <p className="text-lg font-bold text-green-600 dark:text-green-400">{mlModel.training_samples}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                          {mlModel.training_samples >= 50 ? 'Excellent dataset' : mlModel.training_samples >= 20 ? 'Good dataset' : 'Add more posts'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1326,7 +1413,7 @@ export default function InstagramAnalytics() {
                     onChange={(e) => setMlPostData({...mlPostData, media_type: e.target.value})} 
                     className="px-4 py-3 rounded-2xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
                   >
-                    <option value="IMAGE">📷 Image</option>
+                    <option value="IMAGE">🖼️ Image</option>
                     <option value="VIDEO">🎥 Video</option>
                     <option value="CAROUSEL_ALBUM">🎠 Carousel</option>
                   </select>
@@ -1349,6 +1436,33 @@ export default function InstagramAnalytics() {
                   className="w-full px-4 py-3 rounded-2xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500 transition-all" 
                   rows="4"
                 />
+
+                {/* Live Feature Analysis */}
+                {mlPostData.caption && (
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-2xl p-4 border-2 border-gray-200 dark:border-gray-600">
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-3">📊 Features Being Analyzed:</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="bg-white dark:bg-gray-900 rounded-xl p-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Caption Length</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{mlPostData.caption.length} chars</p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-900 rounded-xl p-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Hashtags</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{(mlPostData.caption.match(/#\w+/g) || []).length}</p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-900 rounded-xl p-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Emojis</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{(mlPostData.caption.match(/[\u{1F300}-\u{1F9FF}]/gu) || []).length}</p>
+                      </div>
+                      <div className="bg-white dark:bg-gray-900 rounded-xl p-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Has CTA</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">
+                          {/comment|share|tag|follow|click/i.test(mlPostData.caption) ? '✅ Yes' : '❌ No'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 {mlPrediction && (
                   <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-6 border-2 border-green-200 dark:border-green-700 hover:shadow-lg transition-all duration-300">
@@ -1356,8 +1470,12 @@ export default function InstagramAnalytics() {
                     <p className="text-5xl font-bold text-green-600 dark:text-green-400 mb-3">{mlPrediction.predicted_engagement}%</p>
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-3 mb-3">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Confidence Range: <span className="font-semibold text-gray-900 dark:text-white">{mlPrediction.confidence_range.min}% - {mlPrediction.confidence_range.max}%</span></p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Based on your caption's features: length, hashtags, emojis, and content type</p>
                     </div>
-                    <p className="text-sm text-gray-900 dark:text-white">{mlPrediction.recommendation}</p>
+                    <div className="bg-green-100 dark:bg-green-900/30 rounded-xl p-3">
+                      <p className="text-xs font-semibold text-green-900 dark:text-green-300 mb-1">💡 Why this prediction?</p>
+                      <p className="text-xs text-gray-700 dark:text-gray-300">{mlPrediction.recommendation}</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1398,22 +1516,43 @@ export default function InstagramAnalytics() {
                 </div>
                 
                 {optimalTiming && optimalTiming.recommendations && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                    {optimalTiming.recommendations.slice(0, 3).map((rec, idx) => (
-                      <div key={idx} className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-2xl p-6 border-2 border-orange-200 dark:border-orange-700 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">#{idx + 1} Best Time</span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${rec.confidence === 'high' ? 'bg-green-500 text-white' : rec.confidence === 'medium' ? 'bg-yellow-500 text-white' : 'bg-gray-500 text-white'}`}>
-                            {rec.confidence}
-                          </span>
+                  <div className="space-y-4">
+                    {/* Summary Card */}
+                    <div className="bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 rounded-2xl p-4 border-2 border-orange-300 dark:border-orange-700">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                          </svg>
                         </div>
-                        <p className="text-4xl font-bold text-orange-600 dark:text-orange-400 mb-2">{rec.time}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Expected: {rec.expected_engagement.toFixed(2)}% engagement</p>
-                        <div className="bg-white dark:bg-gray-800 rounded-xl p-3">
-                          <p className="text-xs text-gray-600 dark:text-gray-400">{rec.reason}</p>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">💡 How We Calculate This</p>
+                          <p className="text-xs text-gray-700 dark:text-gray-300">
+                            Our ML algorithm analyzes your historical post performance by hour and day of the week. It calculates average engagement rates for each time slot, then combines hour performance with day performance to recommend the optimal posting times for {optimalTiming.day_of_week}. The confidence level reflects the amount of historical data available.
+                          </p>
                         </div>
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Time Recommendations */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {optimalTiming.recommendations.slice(0, 3).map((rec, idx) => (
+                        <div key={idx} className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-2xl p-6 border-2 border-orange-200 dark:border-orange-700 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">#{idx + 1} Best Time</span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${rec.confidence === 'high' ? 'bg-green-500 text-white' : rec.confidence === 'medium' ? 'bg-yellow-500 text-white' : 'bg-gray-500 text-white'}`}>
+                              {rec.confidence}
+                            </span>
+                          </div>
+                          <p className="text-4xl font-bold text-orange-600 dark:text-orange-400 mb-2">{rec.time}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Expected: {rec.expected_engagement.toFixed(2)}% engagement</p>
+                          <div className="bg-white dark:bg-gray-800 rounded-xl p-3">
+                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Why this time?</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">{rec.reason}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
                 

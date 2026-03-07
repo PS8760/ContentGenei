@@ -1,6 +1,5 @@
 import ParticlesBackground from '../components/ParticlesBackground'
 import FloatingEmojis from '../components/FloatingEmojis'
-import Header from '../components/Header'
 import Hero from '../components/Hero'
 import ContentCreator from '../components/ContentCreator'
 import Features from '../components/Features'
@@ -12,7 +11,6 @@ const LandingPage = () => {
       <ParticlesBackground />
       <FloatingEmojis />
       <div className="relative z-10">
-        <Header />
         <main>
           <Hero />
           <ContentCreator />

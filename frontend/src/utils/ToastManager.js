@@ -61,8 +61,8 @@ class ToastManager {
     const actionsHTML = actions.length > 0
       ? `<div class="flex space-x-2 mt-3">
           ${actions.map(action => `
-            <button 
-              onclick="${action.onClick}" 
+            <button
+              onclick="${action.onClick}"
               class="px-4 py-2 ${action.primary ? `bg-gradient-to-r ${gradient}` : 'bg-gray-600 hover:bg-gray-700'} text-white rounded-2xl text-sm font-medium transition-all hover:shadow-lg"
             >
               ${action.label}
@@ -82,8 +82,8 @@ class ToastManager {
             <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">${message}</p>
             ${actionsHTML}
           </div>
-          <button 
-            onclick="document.getElementById('${toastId}').remove()" 
+          <button
+            onclick="document.getElementById('${toastId}').remove()"
             class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors flex-shrink-0"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

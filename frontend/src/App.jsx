@@ -2,10 +2,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavig
 import { useEffect } from 'react'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
-import { ProfileProvider } from './contexts/ProfileContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
-import Navbar from './components/Navbar'
+import Header from './components/Header'
 
 // Pages
 import LandingPage from './pages/LandingPage'
@@ -25,6 +24,8 @@ import Profile from './pages/Profile'
 import Onboarding from './pages/Onboarding'
 import InstagramCallback from './pages/platforms/InstagramCallback'
 import InstagramAnalytics from './pages/InstagramAnalytics'
+import LinkedInCallback from './pages/platforms/LinkedInCallback'
+import LinkedInAnalytics from './pages/LinkedInAnalytics'
 
 import './index.css'
 
@@ -32,13 +33,11 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <ProfileProvider>
-          <ThemeProvider>
-            <Router>
-              <AppContent />
-            </Router>
-          </ThemeProvider>
-        </ProfileProvider>
+        <ThemeProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </ThemeProvider>
       </AuthProvider>
     </ErrorBoundary>
   )
@@ -70,7 +69,7 @@ function AppContent() {
 
   return (
     <>
-      <Navbar />
+      <Header />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
@@ -137,9 +136,17 @@ function AppContent() {
             <InstagramAnalytics />
           </ProtectedRoute>
         } />
+        <Route path="/linkedin-analytics" element={
+          <ProtectedRoute>
+            <LinkedInAnalytics />
+          </ProtectedRoute>
+        } />
         
         {/* Instagram OAuth Callback - NO ProtectedRoute (Instagram redirects here) */}
         <Route path="/platforms/instagram/callback" element={<InstagramCallback />} />
+        
+        {/* LinkedIn OAuth Callback - NO ProtectedRoute (LinkedIn redirects here) */}
+        <Route path="/platforms/linkedin/callback" element={<LinkedInCallback />} />
         
         {/* Redirect any unknown routes to home */}
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,4 +1,4 @@
-"""
+﻿"""
 Instagram ML Service - Advanced Machine Learning Features
 Provides pattern recognition, sentiment analysis, and ML-based recommendations
 """
@@ -149,12 +149,22 @@ class InstagramMLService:
             if not published_at or engagement == 0:
                 continue
             
-            # Parse datetime
+            # Parse datetime - handle both string and datetime objects
             if isinstance(published_at, str):
                 try:
+                    # Try ISO format first
                     dt = datetime.fromisoformat(published_at.replace('Z', '+00:00'))
                 except:
-                    continue
+                    try:
+                        # Try parsing without timezone
+                        dt = datetime.strptime(published_at, '%Y-%m-%d %H:%M:%S.%f')
+                    except:
+                        try:
+                            # Try parsing without microseconds
+                            dt = datetime.strptime(published_at, '%Y-%m-%d %H:%M:%S')
+                        except:
+                            print(f"Could not parse date: {published_at}")
+                            continue
             else:
                 dt = published_at
             
@@ -496,19 +506,19 @@ class InstagramMLService:
         text_lower = text.lower()
         
         # Positive emotions
-        if any(word in text_lower for word in ['love', '❤️', '😍', 'amazing', 'awesome', 'perfect']):
+        if any(word in text_lower for word in ['love', 'ÔØñ´©Å', '­ƒÿì', 'amazing', 'awesome', 'perfect']):
             return 'love'
-        elif any(word in text_lower for word in ['haha', '😂', '🤣', 'funny', 'lol']):
+        elif any(word in text_lower for word in ['haha', '­ƒÿé', '­ƒñú', 'funny', 'lol']):
             return 'joy'
-        elif any(word in text_lower for word in ['wow', '😮', '🤯', 'incredible', 'mind-blowing']):
+        elif any(word in text_lower for word in ['wow', '­ƒÿ«', '­ƒñ»', 'incredible', 'mind-blowing']):
             return 'surprise'
-        elif any(word in text_lower for word in ['inspiring', '💪', '🔥', 'motivated']):
+        elif any(word in text_lower for word in ['inspiring', '­ƒÆ¬', '­ƒöÑ', 'motivated']):
             return 'inspiration'
         
         # Negative emotions
-        elif any(word in text_lower for word in ['sad', '😢', '😭', 'disappointed']):
+        elif any(word in text_lower for word in ['sad', '­ƒÿó', '­ƒÿ¡', 'disappointed']):
             return 'sadness'
-        elif any(word in text_lower for word in ['angry', '😠', '😡', 'frustrated']):
+        elif any(word in text_lower for word in ['angry', '­ƒÿá', '­ƒÿí', 'frustrated']):
             return 'anger'
         
         # Default based on sentiment score
@@ -604,7 +614,7 @@ class InstagramMLService:
         self.engagement_model = LinearRegression()
         self.engagement_model.fit(X_scaled, y_array)
         
-        # Calculate R² score
+        # Calculate R┬▓ score
         r2_score = self.engagement_model.score(X_scaled, y_array)
         
         return {
@@ -636,7 +646,7 @@ class InstagramMLService:
         predicted_engagement = self.engagement_model.predict(features_scaled)[0]
         
         # Calculate confidence interval (simple approach)
-        confidence_range = predicted_engagement * 0.2  # ±20%
+        confidence_range = predicted_engagement * 0.2  # ┬▒20%
         
         return {
             'success': True,
@@ -665,11 +675,24 @@ class InstagramMLService:
         if published_at:
             if isinstance(published_at, str):
                 try:
+                    # Try ISO format
                     dt = datetime.fromisoformat(published_at.replace('Z', '+00:00'))
                     hour_of_day = dt.hour
                     day_of_week = dt.weekday()
                 except:
-                    pass
+                    try:
+                        # Try parsing without timezone
+                        dt = datetime.strptime(published_at, '%Y-%m-%d %H:%M:%S.%f')
+                        hour_of_day = dt.hour
+                        day_of_week = dt.weekday()
+                    except:
+                        try:
+                            # Try parsing without microseconds
+                            dt = datetime.strptime(published_at, '%Y-%m-%d %H:%M:%S')
+                            hour_of_day = dt.hour
+                            day_of_week = dt.weekday()
+                        except:
+                            pass
             else:
                 hour_of_day = published_at.hour
                 day_of_week = published_at.weekday()

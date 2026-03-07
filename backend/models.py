@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import TypeDecorator, DateTime as SQLDateTime
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import uuid
 import json
 
@@ -512,3 +512,54 @@ class PostCategoryAssignment(db.Model):
             'category_id': self.category_id,
             'assigned_at': self.assigned_at.isoformat() if self.assigned_at else None
         }
+
+
+class OAuthState(db.Model):
+    """Store OAuth state for CSRF protection - shared by all platforms"""
+    __tablename__ = 'oauth_states'
+    
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    state = db.Column(db.String(255), nullable=False, unique=True, index=True)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)
+    platform = db.Column(db.String(50), nullable=False)
+    
+    # Expiration (states expire after 10 minutes)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime, nullable=False)
+    
+    # Status
+    is_used = db.Column(db.Boolean, default=False)
+    used_at = db.Column(db.DateTime, nullable=True)
+    
+    def __init__(self, **kwargs):
+        super(OAuthState, self).__init__(**kwargs)
+        # Set expiration to 10 minutes from now
+        if not self.expires_at:
+            self.expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+        # Ensure expires_at is timezone-aware
+        elif self.expires_at.tzinfo is None:
+            self.expires_at = self.expires_at.replace(tzinfo=timezone.utc)
+    
+    def is_valid(self):
+        """Check if state is still valid"""
+        if self.is_used:
+            return False
+        
+        # Ensure both datetimes are timezone-aware for comparison
+        now = datetime.now(timezone.utc)
+        expires_at = self.expires_at
+        
+        # If expires_at is somehow naive, make it aware (shouldn't happen but defensive)
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
+        if now > expires_at:
+            return False
+        return True
+
+
+# Import Instagram models to register them with SQLAlchemy
+from platforms.instagram.instagram_model import InstagramConnection, InstagramPost, InstagramCompetitor
+
+# Import LinkedIn models to register them with SQLAlchemy
+from platforms.linkedin.linkedin_model import LinkedInConnection, LinkedInPost

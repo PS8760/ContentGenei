@@ -21,7 +21,7 @@ const InstagramCallback = () => {
         navigate('/login')
         return
       }
-      
+
       try {
         // Get params from URL
         const code = searchParams.get('code')
@@ -60,10 +60,10 @@ const InstagramCallback = () => {
         if (response.success) {
           setStatus('success')
           setMessage('Instagram connected successfully!')
-          
+
           // Clean up
           sessionStorage.removeItem('instagram_callback_params')
-          
+
           // Redirect to dashboard with success parameter
           setTimeout(() => navigate('/dashboard?instagram=connected'), 2000)
         } else {
@@ -78,12 +78,12 @@ const InstagramCallback = () => {
           response: error.response,
           stack: error.stack
         })
-        
+
         setStatus('error')
-        
+
         // Show specific error messages
         let errorMessage = 'An error occurred while connecting Instagram'
-        
+
         if (error.response?.data) {
           console.error('Backend error response:', error.response.data)
           errorMessage = error.response.data.error || errorMessage
@@ -94,9 +94,9 @@ const InstagramCallback = () => {
         } else if (error.message) {
           errorMessage = error.message
         }
-        
+
         setMessage(errorMessage)
-        
+
         // Don't auto-redirect on error - let user see the error
         // setTimeout(() => navigate('/dashboard'), 3000)
       }
@@ -108,7 +108,7 @@ const InstagramCallback = () => {
   return (
     <div className="min-h-screen theme-transition relative">
       <ParticlesBackground />
-      
+
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
         <div className="glass-card rounded-3xl p-8 max-w-md w-full text-center">
           {/* Status Icon */}
@@ -136,7 +136,7 @@ const InstagramCallback = () => {
             {status === 'success' && 'Success!'}
             {status === 'error' && 'Connection Failed'}
           </h2>
-          
+
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             {message}
           </p>
@@ -147,7 +147,7 @@ const InstagramCallback = () => {
               Please wait...
             </div>
           )}
-          
+
           {(status === 'success' || status === 'error') && (
             <div className="space-y-3">
               <button
@@ -156,7 +156,7 @@ const InstagramCallback = () => {
               >
                 Go to Dashboard
               </button>
-              
+
               {status === 'error' && (
                 <button
                   onClick={() => window.location.href = '/onboarding'}

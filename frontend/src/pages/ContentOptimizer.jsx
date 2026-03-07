@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import ParticlesBackground from '../components/ParticlesBackground'
 import FloatingEmojis from '../components/FloatingEmojis'
-import Header from '../components/Header'
+
 import Footer from '../components/Footer'
 import apiService from '../services/api'
 
@@ -125,7 +125,7 @@ const ContentOptimizer = () => {
       <ParticlesBackground />
       <FloatingEmojis />
       
-      <Header />
+
 
       <main className="pt-24 pb-12 relative z-10 content-layer">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

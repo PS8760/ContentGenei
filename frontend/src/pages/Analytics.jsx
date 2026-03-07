@@ -3,7 +3,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { gsap } from 'gsap'
 import ParticlesBackground from '../components/ParticlesBackground'
 import FloatingEmojis from '../components/FloatingEmojis'
-import Header from '../components/Header'
 import Footer from '../components/Footer'
 import apiService from '../services/api'
 
@@ -368,9 +367,6 @@ const Analytics = () => {
     <div className="min-h-screen theme-transition relative">
       <ParticlesBackground />
       <FloatingEmojis />
-      
-      {/* Header */}
-      <Header />
 
       {/* Main Content */}
       <main className="pt-24 pb-12 relative z-10 content-layer">

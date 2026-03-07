@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ParticlesBackground from '../components/ParticlesBackground';
 import FloatingEmojis from '../components/FloatingEmojis';
@@ -251,7 +250,6 @@ export default function LinkoGenei() {
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <ParticlesBackground />
       <FloatingEmojis />
-      <Header />
       
       <main className="flex-grow pt-20 pb-12 px-4 relative z-10">
         <div className="max-w-7xl mx-auto">

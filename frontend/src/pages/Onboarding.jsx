@@ -237,31 +237,9 @@ const Onboarding = () => {
         localStorage.setItem('onboarding_complete', 'true')
         console.log('Saved to localStorage')
         
-        // Check if Instagram was selected
-        if (formData.platforms.instagram) {
-          console.log('Instagram selected - triggering OAuth...')
-          
-          try {
-            // Get Instagram OAuth URL from backend
-            const oauthResponse = await apiService.getInstagramAuthUrl()
-            
-            if (oauthResponse.success && oauthResponse.oauth_url) {
-              console.log('Redirecting to Instagram OAuth...')
-              // Redirect to Instagram OAuth
-              window.location.href = oauthResponse.oauth_url
-              return // Stop here, Instagram will redirect back
-            } else {
-              console.error('Failed to get Instagram OAuth URL:', oauthResponse)
-              navigate('/dashboard')
-            }
-          } catch (oauthError) {
-            console.error('Instagram OAuth error:', oauthError)
-            navigate('/dashboard')
-          }
-        } else {
-          console.log('No Instagram selected, navigating to dashboard...')
-          navigate('/dashboard')
-        }
+        console.log('Navigating to dashboard...')
+        // Navigate to dashboard
+        navigate('/dashboard')
         
       } catch (error) {
         console.error('Critical error completing onboarding:', error)

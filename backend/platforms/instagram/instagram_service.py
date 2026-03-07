@@ -1,4 +1,4 @@
-import os
+﻿import os
 import requests
 from platforms.base_platform import BasePlatform
 from urllib.parse import urlencode
