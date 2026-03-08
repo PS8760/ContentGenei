@@ -1,7 +1,7 @@
 // Content script for LinkoGenei - Injects "Save to Genei" buttons
 
-// Use production backend URL (change to localhost for development)
-const API_URL = 'https://contentgenei.onrender.com/api';
+// Backend URL - AWS Production
+const API_URL = 'http://52.71.190.153/api';
 let isActive = false;
 let authToken = null;
 
