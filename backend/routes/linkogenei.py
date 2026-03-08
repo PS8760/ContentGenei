@@ -114,19 +114,26 @@ def verify_token():
 def save_post():
     """Save a post from social media"""
     try:
+        logger.info('POST /save-post - Request received')
+        
         # Get token from Authorization header
         auth_header = request.headers.get('Authorization', '')
         if not auth_header.startswith('Bearer '):
+            logger.warning('No authorization header')
             return jsonify({
                 'success': False,
                 'error': 'Unauthorized'
             }), 401
         
         token = auth_header.split(' ')[1]
+        logger.info(f'Token: {token[:10]}...')
         
         # Verify token from MongoDB
         user_id = verify_extension_token(token)
+        logger.info(f'User ID from token: {user_id}')
+        
         if not user_id:
+            logger.warning('Token verification failed')
             return jsonify({
                 'success': False,
                 'error': 'Invalid or expired token'
@@ -134,8 +141,10 @@ def save_post():
         
         # Get post data
         data = request.get_json()
+        logger.info(f'Post data: {data}')
         
         if not data or 'url' not in data:
+            logger.warning('No URL in request')
             return jsonify({
                 'success': False,
                 'error': 'URL is required'
@@ -143,6 +152,7 @@ def save_post():
         
         # Save post to MongoDB
         result = mongodb_service.save_post(user_id, data)
+        logger.info(f'Save result: {result}')
         
         if result['success']:
             return jsonify(result), 201
@@ -151,6 +161,8 @@ def save_post():
             
     except Exception as e:
         logger.error(f"Save post error: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         return jsonify({
             'success': False,
             'error': 'Failed to save post'
@@ -160,19 +172,28 @@ def save_post():
 def get_posts():
     """Get saved posts"""
     try:
+        logger.info('GET /posts - Request received')
+        
         # Get token from Authorization header
         auth_header = request.headers.get('Authorization', '')
+        logger.info(f'Authorization header: {auth_header[:20]}...' if auth_header else 'No auth header')
+        
         if not auth_header.startswith('Bearer '):
+            logger.warning('Invalid authorization header format')
             return jsonify({
                 'success': False,
                 'error': 'Unauthorized'
             }), 401
         
         token = auth_header.split(' ')[1]
+        logger.info(f'Token extracted: {token[:10]}...')
         
         # Verify token from MongoDB
         user_id = verify_extension_token(token)
+        logger.info(f'Token verification result: user_id={user_id}')
+        
         if not user_id:
+            logger.warning('Token verification failed')
             return jsonify({
                 'success': False,
                 'error': 'Invalid or expired token'
@@ -184,6 +205,8 @@ def get_posts():
         limit = int(request.args.get('limit', 50))
         skip = int(request.args.get('skip', 0))
         
+        logger.info(f'Query params: category={category}, platform={platform}, limit={limit}, skip={skip}')
+        
         # Get posts from MongoDB
         result = mongodb_service.get_posts(
             user_id=user_id,
@@ -193,10 +216,14 @@ def get_posts():
             skip=skip
         )
         
+        logger.info(f'Posts retrieved: {len(result.get("posts", []))} posts')
+        
         return jsonify(result), 200
         
     except Exception as e:
         logger.error(f"Get posts error: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         return jsonify({
             'success': False,
             'error': 'Failed to get posts'

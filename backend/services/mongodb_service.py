@@ -7,7 +7,169 @@ from typing import Dict, List, Any, Optional
 import os
 import logging
 
+# Enable logging
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+class MockCollection:
+    """Mock collection for when MongoDB is unavailable"""
+    def __init__(self, name):
+        self.name = name
+        self._counter = 0
+        self._data = {}  # Store data in memory
+    
+    def insert_one(self, document):
+        from bson.objectid import ObjectId
+        self._counter += 1
+        doc_id = ObjectId()
+        self._data[str(doc_id)] = {**document, '_id': doc_id}
+        class MockResult:
+            inserted_id = doc_id
+        return MockResult()
+    
+    def find_one(self, query):
+        # Simple query matching for token verification
+        if 'token' in query:
+            for doc in self._data.values():
+                if doc.get('token') == query['token']:
+                    return doc
+        if '_id' in query:
+            return self._data.get(str(query['_id']))
+        return None
+    
+    def find(self, query=None):
+        """Return a MockCursor that supports chaining"""
+        if query is None:
+            results = list(self._data.values())
+        else:
+            # Simple filtering
+            results = []
+            for doc in self._data.values():
+                match = True
+                for key, value in query.items():
+                    if doc.get(key) != value:
+                        match = False
+                        break
+                if match:
+                    results.append(doc)
+        return MockCursor(results)
+    
+    def update_one(self, query, update, upsert=False):
+        # Find document
+        doc = self.find_one(query)
+        if doc:
+            # Update existing
+            if '$set' in update:
+                doc.update(update['$set'])
+            if '$inc' in update:
+                for key, value in update['$inc'].items():
+                    doc[key] = doc.get(key, 0) + value
+            class MockResult:
+                modified_count = 1
+            return MockResult()
+        elif upsert:
+            # Insert new
+            new_doc = {}
+            if '$set' in update:
+                new_doc.update(update['$set'])
+            if '$setOnInsert' in update:
+                new_doc.update(update['$setOnInsert'])
+            self.insert_one(new_doc)
+            class MockResult:
+                modified_count = 1
+            return MockResult()
+        else:
+            class MockResult:
+                modified_count = 0
+            return MockResult()
+    
+    def delete_one(self, query):
+        doc = self.find_one(query)
+        if doc:
+            del self._data[str(doc['_id'])]
+            class MockResult:
+                deleted_count = 1
+            return MockResult()
+        class MockResult:
+            deleted_count = 0
+        return MockResult()
+    
+    def delete_many(self, query):
+        docs = list(self.find(query))
+        count = 0
+        for doc in docs:
+            del self._data[str(doc['_id'])]
+            count += 1
+        class MockResult:
+            deleted_count = count
+        return MockResult()
+    
+    def count_documents(self, query):
+        return len(list(self.find(query)))
+    
+    def create_index(self, *args, **kwargs):
+        pass
+    
+    def aggregate(self, pipeline):
+        return []
+
+
+class MockCursor:
+    """Mock cursor that supports MongoDB cursor methods"""
+    def __init__(self, results):
+        self._results = results
+        self._sort_key = None
+        self._sort_direction = None
+        self._skip_count = 0
+        self._limit_count = None
+    
+    def sort(self, key, direction=1):
+        """Sort results by key and direction"""
+        self._sort_key = key
+        self._sort_direction = direction
+        return self
+    
+    def skip(self, count):
+        """Skip first N results"""
+        self._skip_count = count
+        return self
+    
+    def limit(self, count):
+        """Limit results to N items"""
+        self._limit_count = count
+        return self
+    
+    def __iter__(self):
+        """Make cursor iterable"""
+        results = self._results.copy()
+        
+        # Apply sorting
+        if self._sort_key:
+            reverse = (self._sort_direction == -1)
+            try:
+                results.sort(key=lambda x: x.get(self._sort_key, ''), reverse=reverse)
+            except Exception:
+                pass  # If sorting fails, return unsorted
+        
+        # Apply skip
+        if self._skip_count:
+            results = results[self._skip_count:]
+        
+        # Apply limit
+        if self._limit_count:
+            results = results[:self._limit_count]
+        
+        return iter(results)
+
+class MockDatabase:
+    """Mock database for when MongoDB is unavailable"""
+    def __init__(self):
+        self._collections = {}
+    
+    def __getitem__(self, name):
+        if name not in self._collections:
+            self._collections[name] = MockCollection(name)
+        return self._collections[name]
 
 class MongoDBService:
     """Service for managing saved posts in MongoDB"""
@@ -23,23 +185,22 @@ class MongoDBService:
         self._connect()
     
     def _connect(self):
-        """Connect to MongoDB"""
+        """Connect to MongoDB with logging"""
         try:
-            # Get MongoDB URI from environment
             mongo_uri = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017/')
             db_name = os.environ.get('MONGODB_DB_NAME', 'linkogenei')
             
-            # Connect to MongoDB
+            logger.info(f'Connecting to MongoDB: {db_name}...')
+            
             self.client = MongoClient(
                 mongo_uri,
-                serverSelectionTimeoutMS=5000,
-                connectTimeoutMS=10000
+                serverSelectionTimeoutMS=3000,
+                connectTimeoutMS=3000,
+                socketTimeoutMS=3000
             )
             
-            # Test connection
             self.client.admin.command('ping')
             
-            # Get database and collections
             self.db = self.client[db_name]
             self.posts_collection = self.db['saved_posts']
             self.categories_collection = self.db['categories']
@@ -47,58 +208,57 @@ class MongoDBService:
             self.chat_messages_collection = self.db['chat_messages']
             self.notifications_collection = self.db['notifications']
             
-            # Create indexes
             self._create_indexes()
             
-            logger.info(f"Connected to MongoDB: {db_name}")
+            logger.info('✅ MongoDB connected successfully')
             
-        except ConnectionFailure as e:
-            logger.warning(f"MongoDB not available: {str(e)}")
-            logger.warning("LinkoGenei features will be limited without MongoDB")
         except Exception as e:
-            logger.warning(f"MongoDB connection error: {str(e)}")
-            logger.warning("LinkoGenei features will be limited without MongoDB")
+            logger.warning(f'⚠️ MongoDB unavailable: {str(e)}')
+            logger.info('Using in-memory mock database (data will not persist)')
+            
+            # Use mock database
+            self.db = MockDatabase()
+            self.posts_collection = self.db['saved_posts']
+            self.categories_collection = self.db['categories']
+            self.chat_conversations_collection = self.db['chat_conversations']
+            self.chat_messages_collection = self.db['chat_messages']
+            self.notifications_collection = self.db['notifications']
     
     def _create_indexes(self):
-        """Create database indexes for better performance"""
+        """Create database indexes with logging"""
         try:
-            # Index on user_id and created_at for fast queries
+            logger.info('Creating MongoDB indexes...')
+            
             self.posts_collection.create_index([
                 ('user_id', ASCENDING),
                 ('created_at', DESCENDING)
             ])
             
-            # Index on URL to prevent duplicates
             self.posts_collection.create_index([
                 ('user_id', ASCENDING),
                 ('url', ASCENDING)
             ], unique=True)
             
-            # Index on category for filtering
             self.posts_collection.create_index([
                 ('user_id', ASCENDING),
                 ('category', ASCENDING)
             ])
             
-            # Index on platform
             self.posts_collection.create_index([
                 ('user_id', ASCENDING),
                 ('platform', ASCENDING)
             ])
             
-            # Categories collection indexes
             self.categories_collection.create_index([
                 ('user_id', ASCENDING),
                 ('name', ASCENDING)
             ], unique=True)
             
-            # Chat conversations indexes
             self.chat_conversations_collection.create_index([
                 ('user_id', ASCENDING),
                 ('updated_at', DESCENDING)
             ])
             
-            # Chat messages indexes
             self.chat_messages_collection.create_index([
                 ('conversation_id', ASCENDING),
                 ('created_at', ASCENDING)
@@ -107,7 +267,6 @@ class MongoDBService:
                 ('user_id', ASCENDING)
             ])
             
-            # Notifications indexes
             self.notifications_collection.create_index([
                 ('user_id', ASCENDING),
                 ('created_at', DESCENDING)
@@ -117,10 +276,10 @@ class MongoDBService:
                 ('read', ASCENDING)
             ])
             
-            logger.info("MongoDB indexes created successfully")
+            logger.info('✅ MongoDB indexes created')
             
         except Exception as e:
-            logger.warning(f"Failed to create indexes: {str(e)}")
+            logger.warning(f'⚠️ Failed to create indexes: {str(e)}')
     
     def save_post(self, user_id: str, post_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -134,6 +293,8 @@ class MongoDBService:
             Saved post document
         """
         try:
+            logger.info(f'Saving post for user {user_id}: {post_data.get("url")}')
+            
             # Prepare document
             document = {
                 'user_id': user_id,
@@ -148,14 +309,18 @@ class MongoDBService:
                 'updated_at': datetime.utcnow()
             }
             
+            logger.info(f'Document prepared: {document}')
+            
             # Insert document
             result = self.posts_collection.insert_one(document)
             document['_id'] = str(result.inserted_id)
             
+            logger.info(f'Post inserted with ID: {result.inserted_id}')
+            
             # Update category count
             self._update_category_count(user_id, document['category'])
             
-            logger.info(f"Post saved: {document['url']} for user {user_id}")
+            logger.info(f'✅ Post saved successfully: {post_data.get("url")}')
             
             return {
                 'success': True,
@@ -164,13 +329,15 @@ class MongoDBService:
             }
             
         except DuplicateKeyError:
-            logger.warning(f"Duplicate post: {post_data['url']} for user {user_id}")
+            logger.warning(f'Duplicate post: {post_data.get("url")}')
             return {
                 'success': False,
                 'error': 'This post has already been saved'
             }
         except Exception as e:
             logger.error(f"Failed to save post: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return {
                 'success': False,
                 'error': str(e)
@@ -198,6 +365,8 @@ class MongoDBService:
             List of posts
         """
         try:
+            logger.info(f'Getting posts for user {user_id}: category={category}, platform={platform}')
+            
             # Build query
             query = {'user_id': user_id}
             
@@ -207,12 +376,18 @@ class MongoDBService:
             if platform and platform != 'all':
                 query['platform'] = platform
             
+            logger.info(f'Query: {query}')
+            
             # Get posts
             cursor = self.posts_collection.find(query).sort('created_at', DESCENDING).skip(skip).limit(limit)
             posts = [self._serialize_post(post) for post in cursor]
             
+            logger.info(f'Found {len(posts)} posts')
+            
             # Get total count
             total = self.posts_collection.count_documents(query)
+            
+            logger.info(f'Total posts in DB: {total}')
             
             return {
                 'success': True,
@@ -396,8 +571,8 @@ class MongoDBService:
                 },
                 upsert=True
             )
-        except Exception as e:
-            logger.warning(f"Failed to update category count: {str(e)}")
+        except Exception:
+            pass
     
     def _decrement_category_count(self, user_id: str, category: str):
         """Decrement post count for a category"""
@@ -406,8 +581,8 @@ class MongoDBService:
                 {'user_id': user_id, 'name': category},
                 {'$inc': {'post_count': -1}}
             )
-        except Exception as e:
-            logger.warning(f"Failed to decrement category count: {str(e)}")
+        except Exception:
+            pass
     
     def _serialize_post(self, post: Dict) -> Dict[str, Any]:
         """Convert MongoDB document to JSON-serializable dict"""
@@ -728,9 +903,12 @@ class MongoDBService:
             if not hasattr(self, 'extension_tokens_collection'):
                 self.extension_tokens_collection = self.db['extension_tokens']
                 # Create indexes
-                self.extension_tokens_collection.create_index('token', unique=True)
-                self.extension_tokens_collection.create_index([('user_id', ASCENDING)])
-                self.extension_tokens_collection.create_index([('expires_at', ASCENDING)])
+                try:
+                    self.extension_tokens_collection.create_index('token', unique=True)
+                    self.extension_tokens_collection.create_index([('user_id', ASCENDING)])
+                    self.extension_tokens_collection.create_index([('expires_at', ASCENDING)])
+                except Exception:
+                    pass
             
             document = {
                 'user_id': user_id,
@@ -746,11 +924,9 @@ class MongoDBService:
                 upsert=True
             )
             
-            logger.info(f"Extension token stored for user: {user_id}")
             return {'success': True, 'message': 'Token stored successfully'}
             
         except Exception as e:
-            logger.error(f"Failed to store extension token: {str(e)}")
             return {'success': False, 'error': str(e)}
     
     def verify_extension_token(self, token: str) -> Dict[str, Any]:
@@ -767,7 +943,7 @@ class MongoDBService:
                 return {'success': False, 'error': 'Token not found'}
             
             # Check if expired
-            if token_doc['expires_at'] < datetime.utcnow():
+            if token_doc.get('expires_at') and token_doc['expires_at'] < datetime.utcnow():
                 return {'success': False, 'error': 'Token expired'}
             
             return {
@@ -776,7 +952,6 @@ class MongoDBService:
             }
             
         except Exception as e:
-            logger.error(f"Failed to verify extension token: {str(e)}")
             return {'success': False, 'error': str(e)}
     
     def delete_extension_token(self, token: str) -> Dict[str, Any]:

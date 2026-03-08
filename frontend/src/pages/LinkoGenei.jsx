@@ -64,14 +64,25 @@ export default function LinkoGenei() {
 
   const loadPosts = async (token) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/linkogenei/posts?category=${selectedCategory}&platform=${selectedPlatform}`, {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      console.log('Loading posts with token:', token?.substring(0, 10) + '...');
+      console.log('API URL:', `${API_URL}/api/linkogenei/posts`);
+      
+      const response = await fetch(`${API_URL}/api/linkogenei/posts?category=${selectedCategory}&platform=${selectedPlatform}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
+      
+      console.log('Posts response status:', response.status);
       const data = await response.json();
+      console.log('Posts data:', data);
+      
       if (data.success) {
+        console.log('Setting posts:', data.posts.length, 'posts');
         setPosts(data.posts);
+      } else {
+        console.error('Failed to load posts:', data.error);
       }
     } catch (error) {
       console.error('Failed to load posts:', error);
@@ -80,7 +91,8 @@ export default function LinkoGenei() {
 
   const loadCategories = async (token) => {
     try {
-      const response = await fetch('http://localhost:5001/api/linkogenei/categories', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const response = await fetch(`${API_URL}/api/linkogenei/categories`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -96,14 +108,23 @@ export default function LinkoGenei() {
 
   const loadStats = async (token) => {
     try {
-      const response = await fetch('http://localhost:5001/api/linkogenei/stats', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      console.log('Loading stats...');
+      
+      const response = await fetch(`${API_URL}/api/linkogenei/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
+      
+      console.log('Stats response status:', response.status);
       const data = await response.json();
+      console.log('Stats data:', data);
+      
       if (data.success) {
         setStats(data.stats);
+      } else {
+        console.error('Failed to load stats:', data.error);
       }
     } catch (error) {
       console.error('Failed to load stats:', error);
@@ -185,7 +206,8 @@ export default function LinkoGenei() {
     if (!newCategoryName.trim()) return;
 
     try {
-      const response = await fetch('http://localhost:5001/api/linkogenei/categories', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const response = await fetch(`${API_URL}/api/linkogenei/categories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -207,7 +229,8 @@ export default function LinkoGenei() {
 
   const updatePost = async (postId, updates) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/linkogenei/posts/${postId}`, {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const response = await fetch(`${API_URL}/api/linkogenei/posts/${postId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -230,7 +253,8 @@ export default function LinkoGenei() {
     if (!confirm('Are you sure you want to delete this post?')) return;
 
     try {
-      const response = await fetch(`http://localhost:5001/api/linkogenei/posts/${postId}`, {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const response = await fetch(`${API_URL}/api/linkogenei/posts/${postId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${extensionToken}`

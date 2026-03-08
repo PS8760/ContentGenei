@@ -96,8 +96,12 @@ const SocialAnalytics = () => {
       })
 
       if (response.success) {
-        setConnectedAccounts([...connectedAccounts, response.account])
-        setSelectedAccount(response.account)
+        const newAccount = {
+          ...response.account,
+          account_url: response.account.profile_url || accountUrl  // Use profile_url from backend or fallback to input
+        }
+        setConnectedAccounts([...connectedAccounts, newAccount])
+        setSelectedAccount(newAccount)
         setAnalytics(response.analytics)
         setAccountUrl('')
         setSelectedPlatform(null)
@@ -229,37 +233,96 @@ const SocialAnalytics = () => {
               </div>
             )}
 
-            {/* Connected Accounts */}
-            {connectedAccounts.length > 0 && !selectedAccount && (
-              <div className="glass-card rounded-2xl p-8 shadow-lg theme-transition">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 theme-transition">
-                  Your Connected Accounts
-                </h2>
+            {/* Connected Accounts - Always Show */}
+            {connectedAccounts.length > 0 && (
+              <div className="glass-card rounded-2xl p-8 shadow-lg theme-transition mb-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white theme-transition">
+                    🔗 Connected Accounts ({connectedAccounts.length})
+                  </h2>
+                  {selectedAccount && (
+                    <button
+                      onClick={() => {
+                        setSelectedAccount(null)
+                        setAnalytics(null)
+                      }}
+                      className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                    >
+                      View All Accounts →
+                    </button>
+                  )}
+                </div>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {connectedAccounts.map((account) => {
                     const platform = platforms.find(p => p.id === account.platform)
+                    const isSelected = selectedAccount?._id === account._id
+                    
                     return (
-                      <button
+                      <div
                         key={account._id}
-                        onClick={() => handleSelectAccount(account)}
-                        className="glass-card p-6 rounded-xl hover:scale-105 transition-all text-left theme-transition"
+                        className={`glass-card p-6 rounded-xl transition-all ${
+                          isSelected 
+                            ? 'ring-2 ring-blue-500 dark:ring-blue-400 shadow-lg scale-105' 
+                            : 'hover:scale-105 hover:shadow-lg'
+                        }`}
                       >
-                        <div className="flex items-center space-x-3 mb-4">
-                          <span className="text-3xl">{platform?.icon}</span>
-                          <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-white theme-transition">
-                              {platform?.name}
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 theme-transition">
-                              @{account.username}
-                            </p>
+                        <button
+                          onClick={() => handleSelectAccount(account)}
+                          className="w-full text-left"
+                        >
+                          <div className="flex items-center space-x-3 mb-3">
+                            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${platform?.color} flex items-center justify-center text-2xl`}>
+                              {platform?.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-gray-900 dark:text-white theme-transition truncate">
+                                {platform?.name}
+                              </h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400 theme-transition truncate">
+                                @{account.username}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 theme-transition">
-                          Last updated: {new Date(account.last_updated).toLocaleDateString()}
-                        </div>
-                      </button>
+                          
+                          {/* Quick Stats */}
+                          {account.metrics && (
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-gray-600 dark:text-gray-400">
+                                  👥 {formatNumber(account.metrics.followers || 0)}
+                                </span>
+                                <span className="text-gray-600 dark:text-gray-400">
+                                  📝 {formatNumber(account.metrics.posts || 0)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="text-xs text-gray-500 dark:text-gray-500 theme-transition mt-2">
+                            Updated: {new Date(account.last_updated).toLocaleDateString()}
+                          </div>
+                          
+                          {isSelected && (
+                            <div className="mt-2 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                              ✓ Currently Viewing
+                            </div>
+                          )}
+                        </button>
+                        
+                        {/* Account URL Link */}
+                        {(account.account_url || account.profile_url) && (
+                          <a
+                            href={account.account_url || account.profile_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-3 flex items-center justify-center gap-2 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
+                          >
+                            🔗 View Profile
+                          </a>
+                        )}
+                      </div>
                     )
                   })}
                 </div>
@@ -308,16 +371,46 @@ const SocialAnalytics = () => {
 
                 {/* Metrics Grid */}
                 <div className="grid md:grid-cols-4 gap-4">
-                  {analytics.metrics && Object.entries(analytics.metrics).map(([key, value]) => (
-                    <div key={key} className="glass-card rounded-xl p-6 theme-transition">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 capitalize theme-transition">
-                        {key.replace(/_/g, ' ')}
-                      </p>
-                      <p className="text-3xl font-bold text-gray-900 dark:text-white theme-transition">
-                        {typeof value === 'number' ? formatNumber(value) : value}
-                      </p>
-                    </div>
-                  ))}
+                  {analytics.metrics && Object.entries(analytics.metrics).map(([key, value]) => {
+                    // Get emoji for each metric
+                    const getMetricEmoji = (metricKey) => {
+                      const emojiMap = {
+                        followers: '👥',
+                        following: '➕',
+                        posts: '📝',
+                        likes: '❤️',
+                        comments: '💬',
+                        shares: '🔄',
+                        views: '👁️',
+                        engagement: '📊',
+                        reach: '🌐',
+                        impressions: '👀',
+                        saves: '🔖',
+                        clicks: '🖱️',
+                        subscribers: '🔔',
+                        videos: '🎥',
+                        connections: '🤝',
+                        reactions: '😊',
+                        reposts: '♻️',
+                        mentions: '📢'
+                      }
+                      return emojiMap[metricKey] || '📈'
+                    }
+                    
+                    return (
+                      <div key={key} className="glass-card rounded-xl p-6 theme-transition hover:shadow-xl transition-all">
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 capitalize theme-transition font-medium">
+                            {key.replace(/_/g, ' ')}
+                          </p>
+                          <span className="text-2xl">{getMetricEmoji(key)}</span>
+                        </div>
+                        <p className="text-3xl font-bold text-gray-900 dark:text-white theme-transition">
+                          {typeof value === 'number' ? formatNumber(value) : value}
+                        </p>
+                      </div>
+                    )
+                  })}
                 </div>
 
                 {/* Growth Insights */}
