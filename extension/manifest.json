@@ -16,7 +16,9 @@
     "https://www.youtube.com/*",
     "https://www.facebook.com/*",
     "http://localhost:5001/*",
-    "http://127.0.0.1:5001/*"
+    "http://127.0.0.1:5001/*",
+    "http://52.71.190.153/*",
+    "https://contentgenei.onrender.com/*"
   ],
   "action": {
     "default_popup": "popup.html",

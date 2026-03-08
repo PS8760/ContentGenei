@@ -1,7 +1,19 @@
 // Content script for LinkoGenei - Injects "Save to Genei" buttons
 
-// Backend URL - AWS Production
-const API_URL = 'http://52.71.190.153/api';
+// Backend URLs - Multiple deployment options
+const BACKEND_URLS = {
+  aws: 'http://52.71.190.153/api',
+  render: 'https://contentgenei.onrender.com/api'
+};
+
+// Default backend
+let API_URL = BACKEND_URLS.aws;
+
+// Load saved backend preference
+chrome.storage.local.get(['selectedBackend'], (result) => {
+  const backend = result.selectedBackend || 'aws';
+  API_URL = BACKEND_URLS[backend];
+});
 let isActive = false;
 let authToken = null;
 
@@ -613,6 +625,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     authToken = null;
     // Remove all buttons
     document.querySelectorAll('.linkogenei-save-btn').forEach(btn => btn.remove());
+  } else if (message.action === 'updateBackend') {
+    // Update API_URL when backend changes
+    const backend = message.backend || 'aws';
+    API_URL = BACKEND_URLS[backend];
+    console.log('LinkoGenei: Backend updated to', backend, '- API_URL:', API_URL);
   }
 });
 

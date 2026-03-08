@@ -1,9 +1,38 @@
 // Popup script for LinkoGenei extension
 
-// Backend URL - AWS Production
-const API_URL = 'http://52.71.190.153/api';
+// Backend URLs - Multiple deployment options
+const BACKEND_URLS = {
+  aws: 'http://52.71.190.153/api',
+  render: 'https://contentgenei.onrender.com/api'
+};
+
+// Dashboard URLs
+const DASHBOARD_URLS = {
+  aws: 'http://52.71.190.153/linkogenei',
+  render: 'https://contentgenei.onrender.com/linkogenei'
+};
+
+// Default backend (can be changed by user)
+let API_URL = BACKEND_URLS.aws;
+let DASHBOARD_URL = DASHBOARD_URLS.aws;
+
+// Load saved backend preference
+chrome.storage.local.get(['selectedBackend'], (result) => {
+  const backend = result.selectedBackend || 'aws';
+  API_URL = BACKEND_URLS[backend];
+  DASHBOARD_URL = DASHBOARD_URLS[backend];
+  
+  // Set dropdown value after DOM loads
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      const select = document.getElementById('backendSelect');
+      if (select) select.value = backend;
+    });
+  }
+});
 
 // DOM Elements
+const backendSelect = document.getElementById('backendSelect');
 const loginSection = document.getElementById('loginSection');
 const activeSection = document.getElementById('activeSection');
 const tokenInput = document.getElementById('tokenInput');
@@ -15,8 +44,44 @@ const messageEl = document.getElementById('message');
 const savedCountEl = document.getElementById('savedCount');
 const categoryCountEl = document.getElementById('categoryCount');
 
+// Backend selector change handler
+backendSelect.addEventListener('change', (e) => {
+  const selectedBackend = e.target.value;
+  
+  // Save preference
+  chrome.storage.local.set({ selectedBackend }, () => {
+    // Update URLs
+    API_URL = BACKEND_URLS[selectedBackend];
+    DASHBOARD_URL = DASHBOARD_URLS[selectedBackend];
+    
+    showMessage(`Switched to ${selectedBackend.toUpperCase()} backend`, 'success');
+    
+    // Notify content scripts to update their API_URL
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach(tab => {
+        chrome.tabs.sendMessage(tab.id, { 
+          action: 'updateBackend',
+          backend: selectedBackend 
+        }).catch(() => {});
+      });
+    });
+    
+    // Reload stats if active
+    chrome.storage.local.get(['linkoGeneiActive'], (result) => {
+      if (result.linkoGeneiActive) {
+        loadStats();
+      }
+    });
+  });
+});
+
 // Check if extension is already activated
-chrome.storage.local.get(['linkoGeneiToken', 'linkoGeneiActive'], (result) => {
+chrome.storage.local.get(['linkoGeneiToken', 'linkoGeneiActive', 'selectedBackend'], (result) => {
+  // Set backend selector value
+  if (result.selectedBackend) {
+    backendSelect.value = result.selectedBackend;
+  }
+  
   if (result.linkoGeneiActive && result.linkoGeneiToken) {
     showActiveSection();
     loadStats();
@@ -102,15 +167,19 @@ deactivateBtn.addEventListener('click', () => {
 
 // Open dashboard
 openDashboardBtn.addEventListener('click', () => {
-  chrome.tabs.create({ 
-    url: 'http://52.71.190.153/linkogenei' 
+  chrome.storage.local.get(['selectedBackend'], (result) => {
+    const backend = result.selectedBackend || 'aws';
+    const url = DASHBOARD_URLS[backend];
+    chrome.tabs.create({ url });
   });
 });
 
 // Get token link
 getTokenLink.addEventListener('click', () => {
-  chrome.tabs.create({ 
-    url: 'http://52.71.190.153/linkogenei' 
+  chrome.storage.local.get(['selectedBackend'], (result) => {
+    const backend = result.selectedBackend || 'aws';
+    const url = DASHBOARD_URLS[backend];
+    chrome.tabs.create({ url });
   });
 });
 
