@@ -121,7 +121,14 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
+    // Set a timeout to stop loading after 5 seconds if Firebase doesn't respond
+    const loadingTimeout = setTimeout(() => {
+      console.warn('Firebase auth initialization timeout - continuing without auth')
+      setLoading(false)
+    }, 5000)
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      clearTimeout(loadingTimeout) // Clear timeout if auth state changes
       setCurrentUser(user)
       
       if (user) {
@@ -135,7 +142,10 @@ export function AuthProvider({ children }) {
       setLoading(false)
     })
 
-    return unsubscribe
+    return () => {
+      clearTimeout(loadingTimeout)
+      unsubscribe()
+    }
   }, [])
 
   const value = {
