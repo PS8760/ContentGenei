@@ -271,8 +271,37 @@ export default function LinkoGenei() {
   };
 
   const copyToken = () => {
-    navigator.clipboard.writeText(extensionToken);
-    alert('Token copied to clipboard!');
+    // Check if clipboard API is available
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(extensionToken)
+        .then(() => {
+          alert('Token copied to clipboard!');
+        })
+        .catch((err) => {
+          console.error('Failed to copy:', err);
+          fallbackCopyToken();
+        });
+    } else {
+      fallbackCopyToken();
+    }
+  };
+
+  const fallbackCopyToken = () => {
+    // Fallback method for browsers that don't support clipboard API
+    const textArea = document.createElement('textarea');
+    textArea.value = extensionToken;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      alert('Token copied to clipboard!');
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+      alert('Failed to copy token. Please copy manually: ' + extensionToken);
+    }
+    document.body.removeChild(textArea);
   };
 
   const platforms = ['Instagram', 'LinkedIn', 'Twitter', 'X (Twitter)', 'Facebook'];

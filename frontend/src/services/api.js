@@ -673,6 +673,40 @@ class ApiService {
     return this.request('/api/admin/dashboard/stats')
   }
 
+  // ==================== SOCIAL ANALYTICS ====================
+  
+  // Get connected social accounts
+  async getSocialAccounts() {
+    return this.request('/analytics/social-accounts')
+  }
+
+  // Connect social account
+  async connectSocialAccount(accountData) {
+    return this.request('/analytics/social-accounts', {
+      method: 'POST',
+      body: JSON.stringify(accountData)
+    })
+  }
+
+  // Disconnect social account
+  async disconnectSocialAccount(accountId) {
+    return this.request(`/analytics/social-accounts/${accountId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  // Get social analytics for account
+  async getSocialAnalytics(accountId, days = 30) {
+    return this.request(`/analytics/social-accounts/${accountId}/analytics?days=${days}`)
+  }
+
+  // Refresh social analytics
+  async refreshSocialAnalytics(accountId) {
+    return this.request(`/analytics/social-accounts/${accountId}/refresh`, {
+      method: 'POST'
+    })
+  }
+
   // Get all users (admin only)
   async getAdminUsers(page = 1, perPage = 20, search = '') {
     return this.request(`/api/admin/users?page=${page}&per_page=${perPage}&search=${encodeURIComponent(search)}`)
