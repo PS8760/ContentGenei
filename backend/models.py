@@ -535,3 +535,152 @@ class PostCategoryAssignment(db.Model):
             'category_id': self.category_id,
             'assigned_at': self.assigned_at.isoformat() if self.assigned_at else None
         }
+
+
+    class SocialAccount(db.Model):
+        """Connected social media accounts for analytics"""
+        __tablename__ = 'social_accounts'
+
+        id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+        user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)
+
+        # Platform details
+        platform = db.Column(db.String(20), nullable=False, index=True)  # instagram, linkedin, twitter, youtube
+        username = db.Column(db.String(255), nullable=False)
+        profile_url = db.Column(db.String(500), nullable=False)
+
+        # Profile information
+        full_name = db.Column(db.String(255), nullable=True)
+        bio = db.Column(db.Text, nullable=True)
+        profile_pic = db.Column(db.String(500), nullable=True)
+        is_verified = db.Column(db.Boolean, default=False)
+        is_private = db.Column(db.Boolean, default=False)
+
+        # Metrics (stored as JSON)
+        metrics = db.Column(db.Text, nullable=True)  # JSON object with followers, following, posts, etc.
+
+        # Additional data
+        extra_data = db.Column(db.Text, nullable=True)  # JSON for platform-specific data
+
+        # Timestamps
+        last_updated = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+        connected_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+        # Unique constraint: one user can't connect the same account twice
+        __table_args__ = (
+            db.UniqueConstraint('user_id', 'platform', 'username', name='unique_social_account'),
+            db.Index('idx_user_platform_social', 'user_id', 'platform'),
+        )
+
+        def to_dict(self):
+            return {
+                '_id': self.id,  # Use _id for frontend compatibility
+                'id': self.id,
+                'user_id': self.user_id,
+                'platform': self.platform,
+                'username': self.username,
+                'profile_url': self.profile_url,
+                'full_name': self.full_name,
+                'bio': self.bio,
+                'profile_pic': self.profile_pic,
+                'is_verified': self.is_verified,
+                'is_private': self.is_private,
+                'metrics': json.loads(self.metrics) if self.metrics else {},
+                'extra_data': json.loads(self.extra_data) if self.extra_data else {},
+                'last_updated': self.last_updated.isoformat() if self.last_updated else None,
+                'connected_at': self.connected_at.isoformat() if self.connected_at else None
+            }
+
+
+        class ExtensionToken(db.Model):
+            """Extension tokens for LinkoGenei Chrome extension"""
+            __tablename__ = 'extension_tokens'
+
+            id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+            user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)
+            token = db.Column(db.String(255), nullable=False, unique=True, index=True)
+            expires_at = db.Column(db.DateTime, nullable=False, index=True)
+            created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+            def to_dict(self):
+                return {
+                    'id': self.id,
+                    'user_id': self.user_id,
+                    'token': self.token,
+                    'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+                    'created_at': self.created_at.isoformat() if self.created_at else None
+                }
+
+
+        class SavedPost(db.Model):
+            """Saved posts from LinkoGenei extension"""
+            __tablename__ = 'saved_posts'
+
+            id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+            user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)
+
+            # Post details
+            url = db.Column(db.String(500), nullable=False)
+            platform = db.Column(db.String(20), nullable=False, index=True)  # linkedin, instagram, twitter, etc.
+            title = db.Column(db.String(500), nullable=True)
+            image_url = db.Column(db.String(500), nullable=True)
+
+            # Organization
+            category = db.Column(db.String(50), default='Uncategorized', index=True)
+            notes = db.Column(db.Text, nullable=True)
+            tags = db.Column(db.Text, nullable=True)  # JSON array
+
+            # Timestamps
+            created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+            updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+            # Unique constraint: one user can't save the same URL twice
+            __table_args__ = (
+                db.UniqueConstraint('user_id', 'url', name='unique_saved_post'),
+                db.Index('idx_user_category', 'user_id', 'category'),
+                db.Index('idx_user_platform', 'user_id', 'platform'),
+            )
+
+            def to_dict(self):
+                return {
+                    'id': self.id,
+                    'user_id': self.user_id,
+                    'url': self.url,
+                    'platform': self.platform,
+                    'title': self.title,
+                    'image_url': self.image_url,
+                    'category': self.category,
+                    'notes': self.notes,
+                    'tags': json.loads(self.tags) if self.tags else [],
+                    'created_at': self.created_at.isoformat() if self.created_at else None,
+                    'updated_at': self.updated_at.isoformat() if self.updated_at else None
+                }
+
+
+        class SavedPostCategory(db.Model):
+            """Categories for organizing saved posts"""
+            __tablename__ = 'saved_post_categories'
+
+            id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+            user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)
+            name = db.Column(db.String(50), nullable=False)
+            color = db.Column(db.String(7), default='#667eea')
+            post_count = db.Column(db.Integer, default=0)
+            created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+            # Unique constraint: category names must be unique per user
+            __table_args__ = (
+                db.UniqueConstraint('user_id', 'name', name='unique_saved_post_category'),
+            )
+
+            def to_dict(self):
+                return {
+                    'id': self.id,
+                    'user_id': self.user_id,
+                    'name': self.name,
+                    'color': self.color,
+                    'post_count': self.post_count,
+                    'created_at': self.created_at.isoformat() if self.created_at else None
+                }
+
+

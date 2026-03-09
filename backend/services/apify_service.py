@@ -85,6 +85,15 @@ class ApifyService:
                     if results and len(results) > 0:
                         profile = results[0]
                         
+                        # Extract recent posts data
+                        recent_posts = profile.get('latestPosts', [])[:12]  # Get last 12 posts
+                        
+                        # Calculate additional metrics
+                        total_likes = sum(post.get('likesCount', 0) for post in recent_posts)
+                        total_comments = sum(post.get('commentsCount', 0) for post in recent_posts)
+                        avg_likes = total_likes / len(recent_posts) if recent_posts else 0
+                        avg_comments = total_comments / len(recent_posts) if recent_posts else 0
+                        
                         # Extract and format data
                         return {
                             'success': True,
@@ -99,7 +108,18 @@ class ApifyService:
                                 'is_verified': profile.get('verified', False),
                                 'is_private': profile.get('private', False),
                                 'external_url': profile.get('externalUrl'),
-                                'engagement_rate': self._calculate_engagement_rate(profile)
+                                'engagement_rate': self._calculate_engagement_rate(profile),
+                                'extra_data': {
+                                    'avg_likes': round(avg_likes, 2),
+                                    'avg_comments': round(avg_comments, 2),
+                                    'total_likes': total_likes,
+                                    'total_comments': total_comments,
+                                    'recent_posts_count': len(recent_posts),
+                                    'category': profile.get('category'),
+                                    'business_category': profile.get('businessCategoryName'),
+                                    'is_business': profile.get('isBusinessAccount', False),
+                                    'is_professional': profile.get('isProfessionalAccount', False)
+                                }
                             }
                         }
                     else:

@@ -151,10 +151,46 @@ const SocialAnalytics = () => {
     try {
       const response = await apiService.refreshSocialAnalytics(selectedAccount._id)
       if (response.success) {
+        // Update the account in the list
+        setConnectedAccounts(connectedAccounts.map(acc => 
+          acc._id === selectedAccount._id ? response.account : acc
+        ))
+        setSelectedAccount(response.account)
         setAnalytics(response.analytics)
       }
     } catch (error) {
       console.error('Error refreshing analytics:', error)
+      setError('Failed to refresh analytics')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteAccount = async (accountId, event) => {
+    event.stopPropagation() // Prevent triggering account selection
+    
+    if (!confirm('Are you sure you want to disconnect this account? This action cannot be undone.')) {
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await apiService.disconnectSocialAccount(accountId)
+      if (response.success) {
+        // Remove account from list
+        setConnectedAccounts(connectedAccounts.filter(acc => acc._id !== accountId))
+        
+        // Clear selection if deleted account was selected
+        if (selectedAccount?._id === accountId) {
+          setSelectedAccount(null)
+          setAnalytics(null)
+        }
+      } else {
+        setError(response.error || 'Failed to disconnect account')
+      }
+    } catch (error) {
+      console.error('Error disconnecting account:', error)
+      setError('Failed to disconnect account')
     } finally {
       setLoading(false)
     }
@@ -285,16 +321,22 @@ const SocialAnalytics = () => {
                     return (
                       <div
                         key={account._id}
-                        className={`glass-card p-6 rounded-xl transition-all ${
+                        className={`glass-card p-6 rounded-xl transition-all relative ${
                           isSelected 
                             ? 'ring-2 ring-blue-500 dark:ring-blue-400 shadow-lg scale-105' 
                             : 'hover:scale-105 hover:shadow-lg'
                         }`}
                       >
+                        {/* Delete Button */}
                         <button
-                          onClick={() => handleSelectAccount(account)}
-                          className="w-full text-left"
+                          onClick={(e) => handleDeleteAccount(account._id, e)}
+                          className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-colors z-10"
+                          title="Disconnect account"
                         >
+                          ✕
+                        </button>
+
+                        <div className="w-full">
                           <div className="flex items-center space-x-3 mb-3">
                             <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${platform?.color} flex items-center justify-center text-2xl`}>
                               {platform?.icon}
@@ -327,12 +369,18 @@ const SocialAnalytics = () => {
                             Updated: {account.last_updated ? new Date(account.last_updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently'}
                           </div>
                           
-                          {isSelected && (
-                            <div className="mt-2 text-xs font-semibold text-blue-600 dark:text-blue-400">
-                              ✓ Currently Viewing
-                            </div>
-                          )}
-                        </button>
+                          {/* View Analytics Button */}
+                          <button
+                            onClick={() => handleSelectAccount(account)}
+                            className={`mt-3 w-full py-2 px-4 rounded-lg font-medium transition-all ${
+                              isSelected
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-blue-50 dark:hover:bg-gray-600'
+                            }`}
+                          >
+                            {isSelected ? '✓ Viewing Analytics' : '📊 View Analytics'}
+                          </button>
+                        </div>
                         
                         {/* Account URL Link */}
                         {(account.account_url || account.profile_url) && (

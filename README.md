@@ -15,7 +15,7 @@ An AI-powered creative and content intelligence platform for digital content cre
 
 - **Frontend**: React with Vite
 - **Backend**: Python Flask
-- **AI Integration**: Content generation and optimization
+- **AI Integration**: Content generation and optimization(Groq & Apify API Key)
 
 ## Setup Instructions
 

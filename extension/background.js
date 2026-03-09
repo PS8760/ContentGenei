@@ -1,5 +1,11 @@
 // Background service worker for LinkoGenei
 
+// Backend URLs
+const BACKEND_URLS = {
+  aws: 'http://3.235.236.139/api',
+  render: 'https://contentgenei.onrender.com/api'
+};
+
 // Listen for extension installation
 chrome.runtime.onInstalled.addListener(() => {
   console.log('LinkoGenei extension installed');
@@ -7,14 +13,15 @@ chrome.runtime.onInstalled.addListener(() => {
   // Set default values
   chrome.storage.local.set({
     linkoGeneiActive: false,
-    linkoGeneiToken: null
+    linkoGeneiToken: null,
+    selectedBackend: 'aws'
   });
 });
 
 // Listen for messages from content scripts or popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'savePost') {
-    // Handle post saving
+    // Handle post saving - bypass CSP by making request from background
     handleSavePost(message.data)
       .then(result => sendResponse({ success: true, data: result }))
       .catch(error => sendResponse({ success: false, error: error.message }));
@@ -24,14 +31,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Handle post saving
 async function handleSavePost(postData) {
-  const result = await chrome.storage.local.get(['linkoGeneiToken']);
+  console.log('Background: Saving post...', postData);
+  
+  const result = await chrome.storage.local.get(['linkoGeneiToken', 'selectedBackend']);
   const token = result.linkoGeneiToken;
+  const backend = result.selectedBackend || 'aws';
+  const apiUrl = BACKEND_URLS[backend];
 
   if (!token) {
     throw new Error('No authentication token found');
   }
 
-  const response = await fetch('https://contentgenei.onrender.com/api/linkogenei/save-post', {
+  console.log('Background: Using backend:', backend, 'URL:', apiUrl);
+
+  const response = await fetch(`${apiUrl}/linkogenei/save-post`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -40,11 +53,17 @@ async function handleSavePost(postData) {
     body: JSON.stringify(postData)
   });
 
+  console.log('Background: Response status:', response.status);
+
   if (!response.ok) {
-    throw new Error('Failed to save post');
+    const errorText = await response.text();
+    console.error('Background: Error response:', errorText);
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
   }
 
-  return await response.json();
+  const data = await response.json();
+  console.log('Background: Success!', data);
+  return data;
 }
 
 // Badge management

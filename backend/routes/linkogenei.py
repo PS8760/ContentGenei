@@ -1,8 +1,8 @@
 """LinkoGenei API Routes - Chrome Extension Backend"""
 
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
-from services.mongodb_service import mongodb_service
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from services.linkogenei_service import linkogenei_service
 from datetime import datetime, timedelta
 import secrets
 import logging
@@ -11,11 +11,11 @@ logger = logging.getLogger(__name__)
 
 linkogenei_bp = Blueprint('linkogenei', __name__, url_prefix='/api/linkogenei')
 
-# Helper function to verify token from MongoDB
+# Helper function to verify token from SQLite
 def verify_extension_token(token):
-    """Verify token exists in MongoDB and return user_id"""
+    """Verify token exists in database and return user_id"""
     try:
-        result = mongodb_service.verify_extension_token(token)
+        result = linkogenei_service.verify_extension_token(token)
         if result and result.get('success'):
             return result.get('user_id')
         return None
@@ -45,14 +45,14 @@ def generate_token():
         # Generate a secure random token
         token = secrets.token_urlsafe(32)
         
-        # Store token in MongoDB (expires in 30 days)
+        # Store token in SQLite database (expires in 30 days)
         expires_at = datetime.utcnow() + timedelta(days=30)
-        mongodb_service.store_extension_token(user_id, token, expires_at)
+        linkogenei_service.store_extension_token(user_id, token, expires_at)
         
         logger.info(f"Generated extension token for user: {user_id}")
         
         # Get existing post count to inform user
-        stats = mongodb_service.get_stats(user_id)
+        stats = linkogenei_service.get_stats(user_id)
         post_count = stats.get('stats', {}).get('total_posts', 0)
         
         message = 'Token generated successfully. Copy this token to your Chrome extension.'
@@ -150,8 +150,8 @@ def save_post():
                 'error': 'URL is required'
             }), 400
         
-        # Save post to MongoDB
-        result = mongodb_service.save_post(user_id, data)
+        # Save post to SQLite database
+        result = linkogenei_service.save_post(user_id, data)
         logger.info(f'Save result: {result}')
         
         if result['success']:
@@ -207,8 +207,8 @@ def get_posts():
         
         logger.info(f'Query params: category={category}, platform={platform}, limit={limit}, skip={skip}')
         
-        # Get posts from MongoDB
-        result = mongodb_service.get_posts(
+        # Get posts from SQLite database
+        result = linkogenei_service.get_posts(
             user_id=user_id,
             category=category,
             platform=platform,
@@ -251,8 +251,8 @@ def get_post(post_id):
                 'error': 'Invalid or expired token'
             }), 401
         
-        # Get post from MongoDB
-        post = mongodb_service.get_post_by_id(user_id, post_id)
+        # Get post from SQLite database
+        post = linkogenei_service.get_post_by_id(user_id, post_id)
         
         if post:
             return jsonify({
@@ -297,8 +297,8 @@ def update_post(post_id):
         # Get update data
         data = request.get_json()
         
-        # Update post in MongoDB
-        result = mongodb_service.update_post(user_id, post_id, data)
+        # Update post in SQLite database
+        result = linkogenei_service.update_post(user_id, post_id, data)
         
         return jsonify(result), 200 if result['success'] else 400
         
@@ -331,8 +331,8 @@ def delete_post(post_id):
                 'error': 'Invalid or expired token'
             }), 401
         
-        # Delete post from MongoDB
-        result = mongodb_service.delete_post(user_id, post_id)
+        # Delete post from SQLite database
+        result = linkogenei_service.delete_post(user_id, post_id)
         
         return jsonify(result), 200 if result['success'] else 404
         
@@ -365,8 +365,8 @@ def get_categories():
                 'error': 'Invalid or expired token'
             }), 401
         
-        # Get categories from MongoDB
-        categories = mongodb_service.get_categories(user_id)
+        # Get categories from SQLite database
+        categories = linkogenei_service.get_categories(user_id)
         
         return jsonify({
             'success': True,
@@ -411,8 +411,8 @@ def create_category():
                 'error': 'Category name is required'
             }), 400
         
-        # Create category in MongoDB
-        result = mongodb_service.create_category(
+        # Create category in SQLite database
+        result = linkogenei_service.create_category(
             user_id=user_id,
             name=data['name'],
             color=data.get('color', '#667eea')
@@ -449,8 +449,8 @@ def get_stats():
                 'error': 'Invalid or expired token'
             }), 401
         
-        # Get stats from MongoDB
-        result = mongodb_service.get_stats(user_id)
+        # Get stats from SQLite database
+        result = linkogenei_service.get_stats(user_id)
         
         return jsonify(result), 200
         

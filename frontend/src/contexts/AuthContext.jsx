@@ -180,6 +180,7 @@ export function AuthProvider({ children }) {
   const value = {
     currentUser,
     backendUser,
+    loading,
     signup,
     login,
     logout,

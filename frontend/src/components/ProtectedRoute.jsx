@@ -1,8 +1,14 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import PageLoader from './PageLoader'
 
 const ProtectedRoute = ({ children, requireOnboarding = true }) => {
-  const { currentUser } = useAuth()
+  const { currentUser, loading } = useAuth()
+  
+  // Show loading while checking authentication
+  if (loading) {
+    return <PageLoader />
+  }
   
   if (!currentUser) {
     return <Navigate to="/signin" />

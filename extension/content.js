@@ -6,15 +6,8 @@ const BACKEND_URLS = {
   render: 'https://contentgenei.onrender.com/api'
 };
 
-// Default backend
+// Default backend (will be updated in init())
 let API_URL = BACKEND_URLS.aws;
-
-// Load saved backend preference
-chrome.storage.local.get(['selectedBackend'], (result) => {
-  const backend = result.selectedBackend || 'aws';
-  API_URL = BACKEND_URLS[backend];
-  console.log('LinkoGenei: Using backend:', backend, 'URL:', API_URL);
-});
 let isActive = false;
 let authToken = null;
 
@@ -341,12 +334,30 @@ function detectPlatform() {
 
 // Initialize extension
 async function init() {
-  const result = await chrome.storage.local.get(['linkoGeneiActive', 'linkoGeneiToken']);
+  console.log('LinkoGenei: Initializing extension...');
+  
+  // Load all settings at once
+  const result = await chrome.storage.local.get(['linkoGeneiActive', 'linkoGeneiToken', 'selectedBackend']);
+  
   isActive = result.linkoGeneiActive || false;
   authToken = result.linkoGeneiToken || null;
+  
+  // Set backend URL
+  const backend = result.selectedBackend || 'aws';
+  API_URL = BACKEND_URLS[backend];
+  
+  console.log('LinkoGenei: Initialized with:', {
+    isActive,
+    hasToken: !!authToken,
+    backend,
+    apiUrl: API_URL
+  });
 
   if (isActive && authToken) {
+    console.log('LinkoGenei: Extension is active, starting to observe posts...');
     startObserving();
+  } else {
+    console.log('LinkoGenei: Extension is not active or token missing');
   }
 }
 
@@ -506,7 +517,7 @@ function extractImageFromPost(postElement, platform) {
   return imageUrl;
 }
 
-// Save post to backend
+// Save post to backend via background script (bypasses CSP)
 async function savePost(url, platform, button, postElement) {
   if (!authToken) {
     showNotification('Please activate the extension first', 'error');
@@ -529,39 +540,23 @@ async function savePost(url, platform, button, postElement) {
   `;
 
   try {
-    console.log('LinkoGenei: Sending request to backend...', {
-      url: `${API_URL}/linkogenei/save-post`,
-      postUrl: url,
-      platform: platform
-    });
+    console.log('LinkoGenei: Sending save request via background script...');
     
-    const response = await fetch(`${API_URL}/linkogenei/save-post`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
-      body: JSON.stringify({
+    // Send message to background script to bypass CSP
+    const response = await chrome.runtime.sendMessage({
+      action: 'savePost',
+      data: {
         url: url,
         platform: platform,
         title: document.title,
         image_url: imageUrl,
         saved_at: new Date().toISOString()
-      })
+      }
     });
 
-    console.log('LinkoGenei: Response status:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('LinkoGenei: Response error:', errorText);
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
-    }
+    console.log('LinkoGenei: Background response:', response);
 
-    const data = await response.json();
-    console.log('LinkoGenei: Response data:', data);
-
-    if (response.ok && data.success) {
+    if (response.success) {
       // Success state
       button.innerHTML = `
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -570,9 +565,9 @@ async function savePost(url, platform, button, postElement) {
         <span>Saved!</span>
       `;
       button.classList.add('saved');
-      showNotification(`Post saved successfully! URL: ${url}`, 'success');
+      showNotification(`Post saved successfully!`, 'success');
     } else {
-      throw new Error(data.error || 'Failed to save post');
+      throw new Error(response.error || 'Failed to save post');
     }
   } catch (error) {
     console.error('LinkoGenei: Save error:', error);
@@ -586,14 +581,15 @@ async function savePost(url, platform, button, postElement) {
     
     // Show specific error message
     let errorMessage = 'Failed to save post';
-    if (error.message.includes('Failed to fetch')) {
-      errorMessage = 'Cannot connect to server. Please check your internet connection and try again.';
+    if (error.message.includes('No authentication token')) {
+      errorMessage = 'Please activate the extension first';
     } else if (error.message.includes('401')) {
-      errorMessage = 'Invalid token. Please generate a new token from the dashboard.';
+      errorMessage = 'Invalid token. Please generate a new token.';
     } else if (error.message) {
       errorMessage = error.message;
     }
     
+    console.error('LinkoGenei: Error details:', error);
     showNotification(errorMessage, 'error');
   }
 }
