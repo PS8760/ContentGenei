@@ -20,6 +20,9 @@ class Config:
     # Groq config (for AI content generation)
     GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
     
+    # Apify config (for social analytics)
+    APIFY_API_KEY = os.environ.get('APIFY_API_KEY')
+    
     # Firebase config
     FIREBASE_CREDENTIALS_PATH = os.environ.get('FIREBASE_CREDENTIALS_PATH')
     
