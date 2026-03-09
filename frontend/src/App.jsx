@@ -16,6 +16,8 @@ import Login from './pages/Login'
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Creator = lazy(() => import('./pages/Creator'))
 const Analytics = lazy(() => import('./pages/Analytics'))
+const ContentAnalytics = lazy(() => import('./pages/ContentAnalytics'))
+const SocialAnalytics = lazy(() => import('./pages/SocialAnalytics'))
 const ContentLibrary = lazy(() => import('./pages/ContentLibrary'))
 const SocialScheduler = lazy(() => import('./pages/SocialScheduler'))
 const ContentOptimizer = lazy(() => import('./pages/ContentOptimizer'))
@@ -36,7 +38,6 @@ function App() {
         <ProfileProvider>
           <ThemeProvider>
             <Router>
-              <PageLoader />
               <AppContent />
             </Router>
           </ThemeProvider>
@@ -102,6 +103,16 @@ function AppContent() {
           <Route path="/analytics" element={
             <ProtectedRoute>
               <Analytics />
+            </ProtectedRoute>
+          } />
+          <Route path="/content-analytics" element={
+            <ProtectedRoute>
+              <ContentAnalytics />
+            </ProtectedRoute>
+          } />
+          <Route path="/social-analytics" element={
+            <ProtectedRoute>
+              <SocialAnalytics />
             </ProtectedRoute>
           } />
           <Route path="/library" element={
