@@ -2,7 +2,7 @@
 
 // Backend URLs - Multiple deployment options
 const BACKEND_URLS = {
-  aws: 'http://52.71.190.153/api',
+  aws: 'http://3.235.236.139/api',
   render: 'https://contentgenei.onrender.com/api'
 };
 

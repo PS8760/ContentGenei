@@ -33,7 +33,7 @@ class ApifyService:
         
         try:
             # Use Instagram Profile Scraper actor
-            actor_id = 'apify/instagram-profile-scraper'
+            actor_id = 'apify~instagram-profile-scraper'
             
             # Start the actor run
             run_url = f'{self.base_url}/acts/{actor_id}/runs'
