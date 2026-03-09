@@ -55,34 +55,47 @@ const SocialAnalytics = () => {
       name: 'Instagram',
       icon: '📷',
       color: 'from-pink-500 to-purple-600',
-      placeholder: 'https://instagram.com/username'
+      placeholder: 'https://instagram.com/username',
+      available: true
     },
     {
       id: 'linkedin',
       name: 'LinkedIn',
       icon: '💼',
       color: 'from-blue-600 to-blue-700',
-      placeholder: 'https://linkedin.com/in/username'
+      placeholder: 'https://linkedin.com/in/username',
+      available: false,
+      comingSoon: true
     },
     {
       id: 'twitter',
       name: 'Twitter/X',
       icon: '🐦',
       color: 'from-blue-400 to-blue-500',
-      placeholder: 'https://twitter.com/username'
+      placeholder: 'https://twitter.com/username',
+      available: false,
+      comingSoon: true
     },
     {
       id: 'youtube',
       name: 'YouTube',
       icon: '🎥',
       color: 'from-red-600 to-red-700',
-      placeholder: 'https://youtube.com/@username'
+      placeholder: 'https://youtube.com/@username',
+      available: false,
+      comingSoon: true
     }
   ]
 
   const handleConnect = async () => {
     if (!selectedPlatform || !accountUrl.trim()) {
       setError('Please select a platform and enter a valid URL')
+      return
+    }
+
+    // Check if platform is available
+    if (!selectedPlatform.available) {
+      setError(`${selectedPlatform.name} integration coming soon!`)
       return
     }
 
@@ -163,12 +176,12 @@ const SocialAnalytics = () => {
       <main className="pt-24 pb-12 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div ref={titleRef} className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4 theme-transition">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4 theme-transition">
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-500 bg-clip-text text-transparent">
                 Social Media Analytics
               </span>
             </h1>
-            <p className="text-gray-700 dark:text-gray-400 text-lg max-w-2xl mx-auto theme-transition">
+            <p className="text-base sm:text-lg text-gray-700 dark:text-gray-400 max-w-2xl mx-auto theme-transition px-4">
               Analyze your social media accounts and get AI-powered growth insights
             </p>
           </div>
@@ -182,19 +195,30 @@ const SocialAnalytics = () => {
                 </h2>
 
                 {/* Platform Cards */}
-                <div className="grid md:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   {platforms.map((platform) => (
                     <button
                       key={platform.id}
-                      onClick={() => setSelectedPlatform(platform)}
-                      className={`glass-card p-6 rounded-xl transition-all hover:scale-105 theme-transition ${
+                      onClick={() => platform.available && setSelectedPlatform(platform)}
+                      disabled={!platform.available}
+                      className={`glass-card p-6 rounded-xl transition-all theme-transition relative ${
                         selectedPlatform?.id === platform.id
                           ? `bg-gradient-to-br ${platform.color} text-white`
-                          : 'hover:shadow-lg'
+                          : platform.available 
+                            ? 'hover:shadow-lg hover:scale-105' 
+                            : 'opacity-60 cursor-not-allowed'
                       }`}
                     >
+                      {platform.comingSoon && (
+                        <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                          Soon
+                        </div>
+                      )}
                       <div className="text-4xl mb-3">{platform.icon}</div>
                       <h3 className="text-lg font-semibold">{platform.name}</h3>
+                      {platform.comingSoon && (
+                        <p className="text-xs mt-2 opacity-75">Coming Soon</p>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -253,7 +277,7 @@ const SocialAnalytics = () => {
                   )}
                 </div>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {connectedAccounts.map((account) => {
                     const platform = platforms.find(p => p.id === account.platform)
                     const isSelected = selectedAccount?._id === account._id
@@ -300,7 +324,7 @@ const SocialAnalytics = () => {
                           )}
                           
                           <div className="text-xs text-gray-500 dark:text-gray-500 theme-transition mt-2">
-                            Updated: {new Date(account.last_updated).toLocaleDateString()}
+                            Updated: {account.last_updated ? new Date(account.last_updated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently'}
                           </div>
                           
                           {isSelected && (
@@ -333,26 +357,26 @@ const SocialAnalytics = () => {
             {selectedAccount && analytics && (
               <div className="space-y-6">
                 {/* Account Header */}
-                <div className="glass-card rounded-2xl p-6 shadow-lg theme-transition">
-                  <div className="flex items-center justify-between">
+                <div className="glass-card rounded-2xl p-4 sm:p-6 shadow-lg theme-transition">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center space-x-4">
-                      <span className="text-4xl">
+                      <span className="text-3xl sm:text-4xl">
                         {platforms.find(p => p.id === selectedAccount.platform)?.icon}
                       </span>
                       <div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white theme-transition">
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white theme-transition break-all">
                           @{selectedAccount.username}
                         </h2>
-                        <p className="text-gray-600 dark:text-gray-400 theme-transition">
+                        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 theme-transition">
                           {platforms.find(p => p.id === selectedAccount.platform)?.name}
                         </p>
                       </div>
                     </div>
-                    <div className="flex space-x-3">
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                       <button
                         onClick={handleRefresh}
                         disabled={loading}
-                        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg transition-colors"
+                        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg transition-colors text-sm sm:text-base"
                       >
                         🔄 Refresh
                       </button>
@@ -361,7 +385,7 @@ const SocialAnalytics = () => {
                           setSelectedAccount(null)
                           setAnalytics(null)
                         }}
-                        className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+                        className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors text-sm sm:text-base"
                       >
                         ← Back
                       </button>
@@ -370,7 +394,7 @@ const SocialAnalytics = () => {
                 </div>
 
                 {/* Metrics Grid */}
-                <div className="grid md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {analytics.metrics && Object.entries(analytics.metrics).map(([key, value]) => {
                     // Get emoji for each metric
                     const getMetricEmoji = (metricKey) => {

@@ -2,7 +2,9 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, User
 from services.analytics_service import AnalyticsService
+from services.apify_service import apify_service
 from datetime import datetime, timezone
+import re
 
 analytics_bp = Blueprint('analytics', __name__)
 
@@ -251,7 +253,7 @@ def get_social_accounts():
 @analytics_bp.route('/social-accounts', methods=['POST'])
 @jwt_required()
 def connect_social_account():
-    """Connect a social media account"""
+    """Connect a social media account using Apify"""
     try:
         current_user_id = get_jwt_identity()
         data = request.get_json()
@@ -262,26 +264,115 @@ def connect_social_account():
         if not platform or not url:
             return jsonify({'error': 'Platform and URL are required'}), 400
         
-        # TODO: Implement Apify integration to fetch account data
-        # For now, return mock data
-        account = {
-            'id': f"{platform}_{current_user_id}",
-            'platform': platform,
-            'url': url,
-            'username': url.split('/')[-1],
-            'connected_at': datetime.now(timezone.utc).isoformat(),
-            'status': 'connected'
-        }
+        # Extract username from URL
+        username = extract_username_from_url(url, platform)
+        if not username:
+            return jsonify({'error': 'Invalid URL format'}), 400
         
-        return jsonify({
-            'success': True,
-            'account': account,
-            'message': 'Account connected successfully'
-        })
-        
+        # Only Instagram is supported for now
+        if platform == 'instagram':
+            # Use Apify to scrape real data
+            result = apify_service.scrape_instagram_profile(username)
+            
+            if result['success']:
+                profile_data = result['data']
+                
+                # Generate insights
+                insights = apify_service.generate_insights(profile_data)
+                
+                # Create account object
+                account = {
+                    '_id': f"{platform}_{current_user_id}_{username}",
+                    'user_id': current_user_id,
+                    'platform': platform,
+                    'username': username,
+                    'profile_url': url,
+                    'full_name': profile_data.get('full_name'),
+                    'bio': profile_data.get('bio'),
+                    'profile_pic': profile_data.get('profile_pic'),
+                    'is_verified': profile_data.get('is_verified', False),
+                    'is_private': profile_data.get('is_private', False),
+                    'metrics': {
+                        'followers': profile_data.get('followers', 0),
+                        'following': profile_data.get('following', 0),
+                        'posts': profile_data.get('posts', 0),
+                        'engagement_rate': profile_data.get('engagement_rate', 0)
+                    },
+                    'last_updated': datetime.now(timezone.utc).isoformat(),
+                    'connected_at': datetime.now(timezone.utc).isoformat()
+                }
+                
+                # Create analytics object
+                analytics_data = {
+                    'metrics': account['metrics'],
+                    'insights': insights,
+                    'profile': {
+                        'username': username,
+                        'full_name': profile_data.get('full_name'),
+                        'bio': profile_data.get('bio'),
+                        'is_verified': profile_data.get('is_verified', False),
+                        'is_private': profile_data.get('is_private', False)
+                    }
+                }
+                
+                return jsonify({
+                    'success': True,
+                    'account': account,
+                    'analytics': analytics_data,
+                    'message': 'Account connected successfully'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': result.get('error', 'Failed to fetch profile data')
+                }), 400
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'{platform.title()} integration coming soon!'
+            }), 400
+            
     except Exception as e:
         current_app.logger.error(f"Connect social account error: {str(e)}")
-        return jsonify({'error': 'Failed to connect account'}), 500
+        return jsonify({
+            'success': False,
+            'error': f'Failed to connect account: {str(e)}'
+        }), 500
+
+
+def extract_username_from_url(url, platform):
+    """Extract username from social media URL"""
+    try:
+        if platform == 'instagram':
+            # https://instagram.com/username or https://www.instagram.com/username
+            # Remove trailing slash and query parameters
+            url = url.rstrip('/').split('?')[0]
+            parts = url.split('/')
+            # Get the last part which should be the username
+            username = parts[-1]
+            # Remove @ if present
+            username = username.lstrip('@')
+            return username if username else None
+        
+        elif platform == 'linkedin':
+            # https://linkedin.com/in/username
+            match = re.search(r'linkedin\.com/in/([^/?]+)', url)
+            return match.group(1) if match else None
+        
+        elif platform == 'twitter':
+            # https://twitter.com/username or https://x.com/username
+            match = re.search(r'(?:twitter|x)\.com/([^/?]+)', url)
+            username = match.group(1) if match else None
+            return username.lstrip('@') if username else None
+        
+        elif platform == 'youtube':
+            # https://youtube.com/@username or https://youtube.com/c/username
+            match = re.search(r'youtube\.com/(?:@|c/|channel/)([^/?]+)', url)
+            return match.group(1) if match else None
+        
+        return None
+    except:
+        return None
 
 
 @analytics_bp.route('/social-accounts/<account_id>', methods=['DELETE'])

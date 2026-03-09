@@ -1,3 +1,4 @@
+./deploy-to-aws.sh
 #!/bin/bash
 
 # AWS Deployment Script for ContentGenei
@@ -105,3 +106,5 @@ echo "2. Test LinkoGenei: Visit your-domain/linkogenei"
 echo "3. Test Analytics: Visit your-domain/analytics"
 echo ""
 echo "For detailed testing, see AWS_DEPLOYMENT_GUIDE.md"
+Y
+
