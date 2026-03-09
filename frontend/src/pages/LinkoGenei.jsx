@@ -134,11 +134,20 @@ export default function LinkoGenei() {
   const generateToken = async () => {
     try {
       console.log('Generating token...');
+      console.log('Current user:', currentUser);
       
       // Check if user is logged in
       if (!currentUser) {
         alert('Please log in first to generate a token.');
+        window.location.href = '/login';
         return;
+      }
+      
+      // Show loading state
+      const button = document.querySelector('button');
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Generating...';
       }
       
       const response = await ApiService.generateLinkoGeneiToken();
@@ -169,10 +178,19 @@ export default function LinkoGenei() {
       // Check if it's an authentication error
       if (error.message && error.message.includes('401')) {
         alert('Authentication required. Please log in again.');
+        window.location.href = '/login';
       } else if (error.message && error.message.includes('token')) {
         alert('Session expired. Please log in again.');
+        window.location.href = '/login';
       } else {
         alert(`Failed to generate token: ${error.message || 'Please try again.'}`);
+      }
+    } finally {
+      // Reset button state
+      const button = document.querySelector('button');
+      if (button) {
+        button.disabled = false;
+        button.textContent = 'Generate Access Token';
       }
     }
   };
