@@ -13,6 +13,7 @@ let API_URL = BACKEND_URLS.aws;
 chrome.storage.local.get(['selectedBackend'], (result) => {
   const backend = result.selectedBackend || 'aws';
   API_URL = BACKEND_URLS[backend];
+  console.log('LinkoGenei: Using backend:', backend, 'URL:', API_URL);
 });
 let isActive = false;
 let authToken = null;
@@ -586,7 +587,7 @@ async function savePost(url, platform, button, postElement) {
     // Show specific error message
     let errorMessage = 'Failed to save post';
     if (error.message.includes('Failed to fetch')) {
-      errorMessage = 'Cannot connect to server. Make sure backend is running on port 5001.';
+      errorMessage = 'Cannot connect to server. Please check your internet connection and try again.';
     } else if (error.message.includes('401')) {
       errorMessage = 'Invalid token. Please generate a new token from the dashboard.';
     } else if (error.message) {
