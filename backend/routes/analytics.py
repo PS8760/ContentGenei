@@ -225,3 +225,136 @@ def export_analytics():
     except Exception as e:
         current_app.logger.error(f"Export analytics error: {str(e)}")
         return jsonify({'error': 'Failed to export analytics'}), 500
+
+
+# ==================== SOCIAL ANALYTICS ENDPOINTS ====================
+
+@analytics_bp.route('/social-accounts', methods=['GET'])
+@jwt_required()
+def get_social_accounts():
+    """Get connected social media accounts"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # For now, return empty list
+        # TODO: Implement social accounts storage in database
+        return jsonify({
+            'success': True,
+            'accounts': []
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Get social accounts error: {str(e)}")
+        return jsonify({'error': 'Failed to get social accounts'}), 500
+
+
+@analytics_bp.route('/social-accounts', methods=['POST'])
+@jwt_required()
+def connect_social_account():
+    """Connect a social media account"""
+    try:
+        current_user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        platform = data.get('platform')
+        url = data.get('url')
+        
+        if not platform or not url:
+            return jsonify({'error': 'Platform and URL are required'}), 400
+        
+        # TODO: Implement Apify integration to fetch account data
+        # For now, return mock data
+        account = {
+            'id': f"{platform}_{current_user_id}",
+            'platform': platform,
+            'url': url,
+            'username': url.split('/')[-1],
+            'connected_at': datetime.now(timezone.utc).isoformat(),
+            'status': 'connected'
+        }
+        
+        return jsonify({
+            'success': True,
+            'account': account,
+            'message': 'Account connected successfully'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Connect social account error: {str(e)}")
+        return jsonify({'error': 'Failed to connect account'}), 500
+
+
+@analytics_bp.route('/social-accounts/<account_id>', methods=['DELETE'])
+@jwt_required()
+def disconnect_social_account(account_id):
+    """Disconnect a social media account"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # TODO: Implement account deletion from database
+        
+        return jsonify({
+            'success': True,
+            'message': 'Account disconnected successfully'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Disconnect social account error: {str(e)}")
+        return jsonify({'error': 'Failed to disconnect account'}), 500
+
+
+@analytics_bp.route('/social-accounts/<account_id>/analytics', methods=['GET'])
+@jwt_required()
+def get_social_analytics(account_id):
+    """Get analytics for a specific social account"""
+    try:
+        current_user_id = get_jwt_identity()
+        days = request.args.get('days', 30, type=int)
+        
+        # TODO: Implement Apify integration to fetch real analytics
+        # For now, return mock data
+        analytics_data = {
+            'account_id': account_id,
+            'period_days': days,
+            'followers': 1250,
+            'following': 890,
+            'posts': 45,
+            'engagement_rate': 4.5,
+            'total_likes': 5600,
+            'total_comments': 340,
+            'total_shares': 120,
+            'top_posts': [],
+            'growth': {
+                'followers': 12,
+                'engagement': 0.5
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'analytics': analytics_data
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Get social analytics error: {str(e)}")
+        return jsonify({'error': 'Failed to get social analytics'}), 500
+
+
+@analytics_bp.route('/social-accounts/<account_id>/refresh', methods=['POST'])
+@jwt_required()
+def refresh_social_analytics(account_id):
+    """Refresh analytics data for a social account"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # TODO: Implement Apify API call to refresh data
+        
+        return jsonify({
+            'success': True,
+            'message': 'Analytics refreshed successfully',
+            'last_updated': datetime.now(timezone.utc).isoformat()
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Refresh social analytics error: {str(e)}")
+        return jsonify({'error': 'Failed to refresh analytics'}), 500
