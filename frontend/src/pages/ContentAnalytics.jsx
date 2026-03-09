@@ -13,6 +13,8 @@ const ContentAnalytics = () => {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [contents, setContents] = useState([])
+  const [selectedContent, setSelectedContent] = useState(null)
+  const [showContentModal, setShowContentModal] = useState(false)
   const [stats, setStats] = useState({
     total_content: 0,
     total_words: 0,
@@ -145,8 +147,33 @@ const ContentAnalytics = () => {
   }
 
   const handleViewContent = (content) => {
+    setSelectedContent(content)
+    setShowContentModal(true)
+  }
+
+  const handleEditContent = (content) => {
     // Navigate to creator with content loaded
     navigate('/creator', { state: { content } })
+  }
+
+  const handleCopyContent = (content) => {
+    navigator.clipboard.writeText(content.content || '')
+    alert('Content copied to clipboard!')
+  }
+
+  const handleUpdateStatus = async (contentId, newStatus) => {
+    try {
+      const response = await apiService.updateContent(contentId, { status: newStatus })
+      if (response.success) {
+        loadContent()
+        if (selectedContent?.id === contentId) {
+          setSelectedContent({ ...selectedContent, status: newStatus })
+        }
+      }
+    } catch (error) {
+      console.error('Failed to update status:', error)
+      alert('Failed to update status')
+    }
   }
 
   const handleDeleteContent = async (contentId) => {
@@ -176,68 +203,68 @@ const ContentAnalytics = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Title Section */}
           <div ref={titleRef} className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-700 mb-4 leading-tight tracking-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-700 mb-4 leading-tight tracking-tight px-4">
               <span className="gradient-text">Content Analytics</span>
             </h1>
-            <p className="text-gray-700 dark:text-blue-200 text-lg font-normal max-w-2xl mx-auto theme-transition">
+            <p className="text-sm sm:text-base lg:text-lg text-gray-700 dark:text-blue-200 font-normal max-w-2xl mx-auto theme-transition px-4">
               Track and manage all your AI-generated content in one place.
             </p>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid md:grid-cols-4 gap-6 mb-8">
-            <div ref={el => statsRef.current[0] = el} className="glass-card rounded-xl p-6 theme-transition">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+            <div ref={el => statsRef.current[0] = el} className="glass-card rounded-xl p-4 sm:p-6 theme-transition">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Total Content</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.total_content}</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Total Content</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.total_content}</p>
                 </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-gray-700 to-gray-900 dark:from-blue-500 dark:to-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">📄</span>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-gray-700 to-gray-900 dark:from-blue-500 dark:to-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-xl sm:text-2xl">📄</span>
                 </div>
               </div>
             </div>
 
-            <div ref={el => statsRef.current[1] = el} className="glass-card rounded-xl p-6 theme-transition">
+            <div ref={el => statsRef.current[1] = el} className="glass-card rounded-xl p-4 sm:p-6 theme-transition">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Total Words</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.total_words.toLocaleString()}</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Total Words</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.total_words.toLocaleString()}</p>
                 </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-gray-800 to-black dark:from-purple-500 dark:to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">✍️</span>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-gray-800 to-black dark:from-purple-500 dark:to-purple-600 rounded-lg flex items-center justify-center">
+                  <span className="text-xl sm:text-2xl">✍️</span>
                 </div>
               </div>
             </div>
 
-            <div ref={el => statsRef.current[2] = el} className="glass-card rounded-xl p-6 theme-transition">
+            <div ref={el => statsRef.current[2] = el} className="glass-card rounded-xl p-4 sm:p-6 theme-transition">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Avg Words/Content</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.avg_word_count}</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Avg Words/Content</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.avg_word_count}</p>
                 </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-black to-gray-700 dark:from-green-500 dark:to-green-600 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">📊</span>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-black to-gray-700 dark:from-green-500 dark:to-green-600 rounded-lg flex items-center justify-center">
+                  <span className="text-xl sm:text-2xl">📊</span>
                 </div>
               </div>
             </div>
 
-            <div ref={el => statsRef.current[3] = el} className="glass-card rounded-xl p-6 theme-transition">
+            <div ref={el => statsRef.current[3] = el} className="glass-card rounded-xl p-4 sm:p-6 theme-transition">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Content Types</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{Object.keys(stats.content_by_type).length}</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Content Types</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">{Object.keys(stats.content_by_type).length}</p>
                 </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-gray-600 to-gray-800 dark:from-orange-500 dark:to-orange-600 rounded-lg flex items-center justify-center">
-                  <span className="text-2xl">🎯</span>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-gray-600 to-gray-800 dark:from-orange-500 dark:to-orange-600 rounded-lg flex items-center justify-center">
+                  <span className="text-xl sm:text-2xl">🎯</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Filters */}
-          <div className="glass-card rounded-xl p-6 mb-8 theme-transition">
-            <div className="grid md:grid-cols-3 gap-4">
+          <div className="glass-card rounded-xl p-4 sm:p-6 mb-8 theme-transition">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Content Type
@@ -317,46 +344,47 @@ const ContentAnalytics = () => {
               )}
             </div>
           ) : (
-            <div ref={contentRef} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div ref={contentRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {filteredContent.map((content) => (
-                <div key={content.id} className="glass-card rounded-xl p-6 hover:shadow-xl transition-all theme-transition">
+                <div key={content.id} className="glass-card rounded-xl p-4 sm:p-6 hover:shadow-xl transition-all theme-transition">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-2">
-                      <span className="text-3xl">{getContentTypeIcon(content.content_type)}</span>
+                      <span className="text-2xl sm:text-3xl">{getContentTypeIcon(content.content_type)}</span>
                       <div>
                         <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
                           {content.content_type || 'other'}
                         </span>
                       </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(content.status)}`}>
+                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(content.status)}`}>
                       {content.status || 'draft'}
                     </span>
                   </div>
 
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2 line-clamp-2">
+                  <h3 className="font-bold text-base sm:text-lg text-gray-900 dark:text-white mb-2 line-clamp-2">
                     {content.title || 'Untitled Content'}
                   </h3>
 
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
                     {content.content?.substring(0, 150)}...
                   </p>
 
                   <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500 mb-4">
                     <span>{content.word_count || 0} words</span>
-                    <span>{new Date(content.created_at).toLocaleDateString()}</span>
+                    <span className="hidden sm:inline">{new Date(content.created_at).toLocaleDateString()}</span>
+                    <span className="sm:hidden">{new Date(content.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                   </div>
 
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleViewContent(content)}
-                      className="flex-1 bg-gray-800 hover:bg-black dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm"
+                      className="flex-1 bg-gray-800 hover:bg-black dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-xs sm:text-sm"
                     >
                       View
                     </button>
                     <button
                       onClick={() => handleDeleteContent(content.id)}
-                      className="bg-gray-600 hover:bg-gray-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm"
+                      className="bg-gray-600 hover:bg-gray-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-3 sm:px-4 py-2 rounded-lg font-medium transition-all text-xs sm:text-sm"
                     >
                       Delete
                     </button>
@@ -367,6 +395,148 @@ const ContentAnalytics = () => {
           )}
         </div>
       </main>
+      
+      {/* Content View Modal */}
+      {showContentModal && selectedContent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 sm:p-6 flex items-start justify-between">
+              <div className="flex-1 mr-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-3xl sm:text-4xl">{getContentTypeIcon(selectedContent.content_type)}</span>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                      {selectedContent.title || 'Untitled Content'}
+                    </h2>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                      {selectedContent.content_type} • {selectedContent.word_count || 0} words
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowContentModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 sm:p-6">
+              {/* Status and Actions */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</span>
+                  <select
+                    value={selectedContent.status || 'draft'}
+                    onChange={(e) => handleUpdateStatus(selectedContent.id, e.target.value)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border-2 ${getStatusColor(selectedContent.status)}`}
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => handleEditContent(selectedContent)}
+                    className="flex-1 sm:flex-none bg-gray-800 hover:bg-black dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    onClick={() => handleCopyContent(selectedContent)}
+                    className="flex-1 sm:flex-none bg-gray-600 hover:bg-gray-700 dark:bg-purple-600 dark:hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm"
+                  >
+                    📋 Copy
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleDeleteContent(selectedContent.id)
+                      setShowContentModal(false)
+                    }}
+                    className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm"
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
+              </div>
+
+              {/* Content Metadata */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Created</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {new Date(selectedContent.created_at).toLocaleDateString('en-US', { 
+                      month: 'long', 
+                      day: 'numeric', 
+                      year: 'numeric' 
+                    })}
+                  </p>
+                </div>
+                
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Word Count</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {selectedContent.word_count || 0} words
+                  </p>
+                </div>
+                
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Type</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white capitalize">
+                    {selectedContent.content_type || 'other'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Content Display */}
+              <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 sm:p-6">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Content</h3>
+                <div className="prose prose-sm sm:prose dark:prose-invert max-w-none">
+                  <div className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words text-sm sm:text-base leading-relaxed">
+                    {selectedContent.content || 'No content available'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Settings */}
+              {selectedContent.settings && (
+                <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 sm:p-6">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Generation Settings</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    {Object.entries(selectedContent.settings).map(([key, value]) => (
+                      <div key={key} className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{String(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4 sm:p-6 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => setShowContentModal(false)}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-6 py-3 rounded-lg font-medium transition-all"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => handleEditContent(selectedContent)}
+                className="flex-1 bg-gradient-to-r from-gray-800 to-black dark:from-blue-600 dark:to-indigo-700 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all"
+              >
+                Edit in Creator →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <Footer />
     </div>
