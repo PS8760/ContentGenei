@@ -132,11 +132,40 @@ export function AuthProvider({ children }) {
       setCurrentUser(user)
       
       if (user) {
-        // Authenticate with backend when user signs in
-        await authenticateWithBackend(user)
+        // Check if we already have backend tokens
+        const accessToken = localStorage.getItem('access_token')
+        const sessionToken = localStorage.getItem('session_token')
+        
+        if (!accessToken || !sessionToken) {
+          // No backend tokens, authenticate with backend
+          console.log('No backend tokens found, authenticating with backend...')
+          await authenticateWithBackend(user)
+        } else {
+          // We have tokens, verify they're still valid
+          console.log('Backend tokens found, verifying...')
+          try {
+            // Try to get user profile to verify token is valid
+            const response = await apiService.getProfile()
+            if (response.success) {
+              setBackendUser(response.user)
+              console.log('Backend session restored successfully')
+            } else {
+              // Token invalid, re-authenticate
+              console.log('Backend token invalid, re-authenticating...')
+              await authenticateWithBackend(user)
+            }
+          } catch (error) {
+            // Token invalid or expired, re-authenticate
+            console.log('Backend token verification failed, re-authenticating...')
+            await authenticateWithBackend(user)
+          }
+        }
       } else {
         // Clear backend user when user signs out
         setBackendUser(null)
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('refresh_token')
+        localStorage.removeItem('session_token')
       }
       
       setLoading(false)
